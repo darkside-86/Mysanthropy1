@@ -62,6 +62,7 @@ add_executable (
         engine/Logger.cpp
         engine/RectangleShape.cpp
         engine/TextRenderer.cpp
+        engine/TextureManager.cpp
         engine/ui/Frame.cpp
         engine/ui/Object.cpp
         engine/ui/Root.cpp

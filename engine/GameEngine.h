@@ -25,6 +25,7 @@
 #include "Game.h"
 #include "Logger.h"
 #include "TextRenderer.h"
+#include "TextureManager.h"
 
 namespace engine 
 {
@@ -75,6 +76,8 @@ namespace engine
         inline Logger& GetLogger() { return logger_; }
         // Return the text renderer
         inline TextRenderer& GetTextRenderer() { return textRenderer_; }
+        // Get texture manager
+        inline TextureManager& GetTextureManager() { return textureManager_; }
         // Return the random number generator
         inline std::default_random_engine& GetRNG() { return rng_; }
     private:
@@ -87,6 +90,7 @@ namespace engine
         int width_, height_; // logical pixels. scalable with window resize
         Logger logger_;
         TextRenderer textRenderer_;
+        TextureManager textureManager_;
         std::default_random_engine rng_;
     };
 }

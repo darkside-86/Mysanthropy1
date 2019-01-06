@@ -34,7 +34,8 @@ namespace ogl
 		//  by shaders.
 		// slot - GL_TEXTURE0 by default. Check platform for available number of slots.
 		void Bind(unsigned int slot = 0) const;
-		void Unbind();
+		void Unbind() const;
+		static void BindNone();
 		// Returns the image width in pixels
 		inline unsigned int GetWidth() const { return width_; }
 		// Returns the image height in pixels

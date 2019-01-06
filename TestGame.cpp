@@ -30,8 +30,10 @@
 TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
                         frameTexture("res/textures/frame.png", false)
 {
+    engine::GameEngine::Get().GetTextureManager().LoadTexture("uiblank", "res/textures/uiblank.png");
+    ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture("uiblank");
     uiRoot_ = new engine::ui::Root();
-    frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, &frameTexture, {0.f,0.f,1.f,1.f});
+    frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
 }
 
 TestGame::~TestGame()
@@ -41,8 +43,6 @@ TestGame::~TestGame()
 
 bool TestGame::Initialize()
 {
-    RandomizeRectColors();
-
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
         uiRoot_->ProcessMouseButtonEvent(e);
     });
