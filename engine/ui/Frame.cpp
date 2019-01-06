@@ -22,15 +22,15 @@
 
 namespace engine { namespace ui {
 
-    Frame::Frame(Object* parent, int w, int h, int xpos, int ypos, ogl::Texture* texture) 
-        : Object(parent), texture_(texture)
+    Frame::Frame(Object* parent, int w, int h, int xpos, int ypos, ogl::Texture* texture, const Color& color) 
+        : Object(parent), texture_(texture), color_(color)
     {
         xPos_ = xpos;
         yPos_ = ypos;
         width_ = w;
         height_ = h;
         // todo: clip visible Frame area to parent object.
-        CreateRectangle((float)width_, (float)height_);
+        CreateRectangle((float)width_, (float)height_, color);
     }
 
     Frame::~Frame()
@@ -56,15 +56,17 @@ namespace engine { namespace ui {
 
     void Frame::SetWidth(int w)
     {
-        width_ = w; // todo: clip object to parent object
+        width_ = w; 
+        CreateRectangle((float)width_, (float)height_, color_);
     }
 
     void Frame::SetHeight(int h)
     {
-        height_ = h; // todo: clip object to parent object
+        height_ = h; 
+        CreateRectangle((float)width_, (float)height_, color_);
     }
 
-    void Frame::CreateRectangle(float w, float h)
+    void Frame::CreateRectangle(float w, float h, const Color& color)
     {
         ogl::Vertex vertices[4];
         float s=1.f,t=1.f;
@@ -73,10 +75,14 @@ namespace engine { namespace ui {
             s = w / (float)texture_->GetWidth();
             t = h / (float)texture_->GetHeight();
         }
-        vertices[0] =  {{0.f, 0.f, 0.f}, {255,255,255,255}, {0.f,0.f}};
-        vertices[1] =  {{0.f, h, 0.f}, {255,255,255,255}, {0.f,t}};
-        vertices[2] =  {{w, 0.f, 0.f}, {255,255,255,255}, {s,0.f}};
-        vertices[3] =  {{w, h, 0.f}, {255,255,255,255}, {s,t}};
+        vertices[0] =  {{0.f, 0.f, 0.f}, {(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
+            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {0.f,0.f}};
+        vertices[1] =  {{0.f, h, 0.f}, {(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
+            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {0.f,t}};
+        vertices[2] =  {{w, 0.f, 0.f},{(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
+            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {s,0.f}};
+        vertices[3] =  {{w, h, 0.f}, {(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
+            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {s,t}};
         if(vbo_)
             delete vbo_;
         vbo_ = new ogl::VertexBuffer();

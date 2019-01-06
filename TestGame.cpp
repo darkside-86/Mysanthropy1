@@ -31,7 +31,7 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
                         frameTexture("res/textures/frame.png", false)
 {
     uiRoot_ = new engine::ui::Root();
-    frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, &frameTexture);
+    frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, &frameTexture, {0.f,0.f,1.f,1.f});
 }
 
 TestGame::~TestGame()
@@ -47,9 +47,10 @@ bool TestGame::Initialize()
         uiRoot_->ProcessMouseButtonEvent(e);
     });
 
-    frame_->AddOnClicked([](const engine::ui::ClickedEvent&) {
+    frame_->AddOnClicked([this](const engine::ui::ClickedEvent&) {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
                 "Frame was clicked!");
+        this->frame_->SetColor({1.f,0.f,0.f,1.f});
     } );
 
     engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){

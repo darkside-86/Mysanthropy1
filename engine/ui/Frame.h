@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include "Color.h"
 #include "Object.h"
 
 #include "ogl/Texture.h"
@@ -29,14 +30,18 @@ namespace engine { namespace ui {
     class Frame : public Object
     {
     public:
-        Frame(Object* parent, int w, int h, int xpos, int ypos, ogl::Texture* texture);
+        Frame(Object* parent, int w, int h, int xpos, int ypos, ogl::Texture* texture, const Color& color);
         virtual ~Frame();
         virtual void Render(GraphicsContext& gc) override;  
         Object* CheckPoint(int x, int y);  
         virtual void SetWidth(int w) override;
-        virtual void SetHeight(int h) override;  
+        virtual void SetHeight(int h) override;
+        void SetColor(const Color& color) 
+            { color_ = color; CreateRectangle((float)width_,(float)height_,color_); }
+        Color GetColor() { return color_; }
     private:
-        void CreateRectangle(float w, float h);
+        void CreateRectangle(float w, float h, const Color& color);
+        Color color_;
         ogl::Texture* texture_;
         ogl::VertexArray* vao_=nullptr;
         ogl::VertexBuffer* vbo_=nullptr;

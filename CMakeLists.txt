@@ -4,7 +4,7 @@ project (Mysanthropy1)
 if ( MSVC )
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /subsystem:console") 
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")  
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif( MSVC )
 
 include_directories(
@@ -22,6 +22,19 @@ if ( MSVC )
             "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_ttf.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/glew32.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/v8_monolith.lib" 
+    )
+else ( MSVC )
+    find_library(OPENGL32_LIB NAMES libopengl32.a opengl32)
+    find_library(SDL2_LIB NAMES libSDL2.a SDL2)
+    find_library(SDL2MAIN_LIB NAMES libSDL2main.a SDL2main)
+    find_library(SDL2IMAGE_LIB NAMES libSDL2_image.a SDL2_image)
+    find_library(SDL2TTF_LIB NAMES libSDL2_ttf.a SDL2_ttf)
+    find_library(GLEW32_LIB NAMES libglew32.a glew32)
+    find_library(V8MONOLITH_LIB NAMES libv8_monolith.a v8_monolith)
+    set (
+        LIBRARIES
+            ${OPENGL32_LIB} ${SDL2_LIB} ${SDL2MAIN_LIB} ${SDL2IMAGE_LIB}
+            ${SDL2IMAGE_LIB} ${SDL2TTF_LIB} ${GLEW32_LIB} ${V8MONOLITH_LIB}
     )
 endif( MSVC )
 
