@@ -18,9 +18,14 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-class GameObject
+#include "GraphicsContext.h"
+
+namespace engine 
 {
-public:
-    virtual void update(float dtime) = 0;
-    // virtual void render(Context& ctx) = 0;
-};
+    class GameObject
+    {
+    public:
+        virtual void Update(float dtime) = 0;
+        virtual void Render(GraphicsContext& ctx) = 0;
+    };
+}

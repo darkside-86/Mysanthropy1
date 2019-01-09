@@ -107,9 +107,4 @@ namespace ogl
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void Texture::BindNone()
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
 }

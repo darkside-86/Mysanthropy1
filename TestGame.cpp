@@ -50,34 +50,23 @@ bool TestGame::Initialize()
     frame_->AddOnClicked([this](const engine::ui::ClickedEvent&) {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
                 "Frame was clicked!");
-        this->frame_->SetColor({1.f,0.f,0.f,1.f});
+        this->RandomizeRectColors();
     } );
 
-    engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
-        if(e.type == SDL_KEYDOWN)
-        {
-            if(e.keysym.sym == SDLK_r)
-            {
-                this->RandomizeRectColors();
-            }
-        }
-    });
-
-    engine::GameEngine::Get().GetTextRenderer().LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
-    engine::GameEngine::Get().GetTextRenderer().SetFGColor(1.0f, 1.0f, 1.0f, 1.0f);
-    engine::GameEngine::Get().GetTextRenderer().SetBGColor(0.0f, 0.5f, 0.0f, 1.0f);
-    messageTexture_ = engine::GameEngine::Get().GetTextRenderer().RenderTextShaded("mono", "Hello");
+    engine::TextRenderer& tr = engine::GameEngine::Get().GetTextRenderer();
+    tr.LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
+    tr.SetFGColor(1.0f, 1.0f, 1.0f, 1.0f);
+    tr.SetBGColor(0.0f, 0.5f, 0.0f, 1.0f);
+    messageTexture_ = tr.RenderTextShaded("mono", "Hello");
     messageRect_ = new engine::RectangleShape(0.0f, 0.0f, 
             (float)messageTexture_->GetWidth(), (float)messageTexture_->GetHeight());
-
-    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
-            "The width and height are %d, %d", 
-            messageTexture_->GetWidth(), messageTexture_->GetHeight());
     return true;
 }
 
 void TestGame::Cleanup()
 {
+    delete frame_;
+    // delete uiRoot_; // no crash but slow exit
     delete messageRect_;
     delete messageTexture_;
 }
@@ -97,7 +86,7 @@ void TestGame::Render(engine::GraphicsContext& gc)
         isInit = true;
     }
     glDisable(GL_DEPTH_TEST);
-    OGL_ERROR_CHECK();
+    OGL_ERROR_CHECK(); 
     gc.ResetMVP();
     gc.SetOrthoProjection();
     gc.SetMVP();
@@ -112,15 +101,10 @@ void TestGame::Render(engine::GraphicsContext& gc)
 
 void TestGame::RandomizeRectColors()
 {
-    /*auto& rng = engine::GameEngine::Get().GetRNG();
-    for(int i=0; i < rect.GetNumVertices(); ++i)
-    {
-        rect.GetVertices()[i].color = {
-            (unsigned char) (0xff & (rng() % 256)), 
-            (unsigned char) (0xff & (rng() % 256)), 
-            (unsigned char) (0xff & (rng() % 256)), 
-            255
-        };
-    }
-    rect.ModifyVertices();*/
+    auto& rng = engine::GameEngine::Get().GetRNG();
+    float red = (float)rng() / (float)rng.max();
+    float green = (float)rng() / (float)rng.max();
+    float blue = (float)rng() / (float)rng.max();
+    constexpr float alpha = 1.0f;
+    frame_->SetColor({red,green,blue,alpha});    
 }

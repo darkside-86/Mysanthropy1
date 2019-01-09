@@ -31,8 +31,8 @@ namespace engine { namespace ui {
 
     Object::~Object()
     {
-        for(auto eachChild : children_)
-            delete eachChild;
+        /* for(auto eachChild : children_)
+            delete eachChild; */
     }
 
     void Object::AddOnClicked(const ClickedEventCallback& cb)

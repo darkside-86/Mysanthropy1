@@ -23,18 +23,20 @@ namespace engine { namespace ui {
 
     void Root::ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe)
     {
-        if(mbe.type != SDL_MOUSEBUTTONDOWN)
-            return;
-
-        int x = mbe.x;
-        int y = mbe.y;
-
+        static Object* prevPressed = nullptr;
+        int x = mbe.x, y = mbe.y;
         GameEngine::Get().SetLogicalXY(x,y);
-
-        Object* clicked = CheckPoint(x,y);
-        if(clicked != nullptr)
+        if(mbe.type == SDL_MOUSEBUTTONDOWN)
         {
-            clicked->OnClicked(x,y, mbe.button);
+            prevPressed = CheckPoint(x,y);
+        }
+        else
+        {
+            Object* unpressed = CheckPoint(x,y);
+            if(prevPressed == unpressed && unpressed != nullptr)
+            {
+                unpressed->OnClicked(x, y, mbe.button);
+            }
         }
     }
 
