@@ -42,7 +42,9 @@ namespace engine { namespace ui {
 
     void Root::Render(GraphicsContext& gc)
     {
-        gc.ResetModel();
+        gc.ResetMVP();
+        gc.SetOrthoProjection();
+        gc.SetMVP();
         gc.TranslateModel((float)xPos_, (float)yPos_, 0.f);
         gc.SetMVP();
         for(auto child : children_)

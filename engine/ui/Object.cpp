@@ -60,7 +60,7 @@ namespace engine { namespace ui {
             result = this;
             for(auto child : children_)
             {
-                if(ContainsPoint(x - xPos_, y - yPos_))
+                if(child->ContainsPoint(x - xPos_, y - yPos_))
                 {
                     result = child->CheckPoint(x - xPos_, y - yPos_);
                     break;

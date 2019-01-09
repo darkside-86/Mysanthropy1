@@ -37,6 +37,7 @@ private:
     void RandomizeRectColors();
     engine::ui::Root* uiRoot_;
     engine::ui::Frame* frame_;
+    engine::ui::Frame* blueButton_;
     ogl::Texture groundTexture;
     ogl::Texture frameTexture;
 

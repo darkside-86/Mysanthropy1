@@ -34,10 +34,13 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture("uiblank");
     uiRoot_ = new engine::ui::Root();
     frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
+    blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, {0.2f, 0.2f, 0.6f, 1.f});
 }
 
 TestGame::~TestGame()
 {
+    delete blueButton_;
+    delete frame_;
     delete uiRoot_;
 }
 
@@ -47,9 +50,9 @@ bool TestGame::Initialize()
         uiRoot_->ProcessMouseButtonEvent(e);
     });
 
-    frame_->AddOnClicked([this](const engine::ui::ClickedEvent&) {
+    blueButton_->AddOnClicked([this](const engine::ui::ClickedEvent&) {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-                "Frame was clicked!");
+                "Button was clicked!");
         this->RandomizeRectColors();
     } );
 
@@ -60,15 +63,15 @@ bool TestGame::Initialize()
     messageTexture_ = tr.RenderTextShaded("mono", "Hello");
     messageRect_ = new engine::RectangleShape(0.0f, 0.0f, 
             (float)messageTexture_->GetWidth(), (float)messageTexture_->GetHeight());
+    if(messageTexture_ == nullptr)
+        return false;
     return true;
 }
 
 void TestGame::Cleanup()
 {
-    delete frame_;
-    // delete uiRoot_; // no crash but slow exit
-    delete messageRect_;
     delete messageTexture_;
+    delete messageRect_;
 }
 
 void TestGame::Update(float dtime)
@@ -86,17 +89,13 @@ void TestGame::Render(engine::GraphicsContext& gc)
         isInit = true;
     }
     glDisable(GL_DEPTH_TEST);
-    OGL_ERROR_CHECK(); 
-    gc.ResetMVP();
-    gc.SetOrthoProjection();
-    gc.SetMVP();
-    groundTexture.Bind();
     uiRoot_->Render(gc);
     gc.ResetModel();
     gc.SetMVP();
     messageTexture_->Bind();
     messageRect_->Render(gc);
     glEnable(GL_DEPTH_TEST);
+    // 3D rendering here
 }
 
 void TestGame::RandomizeRectColors()
