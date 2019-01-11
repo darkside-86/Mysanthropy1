@@ -26,7 +26,7 @@ namespace engine { namespace ui {
     {
     public:
         enum class Type {
-            CLICKED
+            CLICKED, HOVER
         };
         Event(Type t) : type(t) {}
         Type type;
@@ -40,5 +40,15 @@ namespace engine { namespace ui {
         int x, y, button;
     };
 
+    class HoverEvent : Event
+    {
+    public:
+        HoverEvent(int sx, int sy, int dx, int dy, bool o) : Event(Type::HOVER),
+            x(sx), y(sy), xrel(dx), yrel(dy), over(o) {}
+        int x, y, xrel, yrel;
+        bool over; // false when mouse moves away
+    };
+
     typedef std::function<void(const ClickedEvent&)> ClickedEventCallback;
+    typedef std::function<void(const HoverEvent&)> HoverEventCallback;
 }}

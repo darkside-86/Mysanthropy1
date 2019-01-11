@@ -35,7 +35,9 @@ namespace engine { namespace ui {
         Object(Object* parent);
         virtual ~Object();
         virtual void AddOnClicked(const ClickedEventCallback& cb);
-        virtual void OnClicked(int x, int y, int btn);
+        virtual void OnClicked(const ClickedEvent& e);
+        virtual void AddOnHover(const HoverEventCallback& cb);
+        virtual void OnHover(const HoverEvent& e);
         bool ContainsPoint(int x, int y);
         // get the inner child object that contains the point if any
         Object* CheckPoint(int x, int y);
@@ -54,6 +56,7 @@ namespace engine { namespace ui {
     protected:
         std::vector<Object*>                children_;
         std::vector<ClickedEventCallback>   onClicked_;
+        std::vector<HoverEventCallback>     onHover_;
         Object*                             parent_;
         bool                                visible_;
         int                                 width_=1, height_=1;

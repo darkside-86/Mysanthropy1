@@ -39,6 +39,10 @@ namespace engine { namespace ui {
         virtual ~Root() {}
         virtual void Render(GraphicsContext& gc) override;
         void ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe);
+        void ProcessMouseMotionEvent(const SDL_MouseMotionEvent& mme);
+    private:
+        Object*     mousePressed_ = nullptr;
+        Object*     mouseOver_ = nullptr;
     };
 
 }}

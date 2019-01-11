@@ -27,6 +27,9 @@
 #include "engine/GameEngine.h"
 #include "ogl/ErrorCheck.h"
 
+static constexpr engine::ui::Color BUTTON_OFF_COLOR = {0.2f,0.2f,0.6f,1.f};
+static constexpr engine::ui::Color BUTTON_ON_COLOR = {0.6f, 0.2f, 0.2f, 1.f};
+
 TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
                         frameTexture("res/textures/frame.png", false)
 {
@@ -34,7 +37,7 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture("uiblank");
     uiRoot_ = new engine::ui::Root();
     frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
-    blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, {0.2f, 0.2f, 0.6f, 1.f});
+    blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, BUTTON_OFF_COLOR);
 }
 
 TestGame::~TestGame()
@@ -47,7 +50,24 @@ TestGame::~TestGame()
 bool TestGame::Initialize()
 {
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
-        uiRoot_->ProcessMouseButtonEvent(e);
+        this->uiRoot_->ProcessMouseButtonEvent(e);
+    });
+
+    engine::GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e) {
+        this->uiRoot_->ProcessMouseMotionEvent(e);
+    });
+
+    blueButton_->AddOnHover([this](const engine::ui::HoverEvent& e){
+        if(e.over)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                    "Hovered over button!");
+            this->blueButton_->SetColor(BUTTON_ON_COLOR);
+        }
+        else
+        {
+            this->blueButton_->SetColor(BUTTON_OFF_COLOR);
+        }
     });
 
     blueButton_->AddOnClicked([this](const engine::ui::ClickedEvent&) {
@@ -55,6 +75,8 @@ bool TestGame::Initialize()
                 "Button was clicked!");
         this->RandomizeRectColors();
     } );
+
+    
 
     engine::TextRenderer& tr = engine::GameEngine::Get().GetTextRenderer();
     tr.LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
@@ -88,14 +110,14 @@ void TestGame::Render(engine::GraphicsContext& gc)
         gc.SetUseTexture(true);
         isInit = true;
     }
+    glEnable(GL_DEPTH_TEST);
+    // 3D rendering here
     glDisable(GL_DEPTH_TEST);
     uiRoot_->Render(gc);
     gc.ResetModel();
     gc.SetMVP();
     messageTexture_->Bind();
     messageRect_->Render(gc);
-    glEnable(GL_DEPTH_TEST);
-    // 3D rendering here
 }
 
 void TestGame::RandomizeRectColors()

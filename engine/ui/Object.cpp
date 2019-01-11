@@ -40,10 +40,21 @@ namespace engine { namespace ui {
         onClicked_.push_back(cb);
     }
 
-    void Object::OnClicked(int x, int y, int btn)
+    void Object::OnClicked(const ClickedEvent& e)
     {
         for(auto& handler : onClicked_)
-            handler(ClickedEvent(x, y, btn));
+            handler(e);
+    }
+
+    void Object::AddOnHover(const HoverEventCallback& cb)
+    {
+        onHover_.push_back(cb);
+    }
+
+    void Object::OnHover(const HoverEvent& e)
+    {
+        for(auto& handler : onHover_)
+            handler(e);
     }
 
     bool Object::ContainsPoint(int x, int y)
