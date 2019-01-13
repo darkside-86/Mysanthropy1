@@ -3,8 +3,6 @@ project (Mysanthropy1)
 
 if ( MSVC )
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /subsystem:console") 
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif( MSVC )
 
 include_directories(
@@ -21,8 +19,8 @@ if ( MSVC )
             "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_image.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_ttf.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/glew32.lib" 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/v8_monolith.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/lua5.3.5.lib"
+            "${PROJECT_SOURCE_DIR}/vendor/lib64/tinyxml2.lib"
     )
 else ( MSVC )
     find_library(OPENGL32_LIB NAMES libopengl32.a opengl32)
@@ -31,13 +29,13 @@ else ( MSVC )
     find_library(SDL2IMAGE_LIB NAMES libSDL2_image.a SDL2_image)
     find_library(SDL2TTF_LIB NAMES libSDL2_ttf.a SDL2_ttf)
     find_library(GLEW32_LIB NAMES libglew32.a glew32)
-    find_library(V8MONOLITH_LIB NAMES libv8_monolith.a v8_monolith)
     find_library(LUA535_LIB NAMES liblua5.3.5.a lua5.3.5)
+    find_library(TINYXML2_LIB NAMES libtinyxml2.a tinyxml2)
     set (
         LIBRARIES
             ${OPENGL32_LIB} ${SDL2_LIB} ${SDL2MAIN_LIB} ${SDL2IMAGE_LIB}
-            ${SDL2IMAGE_LIB} ${SDL2TTF_LIB} ${GLEW32_LIB} ${V8MONOLITH_LIB}
-            ${LUA535_LIB}
+            ${SDL2IMAGE_LIB} ${SDL2TTF_LIB} ${GLEW32_LIB}
+            ${LUA535_LIB} ${TINYXML2_LIB}
     )
 endif( MSVC )
 

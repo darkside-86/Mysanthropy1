@@ -43,8 +43,12 @@ namespace engine { namespace ui {
         void CreateRectangle(float w, float h, const Color& color);
         Color color_;
         ogl::Texture* texture_;
-        ogl::VertexArray* vao_=nullptr;
-        ogl::VertexBuffer* vbo_=nullptr;
+        ogl::VertexArray* vao_ = nullptr;
+        ogl::VertexBuffer* vbo_ = nullptr;
+        int borderSize_ = 0;
+        Color borderColor_;
+        ogl::VertexArray* borderVao_ = nullptr;
+        ogl::VertexBuffer* borderVbo_ = nullptr;
     };
 
 }}

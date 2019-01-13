@@ -76,8 +76,6 @@ bool TestGame::Initialize()
         this->RandomizeRectColors();
     } );
 
-    
-
     engine::TextRenderer& tr = engine::GameEngine::Get().GetTextRenderer();
     tr.LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
     tr.SetFGColor(1.0f, 1.0f, 1.0f, 1.0f);
