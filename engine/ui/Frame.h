@@ -37,10 +37,16 @@ namespace engine { namespace ui {
         virtual void SetWidth(int w) override;
         virtual void SetHeight(int h) override;
         void SetColor(const Color& color) 
-            { color_ = color; CreateRectangle((float)width_,(float)height_,color_); }
+            { color_ = color; CreateRectangle((float)width_,(float)height_,color_); CreateBorder(); }
         Color GetColor() { return color_; }
+        void SetBorderColor(const Color& color)
+            { borderColor_ = color; CreateBorder(); }
+        Color GetBorderColor() { return borderColor_; }
+        void SetBorderSize(int size) { borderSize_ = size; CreateBorder(); }
+        int GetBorderSize() { return borderSize_; }
     private:
         void CreateRectangle(float w, float h, const Color& color);
+        void CreateBorder();
         Color color_;
         ogl::Texture* texture_;
         ogl::VertexArray* vao_ = nullptr;

@@ -31,12 +31,16 @@ namespace engine { namespace ui {
         height_ = h;
         // todo: clip visible Frame area to parent object.
         CreateRectangle((float)width_, (float)height_, color);
+        if(borderSize_)
+            CreateBorder();
     }
 
     Frame::~Frame()
     {
         delete vbo_;
         delete vao_;
+        delete borderVao_;
+        delete borderVbo_;
     }
         
     void Frame::Render(GraphicsContext& gc)
@@ -48,6 +52,16 @@ namespace engine { namespace ui {
         if(texture_) texture_->Bind();
         vao_->Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        if(borderSize_ && borderVao_)
+        {
+            unsigned int indices[] = {0,1,3,2,0};
+            borderVao_->Bind();
+            float oldLineWidth;
+            glGetFloatv(GL_LINE_WIDTH, &oldLineWidth);
+            glLineWidth((float)borderSize_);
+            glDrawElements(GL_LINE_STRIP, 5, GL_UNSIGNED_INT, indices);
+            glLineWidth(oldLineWidth);
+        }
         for(auto eachChild : children_)
         {
             eachChild->Render(gc);
@@ -93,6 +107,37 @@ namespace engine { namespace ui {
         ogl::VertexBufferLayout vbl;
         ogl::Vertex::PushLayout(vbl);
         vao_->AddBuffer(*vbo_, vbl);
+    }
+
+    void Frame::CreateBorder()
+    {
+        ogl::Vertex vertices[4];
+        const float left = 0.f;
+        const float top = 0.f;
+        const float right = (float)width_;
+        const float bottom = (float)height_;
+        const unsigned char red = (unsigned char)(borderColor_.r * 255.f);
+        const unsigned char green = (unsigned char)(borderColor_.g * 255.f);
+        const unsigned char blue = (unsigned char)(borderColor_.b * 255.f);
+        const unsigned char alpha = (unsigned char)(borderColor_.a * 255.f);
+        float s=1.f,t=1.f;
+        if(texture_)
+        {
+            s = (right - left)/(float)texture_->GetWidth();
+            t = (bottom - top)/(float)texture_->GetHeight();
+        }
+        vertices[0] =  {{left,top,0.f}, {red,green,blue,alpha}, {0.f,0.f}};
+        vertices[1] =  {{left,bottom,0.f}, {red,green,blue,alpha}, {0.f,t}};
+        vertices[2] =  {{right,top,0.f},{red,green,blue,alpha}, {s,0.f}};
+        vertices[3] =  {{right,bottom,0.f}, {red,green,blue,alpha}, {s,t}};
+        delete borderVao_;
+        delete borderVbo_;
+        borderVbo_ = new ogl::VertexBuffer();
+        borderVbo_->SetData(sizeof(ogl::Vertex)*4, vertices, GL_STATIC_DRAW);
+        borderVao_ = new ogl::VertexArray();
+        ogl::VertexBufferLayout vbl;
+        ogl::Vertex::PushLayout(vbl);
+        borderVao_->AddBuffer(*borderVbo_, vbl);
     }
 
 }}

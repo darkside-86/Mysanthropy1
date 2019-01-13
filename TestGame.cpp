@@ -37,6 +37,8 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture("uiblank");
     uiRoot_ = new engine::ui::Root();
     frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
+    frame_->SetBorderColor({0.5f,0.f,0.f,1.f});
+    frame_->SetBorderSize(3);
     blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, BUTTON_OFF_COLOR);
 }
 
