@@ -145,4 +145,18 @@ namespace engine
         model_ = glm::translate(model_, glm::vec3(x,y,z));
     }
 
+    void GraphicsContext::PushModel()
+    {
+        modelStack_.push(model_);
+    }
+
+    void GraphicsContext::PopModel()
+    {
+        if(modelStack_.size() > 0)
+        {
+            model_ = modelStack_.top();
+            modelStack_.pop();
+        }
+    }
+
 }

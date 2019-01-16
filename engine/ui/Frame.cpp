@@ -23,14 +23,16 @@
 namespace engine { namespace ui {
 
     Frame::Frame(Object* parent, int w, int h, int xpos, int ypos, ogl::Texture* texture, const Color& color) 
-        : Object(parent), texture_(texture), color_(color)
+        : Object(parent), texture_(texture), color_(color), vbo_(nullptr), vao_(nullptr), borderVao_(nullptr),
+          borderVbo_(nullptr)
     {
         xPos_ = xpos;
         yPos_ = ypos;
         width_ = w;
         height_ = h;
-        // todo: clip visible Frame area to parent object.
+        // allocate vbo_ and vao_
         CreateRectangle((float)width_, (float)height_, color);
+        // possibly allocate borderVao_ and borderVbo_
         if(borderSize_)
             CreateBorder();
     }
@@ -47,14 +49,16 @@ namespace engine { namespace ui {
     {
         if(!visible_)
             return;
+        gc.PushModel();
         gc.TranslateModel((float)xPos_, (float)yPos_, 0.f);
         gc.SetMVP();
-        if(texture_) texture_->Bind();
+        if(texture_) 
+            texture_->Bind();
         vao_->Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         if(borderSize_ && borderVao_)
         {
-            unsigned int indices[] = {0,1,3,2,0};
+            static const unsigned int indices[] = {0,1,3,2,0};
             borderVao_->Bind();
             float oldLineWidth;
             glGetFloatv(GL_LINE_WIDTH, &oldLineWidth);
@@ -66,6 +70,7 @@ namespace engine { namespace ui {
         {
             eachChild->Render(gc);
         }
+        gc.PopModel();
     }
 
     void Frame::SetWidth(int w)
@@ -82,6 +87,7 @@ namespace engine { namespace ui {
 
     void Frame::CreateRectangle(float w, float h, const Color& color)
     {
+        // todo: clip to parent width and height
         ogl::Vertex vertices[4];
         float s=1.f,t=1.f;
         if(texture_)
@@ -89,20 +95,18 @@ namespace engine { namespace ui {
             s = w / (float)texture_->GetWidth();
             t = h / (float)texture_->GetHeight();
         }
-        vertices[0] =  {{0.f, 0.f, 0.f}, {(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
-            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {0.f,0.f}};
-        vertices[1] =  {{0.f, h, 0.f}, {(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
-            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {0.f,t}};
-        vertices[2] =  {{w, 0.f, 0.f},{(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
-            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {s,0.f}};
-        vertices[3] =  {{w, h, 0.f}, {(unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
-            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)}, {s,t}};
-        if(vbo_)
-            delete vbo_;
+        ogl::Vertex::Color c = {
+            (unsigned char)(255.f*color.r), (unsigned char)(255.f*color.g), 
+            (unsigned char)(255.f*color.b), (unsigned char)(255.f*color.a)
+        };
+        vertices[0] =  {{0.f, 0.f, 0.f}, c, {0.f,0.f}};
+        vertices[1] =  {{0.f, h, 0.f}, c, {0.f,t}};
+        vertices[2] =  {{w, 0.f, 0.f}, c, {s,0.f}};
+        vertices[3] =  {{w, h, 0.f}, c, {s,t}};
+        delete vbo_;
         vbo_ = new ogl::VertexBuffer();
         vbo_->SetData(sizeof(vertices), vertices, GL_STATIC_DRAW);
-        if(vao_)
-            delete vao_;
+        delete vao_;
         vao_ = new ogl::VertexArray();
         ogl::VertexBufferLayout vbl;
         ogl::Vertex::PushLayout(vbl);

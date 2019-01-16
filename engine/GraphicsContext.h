@@ -20,6 +20,8 @@
 
 #include <glm/glm.hpp>
 
+#include <stack>
+
 #include "ogl/ElementBuffer.h"
 #include "ogl/Program.h"
 #include "ogl/Texture.h"
@@ -67,6 +69,9 @@ namespace engine
         void TranslateModel(float x, float y, float z);
         // resets the model matrix
         inline void ResetModel() { model_ = glm::mat4(1.0f); }
+
+        void PushModel();
+        void PopModel();
     private:
         // A basic GLSL program for implementing functions of this class.
         //  Uniforms are used to set the MVP and texture.
@@ -74,5 +79,7 @@ namespace engine
         ogl::Program program_;
         // The components for building the MVP matrix in End()
         glm::mat4 model_, view_, projection_;
+
+        std::stack<glm::mat4> modelStack_;
     };
 }

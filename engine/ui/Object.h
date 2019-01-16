@@ -39,7 +39,7 @@ namespace engine { namespace ui {
         virtual void AddOnHover(const HoverEventCallback& cb);
         virtual void OnHover(const HoverEvent& e);
         bool ContainsPoint(int x, int y);
-        // get the inner child object that contains the point if any
+        // get the innermost child object that contains the point if any
         Object* CheckPoint(int x, int y);
         inline bool IsVisible() {return visible_;}
         inline void SetVisible(bool visible) { visible_ = visible; }
