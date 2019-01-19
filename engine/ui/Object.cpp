@@ -40,8 +40,20 @@ namespace engine { namespace ui {
 
     void Object::OnClicked(const ClickedEvent& e)
     {
-        for(auto& handler : onClicked_)
-            handler(e);
+        // if there are no event handlers for this object, propagate event
+        //  to the parent
+        if(onClicked_.size() == 0)
+        {
+            if(parent_ != nullptr)
+            {
+                parent_->OnClicked(e);
+            }
+        }
+        else
+        {
+            for(auto& handler : onClicked_)
+                handler(e);
+        }
     }
 
     void Object::AddOnHover(const HoverEventCallback& cb)
@@ -51,8 +63,20 @@ namespace engine { namespace ui {
 
     void Object::OnHover(const HoverEvent& e)
     {
-        for(auto& handler : onHover_)
-            handler(e);
+        // if there are no event handlers for this object, propagate event
+        //  to the parent
+        if(onHover_.size() == 0)
+        {
+            if(parent_ != nullptr)
+            {
+                parent_->OnHover(e);
+            }
+        }
+        else
+        {
+            for(auto& handler : onHover_)
+                handler(e);
+        }
     }
 
     bool Object::ContainsPoint(int x, int y)

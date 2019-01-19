@@ -35,10 +35,17 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
 {
     engine::GameEngine::Get().GetTextureManager().LoadTexture("uiblank", "res/textures/uiblank.png");
     ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture("uiblank");
+    engine::TextRenderer& tr = engine::GameEngine::Get().GetTextRenderer();
+    tr.LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
+    tr.SetFGColor(1.0f, 1.0f, 1.0f, 1.0f);
+    tr.SetBGColor(0.0f, 0.5f, 0.0f, 1.0f);
+
     uiRoot_ = new engine::ui::Root();
     frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
     frame_->SetBorderColor({0.5f,0.f,0.f,1.f});
     frame_->SetBorderSize(3);
+    helloLabel_ = new engine::ui::Label(uiRoot_, "Hello labels", "mono", 12, {0.4f,8.f,6.f,1.f});
+    helloLabel_->SetXPos(0);    helloLabel_->SetYPos(0);
     blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, BUTTON_OFF_COLOR);
 }
 
@@ -46,6 +53,7 @@ TestGame::~TestGame()
 {
     delete blueButton_;
     delete frame_;
+    delete helloLabel_;
     delete uiRoot_;
 }
 
@@ -77,23 +85,11 @@ bool TestGame::Initialize()
                 "Button was clicked!");
         this->RandomizeRectColors();
     } );
-
-    engine::TextRenderer& tr = engine::GameEngine::Get().GetTextRenderer();
-    tr.LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
-    tr.SetFGColor(1.0f, 1.0f, 1.0f, 1.0f);
-    tr.SetBGColor(0.0f, 0.5f, 0.0f, 1.0f);
-    messageTexture_ = tr.RenderTextShaded("mono", "Hello");
-    messageRect_ = new engine::RectangleShape(0.0f, 0.0f, 
-            (float)messageTexture_->GetWidth(), (float)messageTexture_->GetHeight());
-    if(messageTexture_ == nullptr)
-        return false;
     return true;
 }
 
 void TestGame::Cleanup()
 {
-    delete messageTexture_;
-    delete messageRect_;
 }
 
 void TestGame::Update(float dtime)
@@ -116,8 +112,6 @@ void TestGame::Render(engine::GraphicsContext& gc)
     uiRoot_->Render(gc);
     gc.ResetModel();
     gc.SetMVP();
-    messageTexture_->Bind();
-    messageRect_->Render(gc);
 }
 
 void TestGame::RandomizeRectColors()

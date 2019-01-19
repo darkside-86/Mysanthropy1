@@ -52,10 +52,8 @@ set (
         ogl/VertexBufferLayout.cpp
 )
 
-add_executable ( 
-    Mysanthropy1
-	    main.cpp
-        TestGame.cpp
+set (
+    ENGINESRC
         engine/Camera.cpp
         engine/CircleShape.cpp
         engine/GameEngine.cpp
@@ -65,8 +63,16 @@ add_executable (
         engine/TextRenderer.cpp
         engine/TextureManager.cpp
         engine/ui/Frame.cpp
+        engine/ui/Label.cpp
         engine/ui/Object.cpp
         engine/ui/Root.cpp
+)
+
+add_executable ( 
+    Mysanthropy1
+	    main.cpp
+        TestGame.cpp
+        ${ENGINESRC}
         ${OGLBINDINGSRC}
 )
 

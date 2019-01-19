@@ -1,4 +1,4 @@
-// TestGame.h
+// Label.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,27 +18,35 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "engine/Game.h"
-#include "engine/ui/Frame.h"
-#include "engine/ui/Label.h"
-#include "engine/ui/Root.h"
-#include "ogl/Texture.h"
+#include <string>
 
-class TestGame : public engine::Game
-{
-public:
-    TestGame();
-    virtual ~TestGame();
-    bool Initialize() override;
-    void Update(float dtime) override;
-    void Render(engine::GraphicsContext& gc) override;
-    void Cleanup() override;
-private:
-    void RandomizeRectColors();
-    engine::ui::Root* uiRoot_;
-    engine::ui::Frame* frame_;
-    engine::ui::Frame* blueButton_;
-    engine::ui::Label* helloLabel_;
-    ogl::Texture groundTexture;
-    ogl::Texture frameTexture;
-};
+#include "Color.h"
+#include "Object.h"
+#include "ogl/Texture.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
+
+namespace engine { namespace ui {
+
+    class Label : public Object
+    {
+    public:
+        Label(Object* parent, const std::string& text, const std::string& fontAlias, int size, const Color& color);
+        virtual ~Label();
+        virtual void Render(GraphicsContext& gc) override;
+
+        void SetText(const std::string& text) { text_ = text; CreateText(); }
+        std::string GetText() { return text_; }
+    private:
+        void CreateText();
+
+        std::string text_;
+        std::string font_;
+        int ptSize_;
+        Color color_;
+        ogl::VertexArray* vao_ = nullptr;
+        ogl::VertexBuffer* vbo_ = nullptr;
+        ogl::Texture* texture_ = nullptr;
+    };
+
+}}
