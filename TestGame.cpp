@@ -42,11 +42,9 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
 
     uiRoot_ = new engine::ui::Root();
     frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
-    frame_->SetBorderColor({0.5f,0.f,0.f,1.f});
-    frame_->SetBorderSize(3);
-    helloLabel_ = new engine::ui::Label(uiRoot_, "Hello labels", "mono", 12, {0.4f,8.f,6.f,1.f});
-    helloLabel_->SetXPos(0);    helloLabel_->SetYPos(0);
     blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, BUTTON_OFF_COLOR);
+    helloLabel_ = new engine::ui::Label(blueButton_, "Hi", "mono", 7, {0.4f,8.f,6.f,1.f});
+    closeButton_ = new engine::ui::Button(frame_, uiblank, {0.5f,0.f,0.5f,1.f}, "X", "mono", 6, {0.f,1.f,0.f,1.f},6);
 }
 
 TestGame::~TestGame()
@@ -67,6 +65,20 @@ bool TestGame::Initialize()
         this->uiRoot_->ProcessMouseMotionEvent(e);
     });
 
+    frame_->SetBorderColor({0.5f,0.f,0.f,1.f});
+    frame_->SetBorderSize(3);
+
+    helloLabel_->SetXPos(blueButton_->GetWidth() / 2 - helloLabel_->GetWidth() / 2);    
+    helloLabel_->SetYPos(blueButton_->GetHeight() / 2 - helloLabel_->GetHeight() / 2);
+
+    blueButton_->SetBorderColor({0.f,0.1f,0.f,1.f});
+    blueButton_->SetBorderSize(1);
+
+    closeButton_->SetBorderSize(2);
+    closeButton_->SetBorderColor({0.f,0.f,0.f,1.f});
+    closeButton_->SetXPos(frame_->GetWidth() - closeButton_->GetWidth() - 5);
+    closeButton_->SetYPos(5);
+
     blueButton_->AddOnHover([this](const engine::ui::HoverEvent& e){
         if(e.over)
         {
@@ -85,6 +97,10 @@ bool TestGame::Initialize()
                 "Button was clicked!");
         this->RandomizeRectColors();
     } );
+
+    closeButton_->AddOnClicked([this](const engine::ui::ClickedEvent&){
+        this->frame_->SetVisible(false);
+    });
     return true;
 }
 

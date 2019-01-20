@@ -38,6 +38,8 @@ namespace engine { namespace ui {
 
     void Label::Render(GraphicsContext& gc)
     {
+        if(!IsVisible())
+            return;
         gc.PushModel();
         gc.TranslateModel((float)this->xPos_, (float)this->yPos_, 0.0f);
         gc.SetMVP();
@@ -75,5 +77,7 @@ namespace engine { namespace ui {
         ogl::VertexBufferLayout vbl;
         ogl::Vertex::PushLayout(vbl);
         vao_->AddBuffer(*vbo_, vbl);
+        SetWidth((int)width);
+        SetHeight((int)height);
     }
 }}

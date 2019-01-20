@@ -62,6 +62,7 @@ set (
         engine/RectangleShape.cpp
         engine/TextRenderer.cpp
         engine/TextureManager.cpp
+        engine/ui/Button.cpp
         engine/ui/Frame.cpp
         engine/ui/Label.cpp
         engine/ui/Object.cpp

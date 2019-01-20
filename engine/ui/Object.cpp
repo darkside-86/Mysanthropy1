@@ -63,20 +63,8 @@ namespace engine { namespace ui {
 
     void Object::OnHover(const HoverEvent& e)
     {
-        // if there are no event handlers for this object, propagate event
-        //  to the parent
-        if(onHover_.size() == 0)
-        {
-            if(parent_ != nullptr)
-            {
-                parent_->OnHover(e);
-            }
-        }
-        else
-        {
-            for(auto& handler : onHover_)
-                handler(e);
-        }
+        for(auto& handler : onHover_)
+            handler(e);
     }
 
     bool Object::ContainsPoint(int x, int y)
@@ -88,12 +76,12 @@ namespace engine { namespace ui {
     Object* Object::CheckPoint(int x, int y)
     {
         Object* result = nullptr;
-        if(ContainsPoint(x,y))
+        if(ContainsPoint(x,y) && IsVisible())
         {
             result = this;
             for(auto child : children_)
             {
-                if(child->ContainsPoint(x - xPos_, y - yPos_))
+                if(child->ContainsPoint(x - xPos_, y - yPos_) && child->IsVisible())
                 {
                     result = child->CheckPoint(x - xPos_, y - yPos_);
                     break;

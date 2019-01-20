@@ -44,9 +44,10 @@ namespace engine { namespace ui {
         Color GetBorderColor() { return borderColor_; }
         void SetBorderSize(int size) { borderSize_ = size; CreateBorder(); }
         int GetBorderSize() { return borderSize_; }
-    private:
+    protected:
         void CreateRectangle(float w, float h, const Color& color);
         void CreateBorder();
+    private:
         Color color_;
         ogl::Texture* texture_;
         ogl::VertexArray* vao_ = nullptr;

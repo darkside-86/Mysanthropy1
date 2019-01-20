@@ -41,6 +41,7 @@ namespace engine { namespace ui {
         bool ContainsPoint(int x, int y);
         // get the innermost child object that contains the point if any
         Object* CheckPoint(int x, int y);
+        Object* GetParent() { return parent_; }
         inline bool IsVisible() {return visible_;}
         inline void SetVisible(bool visible) { visible_ = visible; }
         virtual void Render(GraphicsContext& gc) = 0;

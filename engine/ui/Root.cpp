@@ -53,7 +53,8 @@ namespace engine { namespace ui {
                 over->OnHover(HoverEvent(x,y,dx,dy,true));
                 if(mouseOver_ != nullptr)
                 {
-                    mouseOver_->OnHover(HoverEvent(x,y,dx,dy,false));
+                    if(mouseOver_ != over->GetParent())
+                        mouseOver_->OnHover(HoverEvent(x,y,dx,dy,false));
                 }
                 mouseOver_ = over;
             }
