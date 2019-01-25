@@ -33,13 +33,26 @@ namespace engine
 
     void TextureManager::LoadTexture(const std::string& alias, const std::string& fileName)
     {
+        /*auto found = textures_.find(alias);
+        if(found != textures_.end())
+        {
+            // delete found->second;
+            textures_.erase(found);
+        }
         ogl::Texture* texture = new ogl::Texture(fileName);
+        textures_[alias] = texture;*/ // glDeleteTexture is NOT working right???
         auto found = textures_.find(alias);
         if(found != textures_.end())
         {
-            delete found->second;
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
+                "%s: Texture `%s' already loaded; ignoring file `%s'", 
+                __FUNCTION__, alias.c_str(), fileName.c_str());
         }
-        textures_[alias] = texture;
+        else
+        {
+            ogl::Texture* texture = new ogl::Texture(fileName);
+            textures_[alias] = texture;
+        }
     }
 
     void TextureManager::UnloadTexture(const std::string& alias)
@@ -47,7 +60,7 @@ namespace engine
         auto found = textures_.find(alias);
         if(found != textures_.end())
         {
-            delete found->second;
+            // delete found->second; // just leak GL memory whatever
             textures_.erase(found);
         }
     }

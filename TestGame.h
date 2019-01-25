@@ -18,6 +18,8 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <lua/lua.hpp>
+
 #include "engine/Game.h"
 #include "engine/ui/Button.h"
 #include "engine/ui/Frame.h"
@@ -43,4 +45,5 @@ private:
     engine::ui::Button* closeButton_;
     ogl::Texture groundTexture;
     ogl::Texture frameTexture;
+    lua_State* scripting_ = nullptr;
 };

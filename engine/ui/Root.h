@@ -29,6 +29,18 @@ namespace engine { namespace ui {
     class Root : public Object 
     {
     public:
+        virtual ~Root() {}
+        virtual void Render(GraphicsContext& gc) override;
+        void ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe);
+        void ProcessMouseMotionEvent(const SDL_MouseMotionEvent& mme);
+        static Root* Get() 
+        {
+            static Root* root = nullptr;
+            if(root == nullptr)
+                root = new Root();
+            return root;
+        }
+    private:
         Root() : Object(nullptr)
         {
             xPos_ = 0;
@@ -36,11 +48,6 @@ namespace engine { namespace ui {
             width_ = GameEngine::Get().GetWidth();
             height_ = GameEngine::Get().GetHeight();
         }
-        virtual ~Root() {}
-        virtual void Render(GraphicsContext& gc) override;
-        void ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe);
-        void ProcessMouseMotionEvent(const SDL_MouseMotionEvent& mme);
-    private:
         Object*     mousePressed_ = nullptr;
         Object*     mouseOver_ = nullptr;
     };

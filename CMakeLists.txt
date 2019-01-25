@@ -65,6 +65,7 @@ set (
         engine/ui/Button.cpp
         engine/ui/Frame.cpp
         engine/ui/Label.cpp
+        engine/ui/LuaBindings.cpp
         engine/ui/Object.cpp
         engine/ui/Root.cpp
 )
