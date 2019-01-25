@@ -51,7 +51,17 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     luaL_openlibs(scripting_);
     engine::ui::InitLuaBindings(scripting_);
     engine::GameEngine::Get().GetTextureManager().UnloadTexture("uiblank");
-    luaL_dostring(scripting_, "LoadTexture('uiblank', 'res/textures/uiblank.png');print('lol')");
+    int numErrors = luaL_dostring(scripting_, "\n" \
+        "LoadTexture('uiblank', 'res/textures/uiblank.png')\n" \
+        "print('lol')\n" \
+        "--s = UIFrame.New(nil,100,100,100,100,'uiblank')\n" \
+        "--print(s)"
+    );
+    if(numErrors != 0)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "Lua error: %s", lua_tostring(scripting_, -1));
+    }
 }
 
 TestGame::~TestGame()
