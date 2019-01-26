@@ -55,6 +55,7 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
         "LoadTexture('uiblank', 'res/textures/uiblank.png')\n" \
         "print('lol')\n" \
         "s = UIFrame.New(nil,100,100,100,100,'uiblank')\n" \
+        "s:SetColor(1,0,0,1)\n" \
         "print(s)"
     );
     if(numErrors != 0)
