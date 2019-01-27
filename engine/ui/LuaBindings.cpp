@@ -20,21 +20,39 @@
 #include "LuaBindings.h"
 
 #include <sstream>
+#include <unordered_map>
+#include <vector>
 
 #include "Root.h"
 
 namespace engine { namespace ui {
-    
+    // structs
+    struct LuaWriterData
+    {
+        char* bytecode = nullptr;
+        size_t size = 0;
+    };
+
+    static std::unordered_map<lua_State*, std::vector<LuaWriterData> > writerData;
+
     // keys for RTTI table
     static const char* RTTI_TABLE_KEY = "classes";
     static const char* IS_OBJECT = "Object"; 
     static const char* IS_FRAME = "Frame";
 
     // general functions
+    static int lua_ErrorHandler(lua_State* L);
     static void GetRTTI(lua_State* L, int index);
     static bool CheckRTTI(lua_State* L, const char* className);
     Object* CheckObject(lua_State* L, int index);
     Frame* CheckFrame(lua_State* L, int index);
+
+    static int lua_ErrorHandler(lua_State* L)
+    {
+        const char* errorMsg = lua_tostring(L, 1);
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "%s", errorMsg);
+        return 0;
+    }
 
     // Place RTTI table on to stack
     static void GetRTTI(lua_State* L, int index)
@@ -60,12 +78,6 @@ namespace engine { namespace ui {
         return isInstance;
     }
 
-    struct LuaWriterData
-    {
-        char* bytecode = nullptr;
-        size_t size = 0;
-    };
-
     // lua : UIObject.AddOnClicked(self, luaFunction)
     static int lua_UIObject_AddOnClicked(lua_State *L)
     {
@@ -82,13 +94,130 @@ namespace engine { namespace ui {
         }, &data, 0);
         lua_pop(L, 1);
         ClickedEventCallback ceb = [L, data](const ClickedEvent& e) {
+            lua_pushcfunction(L, lua_ErrorHandler);
             int result = luaL_loadbuffer(L, data.bytecode, data.size, "OnClick");
             lua_pushinteger(L, e.x);
             lua_pushinteger(L, e.y);
             lua_pushinteger(L, e.button);
-            lua_call(L, 3, 0);
+            lua_pcall(L, 3, 0, -5);
+            lua_pop(L, 1);
         };
+        writerData[L].push_back(data);
         self->AddOnClicked(ceb);
+        return 0;
+    }
+
+    static int lua_UIObject_AddOnHover(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+        LuaWriterData data;
+        lua_pushvalue(L, 2);
+        int result = lua_dump(L, [](lua_State*,const void*p, size_t sz, void* ud)->int{
+            LuaWriterData* data = (LuaWriterData*)ud;
+            data->bytecode = (char*)realloc(data->bytecode, data->size + sz);
+            memcpy(data->bytecode + data->size, p, sz);
+            data->size += sz;
+            return 0;
+        }, &data, 0);
+        lua_pop(L, 1);
+        HoverEventCallback heb = [L, data](const HoverEvent& e) {
+            lua_pushcfunction(L, lua_ErrorHandler);
+            int result = luaL_loadbuffer(L, data.bytecode, data.size, "OnHover");
+            lua_pushinteger(L, e.x);
+            lua_pushinteger(L, e.y);
+            lua_pushinteger(L, e.xrel);
+            lua_pushinteger(L, e.yrel);
+            lua_pushboolean(L, e.over);
+            lua_pcall(L, 5, 0, -7);
+        };
+        writerData[L].push_back(data);
+        self->AddOnHover(heb);
+        return 0;
+    }
+
+    static int lua_UIObject_ContainsPoint(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        int x = (int)luaL_checkinteger(L, 2);
+        int y = (int)luaL_checkinteger(L, 3);
+        bool result = self->ContainsPoint(x,y);
+        lua_pushboolean(L, result);
+        return 1;
+    }
+
+    static int lua_UIObject_IsVisible(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        lua_pushboolean(L, self->IsVisible());
+        return 1;
+    }
+
+    static int lua_UIObject_SetVisible(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        bool visible = lua_toboolean(L, 2);
+        self->SetVisible(visible);
+        return 0;
+    }
+
+    static int lua_UIObject_GetWidth(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        lua_pushinteger(L, self->GetWidth());
+        return 1;
+    }
+
+    static int lua_UIObject_SetWidth(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        int width = (int)luaL_checkinteger(L, 2);
+        self->SetWidth(width);
+        return 0;
+    }
+
+    static int lua_UIObject_GetHeight(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        lua_pushinteger(L, self->GetHeight());
+        return 1;
+    }
+
+    static int lua_UIObject_SetHeight(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        int height = (int)luaL_checkinteger(L, 2);
+        self->SetHeight(height);
+        return 0;
+    }
+
+    static int lua_UIObject_GetXPos(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        lua_pushinteger(L, self->GetXPos());
+        return 1;
+    }
+
+    static int lua_UIObject_SetXPos(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        int x = (int)luaL_checkinteger(L, 2);
+        self->SetXPos(x);
+        return 0;
+    }
+
+    static int lua_UIObject_GetYPos(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        lua_pushinteger(L, self->GetYPos());
+        return 1;
+    }
+
+    static int lua_UIObject_SetYPos(lua_State* L)
+    {
+        Object* self = CheckObject(L, 1);
+        int y = (int)luaL_checkinteger(L, 2);
+        self->SetYPos(y);
         return 0;
     }
 
@@ -108,13 +237,14 @@ namespace engine { namespace ui {
         const char* textureAlias = luaL_checkstring(L, 6);
         engine::ui::Color white = {1.f,1.f,1.f,1.f};
         ogl::Texture* texture = GameEngine::Get().GetTextureManager().GetTexture(textureAlias);
-        // Frame frame(parent,width,height,xpos,ypos,texture,white);
         void* ud = lua_newuserdata(L, sizeof(Frame));
-        // memcpy(ud, &frame, sizeof(Frame));
         Frame *frame = (Frame*)ud;
         frame = new (frame) Frame(parent,width,height,xpos,ypos,texture,white);
         luaL_setmetatable(L, IS_FRAME);
         lua_newtable(L);
+        lua_pushstring(L, "parent");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
         lua_setuservalue(L, -2);
         return 1;
     }
@@ -248,25 +378,44 @@ namespace engine { namespace ui {
         return 0;
     }
 
-    void InitLuaBindings(lua_State* L)
+#define BIND_METHOD(c,m) lua_pushstring(L, #m); lua_pushcfunction(L, lua_ ## c ## _ ## m); lua_settable(L, -3);
+
+    LuaBindings::LuaBindings(lua_State* L)
     {
+        luastate_ = L;
+        if(writerData.find(L) != writerData.end())
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::FATAL, 
+                "%s: Only 1 to 1 assocation between LuaBindings and lua_State allowed", __FUNCTION__);
+            return;
+        }
+        else
+        {
+            writerData[L] = std::vector<LuaWriterData>();
+        }
         // set LoadTexture(alias,path)
         lua_pushcfunction(L, lua_LoadTexture);
         lua_setglobal(L, "LoadTexture");
         // UIObject
         lua_newtable(L);
-        lua_pushstring(L, "AddOnClicked");
-        lua_pushcfunction(L, lua_UIObject_AddOnClicked);
-        lua_settable(L, -3);
+        BIND_METHOD(UIObject, AddOnClicked);
+        BIND_METHOD(UIObject, AddOnHover);
+        BIND_METHOD(UIObject, ContainsPoint);
+        BIND_METHOD(UIObject, IsVisible);
+        BIND_METHOD(UIObject, SetVisible);
+        BIND_METHOD(UIObject, GetWidth);
+        BIND_METHOD(UIObject, SetWidth);
+        BIND_METHOD(UIObject, GetHeight);
+        BIND_METHOD(UIObject, SetHeight);
+        BIND_METHOD(UIObject, GetXPos);
+        BIND_METHOD(UIObject, SetXPos);
+        BIND_METHOD(UIObject, GetYPos);
+        BIND_METHOD(UIObject, SetYPos);
         lua_setglobal(L, "UIObject");
         // UIFrame
         lua_newtable(L);
-        lua_pushstring(L, "New");
-        lua_pushcfunction(L, lua_UIFrame_New);
-        lua_settable(L, -3);
-        lua_pushstring(L, "SetColor");
-        lua_pushcfunction(L, lua_UIFrame_SetColor);
-        lua_settable(L, -3);
+        BIND_METHOD(UIFrame, New);
+        BIND_METHOD(UIFrame, SetColor);
         lua_setglobal(L, "UIFrame");
         // create UIFrame's metatable
         luaL_newmetatable(L, IS_FRAME);
@@ -292,6 +441,14 @@ namespace engine { namespace ui {
         lua_pushcfunction(L, lua_UIFrame_mtNewIndex);
         lua_settable(L, -3);
         lua_pop(L, 1);
+    }
+
+    LuaBindings::~LuaBindings()
+    {
+        for(LuaWriterData& data : writerData[luastate_] )
+        {
+            free(data.bytecode);
+        }
     }
 
 }}

@@ -25,6 +25,7 @@
 #include "engine/ui/Frame.h"
 #include "engine/ui/Label.h"
 #include "engine/ui/Root.h"
+#include "engine/ui/LuaBindings.h"
 #include "ogl/Texture.h"
 
 class TestGame : public engine::Game
@@ -43,6 +44,7 @@ private:
     engine::ui::Frame* blueButton_;
     engine::ui::Label* helloLabel_;
     engine::ui::Button* closeButton_;
+    engine::ui::LuaBindings* luaBindings_;
     ogl::Texture groundTexture;
     ogl::Texture frameTexture;
     lua_State* scripting_ = nullptr;

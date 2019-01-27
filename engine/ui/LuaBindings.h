@@ -18,13 +18,22 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <vector>
+
 #include <lua/lua.hpp>
 
 #include "Frame.h"
 #include "Object.h"
 
 namespace engine { namespace ui {
-    
-    void InitLuaBindings(lua_State* L);
-    
+
+    class LuaBindings
+    {
+    public:
+        LuaBindings(lua_State*);
+        ~LuaBindings();
+    private:
+        lua_State* luastate_;
+    };
+
 }}

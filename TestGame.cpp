@@ -49,7 +49,7 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
 
     scripting_ = luaL_newstate();
     luaL_openlibs(scripting_);
-    engine::ui::InitLuaBindings(scripting_);
+    luaBindings_ = new engine::ui::LuaBindings(scripting_);
     engine::GameEngine::Get().GetTextureManager().UnloadTexture("uiblank");
     int numErrors = luaL_dofile(scripting_, "ui/test.lua");
     if(numErrors != 0)
@@ -66,6 +66,7 @@ TestGame::~TestGame()
     delete helloLabel_;
     delete uiRoot_;
 
+    delete luaBindings_;
     lua_close(scripting_);
 }
 

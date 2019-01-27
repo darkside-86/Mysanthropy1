@@ -8,5 +8,5 @@ s.foo = 'Foo'
 print(s.foo)
 print(s)
 s:AddOnClicked(function(x,y,btn) 
-    print(x,y,btn)
+    t:SetXPos(t:GetXPos() + 1);
 end)
