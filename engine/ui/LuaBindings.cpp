@@ -60,6 +60,38 @@ namespace engine { namespace ui {
         return isInstance;
     }
 
+    struct LuaWriterData
+    {
+        char* bytecode = nullptr;
+        size_t size = 0;
+    };
+
+    // lua : UIObject.AddOnClicked(self, luaFunction)
+    static int lua_UIObject_AddOnClicked(lua_State *L)
+    {
+        Object* self = CheckObject(L, 1);
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+        LuaWriterData data;
+        lua_pushvalue(L, 2);
+        int result = lua_dump(L,[](lua_State*,const void* p, size_t sz, void* ud)->int{
+            LuaWriterData* data = (LuaWriterData*)ud;
+            data->bytecode = (char*)realloc(data->bytecode, data->size + sz);
+            memcpy(data->bytecode + data->size, p, sz);
+            data->size += sz;
+            return 0;
+        }, &data, 0);
+        lua_pop(L, 1);
+        ClickedEventCallback ceb = [L, data](const ClickedEvent& e) {
+            int result = luaL_loadbuffer(L, data.bytecode, data.size, "OnClick");
+            lua_pushinteger(L, e.x);
+            lua_pushinteger(L, e.y);
+            lua_pushinteger(L, e.button);
+            lua_call(L, 3, 0);
+        };
+        self->AddOnClicked(ceb);
+        return 0;
+    }
+
     // lua : UIFrame.New(parent,width,height,xpos,ypos,'texture')
     static int lua_UIFrame_New(lua_State* L)
     {
@@ -134,8 +166,31 @@ namespace engine { namespace ui {
             lua_pushvalue(L, 2); // UIFrame key [top] self key
             lua_gettable(L, -2); // UIFrame UIFrame.key [top] self key
             lua_remove(L, -2); // UIFrame.key [top] self key
+            if(lua_isnil(L, -1))
+            {
+                // still nil so check UIObject
+                lua_pop(L, 1);
+                lua_getglobal(L, "UIObject");
+                lua_pushvalue(L, 2);
+                lua_gettable(L, -2);
+                lua_remove(L, -2);
+            }
         }
         return 1;
+    }
+
+    // lua : getmetatable(frame).__newindex(self, key, value)
+    static int lua_UIFrame_mtNewIndex(lua_State* L)
+    {
+        Frame* self = CheckFrame(L, 1);
+        // values are simply written to the uservalue table because it is searched first,
+        //  allowing methods to be overidden
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_pushvalue(L, 3);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        return 0;
     }
 
     Object* CheckObject(lua_State* L, int index)
@@ -198,6 +253,12 @@ namespace engine { namespace ui {
         // set LoadTexture(alias,path)
         lua_pushcfunction(L, lua_LoadTexture);
         lua_setglobal(L, "LoadTexture");
+        // UIObject
+        lua_newtable(L);
+        lua_pushstring(L, "AddOnClicked");
+        lua_pushcfunction(L, lua_UIObject_AddOnClicked);
+        lua_settable(L, -3);
+        lua_setglobal(L, "UIObject");
         // UIFrame
         lua_newtable(L);
         lua_pushstring(L, "New");
@@ -226,6 +287,9 @@ namespace engine { namespace ui {
         lua_settable(L, -3);
         lua_pushstring(L, "__index");
         lua_pushcfunction(L, lua_UIFrame_mtIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, lua_UIFrame_mtNewIndex);
         lua_settable(L, -3);
         lua_pop(L, 1);
     }

@@ -24,7 +24,7 @@
 #include "Object.h"
 
 namespace engine { namespace ui {
-
+    
     void InitLuaBindings(lua_State* L);
     
 }}
