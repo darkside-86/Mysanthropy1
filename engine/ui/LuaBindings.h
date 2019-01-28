@@ -22,6 +22,8 @@
 
 #include <lua/lua.hpp>
 
+#include "Event.h"
+
 namespace engine { namespace ui {
 
     class LuaBindings

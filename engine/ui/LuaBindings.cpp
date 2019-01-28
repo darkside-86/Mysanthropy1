@@ -30,14 +30,6 @@
 #include "Root.h"
 
 namespace engine { namespace ui {
-    // structs
-    struct LuaWriterData
-    {
-        char* bytecode = nullptr;
-        size_t size = 0;
-    };
-
-    static std::unordered_map<lua_State*, std::vector<LuaWriterData> > writerData;
 
     // keys for RTTI table
     static const char* RTTI_TABLE_KEY = "classes";
@@ -89,58 +81,66 @@ namespace engine { namespace ui {
     // lua : UIObject.AddOnClicked(self, luaFunction)
     static int lua_UIObject_AddOnClicked(lua_State *L)
     {
+        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
+        // An array of callbacks in the lua registry
         luaL_checktype(L, 2, LUA_TFUNCTION);
-        LuaWriterData data;
+        lua_pushstring(L, "ClickedEventCallbacks");
+        lua_gettable(L, LUA_REGISTRYINDEX);
+        // increment the counter
+        counter++;
+        // capture the current value of the counter to access the correct callback
+        lua_Integer current = counter;
+        lua_pushinteger(L, counter);
         lua_pushvalue(L, 2);
-        int result = lua_dump(L,[](lua_State*,const void* p, size_t sz, void* ud)->int{
-            LuaWriterData* data = (LuaWriterData*)ud;
-            data->bytecode = (char*)realloc(data->bytecode, data->size + sz);
-            memcpy(data->bytecode + data->size, p, sz);
-            data->size += sz;
-            return 0;
-        }, &data, 0);
+        lua_settable(L, -3);
         lua_pop(L, 1);
-        ClickedEventCallback ceb = [L, data](const ClickedEvent& e) {
+        ClickedEventCallback cb = [L, current](const ClickedEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
-            int result = luaL_loadbuffer(L, data.bytecode, data.size, "OnClick");
+            lua_pushstring(L, "ClickedEventCallbacks");
+            lua_gettable(L, LUA_REGISTRYINDEX);
+            lua_pushinteger(L, current);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
             lua_pushinteger(L, e.x);
             lua_pushinteger(L, e.y);
             lua_pushinteger(L, e.button);
             lua_pcall(L, 3, 0, -5);
             lua_pop(L, 1);
         };
-        writerData[L].push_back(data);
-        self->AddOnClicked(ceb);
+        self->AddOnClicked(cb);
         return 0;
     }
 
     static int lua_UIObject_AddOnHover(lua_State* L)
     {
+        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
         luaL_checktype(L, 2, LUA_TFUNCTION);
-        LuaWriterData data;
+        lua_pushstring(L, "HoverEventCallbacks");
+        lua_gettable(L, LUA_REGISTRYINDEX);
+        counter++;
+        lua_Integer current = counter;
+        lua_pushinteger(L, counter);
         lua_pushvalue(L, 2);
-        int result = lua_dump(L, [](lua_State*,const void*p, size_t sz, void* ud)->int{
-            LuaWriterData* data = (LuaWriterData*)ud;
-            data->bytecode = (char*)realloc(data->bytecode, data->size + sz);
-            memcpy(data->bytecode + data->size, p, sz);
-            data->size += sz;
-            return 0;
-        }, &data, 0);
+        lua_settable(L, -3);
         lua_pop(L, 1);
-        HoverEventCallback heb = [L, data](const HoverEvent& e) {
+        HoverEventCallback cb = [L, current](const HoverEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
-            int result = luaL_loadbuffer(L, data.bytecode, data.size, "OnHover");
+            lua_pushstring(L, "HoverEventCallbacks");
+            lua_gettable(L, LUA_REGISTRYINDEX);
+            lua_pushinteger(L, current);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
             lua_pushinteger(L, e.x);
             lua_pushinteger(L, e.y);
             lua_pushinteger(L, e.xrel);
             lua_pushinteger(L, e.yrel);
             lua_pushboolean(L, e.over);
             lua_pcall(L, 5, 0, -7);
+            lua_pop(L, 1);
         };
-        writerData[L].push_back(data);
-        self->AddOnHover(heb);
+        self->AddOnHover(cb);
         return 0;
     }
 
@@ -667,19 +667,17 @@ namespace engine { namespace ui {
     LuaBindings::LuaBindings(lua_State* L)
     {
         luastate_ = L;
-        if(writerData.find(L) != writerData.end())
-        {
-            GameEngine::Get().GetLogger().Logf(Logger::Severity::FATAL, 
-                "%s: Only 1 to 1 association between LuaBindings and lua_State allowed", __FUNCTION__);
-            return;
-        }
-        else
-        {
-            writerData[L] = std::vector<LuaWriterData>();
-        }
+        // register data
+        lua_pushstring(L, "ClickedEventCallbacks");
+        lua_newtable(L);
+        lua_settable(L, LUA_REGISTRYINDEX);
+        lua_pushstring(L, "HoverEventCallbacks");
+        lua_newtable(L);
+        lua_settable(L, LUA_REGISTRYINDEX);
         // set LoadTexture(alias,path)
         lua_pushcfunction(L, lua_LoadTexture);
         lua_setglobal(L, "LoadTexture");
+        // set LoadFont(alias, path, size)
         lua_pushcfunction(L, lua_LoadFont);
         lua_setglobal(L, "LoadFont");
         // UIObject
@@ -795,12 +793,12 @@ namespace engine { namespace ui {
 
     LuaBindings::~LuaBindings()
     {
-        for(LuaWriterData& data : writerData[luastate_] )
-        {
-            free(data.bytecode);
-        }
-        // writerData[luastate_].erase(writerData[luastate_].begin(), writerData[luastate_].end());
-        writerData.erase(writerData.find(luastate_));
+        lua_pushstring(luastate_, "ClickedEventCallbacks");
+        lua_pushnil(luastate_);
+        lua_settable(luastate_, LUA_REGISTRYINDEX);
+        lua_pushstring(luastate_, "HoverEventCallbacks");
+        lua_pushnil(luastate_);
+        lua_settable(luastate_, LUA_REGISTRYINDEX);
     }
 
 }}

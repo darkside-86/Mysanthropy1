@@ -1,7 +1,7 @@
 LoadTexture('uiblank', 'res/textures/uiblank.png')
 LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 12);
 testFrame = UIFrame.New(nil, 200, 200, 100, 100, 'uiblank')
-testFrame:SetColor(1,0.2,0.2,1)
+testFrame:SetColor(0.4,0.3,0.2,1)
 testFrame:SetBorderColor(0.2,1,1,1)
 testFrame:SetBorderSize(2)
 testLabel = UILabel.New(testFrame, 'Test frame', 'sans', 0,0,0,1)
@@ -36,3 +36,36 @@ closeButton:AddOnClicked(function()
     testFrame:SetVisible(false)
     testFrame = nil
 end)
+
+function CreateWindow(width, height, title)
+    local frame = UIFrame.New(nil, width, height, 0, 0, 'uiblank')
+    frame:SetColor(0,0,0.5,1)
+    frame:SetBorderSize(2)
+    frame:SetBorderColor(0,0,0.9,1)
+    local title = UILabel.New(frame, title, 'sans', 1,1,1,1)
+    frame.title = title
+    local closeButton = UIButton.New(frame, 'uiblank', 'X', 'sans', 1)
+    closeButton:SetColor(0.5,0,0,1)
+    closeButton:SetBorderSize(1)
+    closeButton:SetBorderColor(1,0,0,1)
+    closeButton:SetXPos(frame:GetWidth() - closeButton:GetWidth() - 2)
+    closeButton:SetYPos(2)
+    closeButton:AddOnClicked(function()
+        frame:SetVisible(false)
+    end)
+    frame.closeBtn = closeButton
+    return frame
+end
+
+myWindow = CreateWindow(300, 200, 'My window')
+myWindow:SetXPos(300)
+myWindow:SetYPos(200)
+myOther = CreateWindow(50,80, 'Another one')
+
+function test ()
+    local x = 99
+    local printX = function() print(x) end
+    printX()
+end
+
+test()
