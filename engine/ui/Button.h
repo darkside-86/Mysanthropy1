@@ -33,18 +33,18 @@ namespace engine { namespace ui {
     public:
         Button(Object* parent, ogl::Texture* texture, const Color& color, 
                const std::string& text, const std::string fontAlias, 
-               int size, const Color& textColor, int padding);
+               const Color& textColor, int padding);
         virtual ~Button();
         virtual void Render(GraphicsContext& gc) override;
 
         void SetText(const std::string& text) { text_ =text; CreateLabel(); }
+        void SetTextColor(const Color& color) { labelColor_ = color; CreateLabel(); }
     private:
         void CreateLabel();
 
         std::string text_;
         std::string font_;
         Color labelColor_;
-        int ptSize_;
         int padding_;
         ogl::VertexArray    *labelVao_ = nullptr;
         ogl::VertexBuffer   *labelVbo_ = nullptr;

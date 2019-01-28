@@ -31,7 +31,7 @@ namespace engine { namespace ui {
     class Label : public Object
     {
     public:
-        Label(Object* parent, const std::string& text, const std::string& fontAlias, int size, const Color& color);
+        Label(Object* parent, const std::string& text, const std::string& fontAlias, const Color& color);
         virtual ~Label();
         virtual void Render(GraphicsContext& gc) override;
 
@@ -42,7 +42,6 @@ namespace engine { namespace ui {
 
         std::string text_;
         std::string font_;
-        int ptSize_;
         Color color_;
         ogl::VertexArray* vao_ = nullptr;
         ogl::VertexBuffer* vbo_ = nullptr;

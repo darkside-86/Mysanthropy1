@@ -23,8 +23,8 @@
 #include "ogl/Vertex.h"
 
 namespace engine { namespace ui {
-    Label::Label(Object* parent, const std::string& text, const std::string& fontAlias, int size, const Color& color)
-        : Object(parent), text_(text), font_(fontAlias), ptSize_(size), color_(color)
+    Label::Label(Object* parent, const std::string& text, const std::string& fontAlias, const Color& color)
+        : Object(parent), text_(text), font_(fontAlias), color_(color)
     {
         CreateText();
     }

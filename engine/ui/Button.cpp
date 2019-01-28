@@ -24,8 +24,8 @@
 namespace engine { namespace ui {
 
     Button::Button(Object* parent, ogl::Texture* texture, const Color& color, const std::string& text, 
-                   const std::string fontAlias, int size, const Color& textColor, int padding) 
-                : Frame(parent,0,0,0,0,texture, color), text_(text), font_(fontAlias), ptSize_(size),
+                   const std::string fontAlias, const Color& textColor, int padding) 
+                : Frame(parent,0,0,0,0,texture, color), text_(text), font_(fontAlias),
                     labelColor_(textColor), padding_(padding)
     {
         CreateLabel();
@@ -55,7 +55,8 @@ namespace engine { namespace ui {
     {
         TextRenderer &tr = GameEngine::Get().GetTextRenderer();
         delete labelTexture_;
-        labelTexture_ = tr.RenderText(font_, text_, true);
+        tr.SetFGColor(labelColor_.r, labelColor_.g, labelColor_.b, labelColor_.a);
+        labelTexture_ = tr.RenderText(font_, text_, false);
         float labelWidth = (float)labelTexture_->GetWidth();
         float labelHeight = (float)labelTexture_->GetHeight();
         float buttonWidth = labelWidth + padding_ * 2.f;

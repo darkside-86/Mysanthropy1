@@ -22,9 +22,6 @@
 
 #include <lua/lua.hpp>
 
-#include "Frame.h"
-#include "Object.h"
-
 namespace engine { namespace ui {
 
     class LuaBindings

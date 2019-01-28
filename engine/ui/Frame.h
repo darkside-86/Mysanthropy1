@@ -32,8 +32,7 @@ namespace engine { namespace ui {
     public:
         Frame(Object* parent, int w, int h, int xpos, int ypos, ogl::Texture* texture, const Color& color);
         virtual ~Frame();
-        virtual void Render(GraphicsContext& gc) override;  
-        Object* CheckPoint(int x, int y);  
+        virtual void Render(GraphicsContext& gc) override;   
         virtual void SetWidth(int w) override;
         virtual void SetHeight(int h) override;
         void SetColor(const Color& color) 

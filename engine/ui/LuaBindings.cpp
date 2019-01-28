@@ -23,6 +23,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Button.h"
+#include "Frame.h"
+#include "Label.h"
+#include "Object.h"
 #include "Root.h"
 
 namespace engine { namespace ui {
@@ -37,6 +41,8 @@ namespace engine { namespace ui {
 
     // keys for RTTI table
     static const char* RTTI_TABLE_KEY = "classes";
+    static const char* IS_BUTTON = "Button";
+    static const char* IS_LABEL = "Label";
     static const char* IS_OBJECT = "Object"; 
     static const char* IS_FRAME = "Frame";
 
@@ -44,6 +50,8 @@ namespace engine { namespace ui {
     static int lua_ErrorHandler(lua_State* L);
     static void GetRTTI(lua_State* L, int index);
     static bool CheckRTTI(lua_State* L, const char* className);
+    Button* CheckButton(lua_State* L, int index);
+    Label* CheckLabel(lua_State* L, int index);
     Object* CheckObject(lua_State* L, int index);
     Frame* CheckFrame(lua_State* L, int index);
 
@@ -171,7 +179,7 @@ namespace engine { namespace ui {
     static int lua_UIObject_SetWidth(lua_State* L)
     {
         Object* self = CheckObject(L, 1);
-        int width = (int)luaL_checkinteger(L, 2);
+        int width = (int)lua_tonumber(L, 2);
         self->SetWidth(width);
         return 0;
     }
@@ -186,7 +194,7 @@ namespace engine { namespace ui {
     static int lua_UIObject_SetHeight(lua_State* L)
     {
         Object* self = CheckObject(L, 1);
-        int height = (int)luaL_checkinteger(L, 2);
+        int height = (int)lua_tonumber(L, 2);
         self->SetHeight(height);
         return 0;
     }
@@ -201,7 +209,7 @@ namespace engine { namespace ui {
     static int lua_UIObject_SetXPos(lua_State* L)
     {
         Object* self = CheckObject(L, 1);
-        int x = (int)luaL_checkinteger(L, 2);
+        int x = (int)lua_tonumber(L, 2);
         self->SetXPos(x);
         return 0;
     }
@@ -216,7 +224,7 @@ namespace engine { namespace ui {
     static int lua_UIObject_SetYPos(lua_State* L)
     {
         Object* self = CheckObject(L, 1);
-        int y = (int)luaL_checkinteger(L, 2);
+        int y = (int)lua_tonumber(L, 2);
         self->SetYPos(y);
         return 0;
     }
@@ -249,6 +257,18 @@ namespace engine { namespace ui {
         return 1;
     }
 
+    // lua : UIFrame.GetColor() : r,g,b,a
+    static int lua_UIFrame_GetColor(lua_State* L)
+    {
+        Frame* self = CheckFrame(L, 1);
+        engine::ui::Color color = self->GetColor();
+        lua_pushnumber(L, color.r);
+        lua_pushnumber(L, color.g);
+        lua_pushnumber(L, color.b);
+        lua_pushnumber(L, color.a);
+        return 4;
+    }
+
     // lua : UIFrame.SetColor(self, r, g, b, a)
     static int lua_UIFrame_SetColor(lua_State* L)
     {
@@ -258,6 +278,43 @@ namespace engine { namespace ui {
         lua_Number b = luaL_checknumber(L, 4);
         lua_Number a = luaL_checknumber(L, 5);
         self->SetColor({(float)r, (float)g, (float)b, (float)a});
+        return 0;
+    }
+
+    static int lua_UIFrame_GetBorderColor(lua_State* L)
+    {
+        Frame* self = CheckFrame(L, 1);
+        engine::ui::Color color = self->GetBorderColor();
+        lua_pushnumber(L, color.r);
+        lua_pushnumber(L, color.g);
+        lua_pushnumber(L, color.b);
+        lua_pushnumber(L, color.a);
+        return 4;    
+    }
+
+    static int lua_UIFrame_SetBorderColor(lua_State* L)
+    {
+        Frame* self = CheckFrame(L, 1);
+        lua_Number r = luaL_checknumber(L, 2);
+        lua_Number g = luaL_checknumber(L, 3);
+        lua_Number b = luaL_checknumber(L, 4);
+        lua_Number a = luaL_checknumber(L, 5);
+        self->SetBorderColor({(float)r, (float)g, (float)b, (float)a});
+        return 0;
+    }
+
+    static int lua_UIFrame_GetBorderSize(lua_State* L)
+    {
+        Frame* self = CheckFrame(L, 1);
+        lua_pushinteger(L,self->GetBorderSize());
+        return 1;
+    }
+
+    static int lua_UIFrame_SetBorderSize(lua_State* L)
+    {
+        Frame* self = CheckFrame(L, 1);
+        int size = (int)luaL_checkinteger(L, 2);
+        self->SetBorderSize(size);
         return 0;
     }
 
@@ -323,6 +380,227 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    static int lua_UIButton_New(lua_State* L)
+    {
+        Object* parent;
+        if(lua_isnil(L, 1))
+            parent = Root::Get();
+        else
+            parent = CheckObject(L, 1);
+        
+        const char* textureAlias = luaL_checkstring(L, 2);
+        std::string btnText = luaL_checkstring(L, 3);
+        std::string fontAlias = luaL_checkstring(L, 4);
+        int padding = (int)luaL_checkinteger(L, 5);
+        Button* button = (Button*)lua_newuserdata(L, sizeof(Button));
+        ogl::Texture* texture = GameEngine::Get().GetTextureManager().GetTexture(textureAlias);
+        button = new (button) Button(parent, texture, {1,1,1,1}, btnText, fontAlias, {.5,.5,.5,1}, padding);
+        luaL_setmetatable(L, IS_BUTTON);
+        lua_newtable(L);
+        lua_pushstring(L, "parent");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
+        lua_setuservalue(L, -2);
+        return 1;
+    }
+
+    static int lua_UIButton_SetText(lua_State* L)
+    {
+        Button* self = CheckButton(L, 1);
+        std::string text = luaL_checkstring(L, 2);
+        self->SetText(text);
+        return 0;
+    }
+
+    static int lua_UIButton_SetTextColor(lua_State* L)
+    {
+        Button* self = CheckButton(L, 1);
+        float r = (float)luaL_checknumber(L, 2);
+        float g = (float)luaL_checknumber(L, 3);
+        float b = (float)luaL_checknumber(L, 4);
+        float a = (float)luaL_checknumber(L, 5);
+        self->SetTextColor({r,g,b,a});
+        return 0;
+    }
+
+    static int lua_UIButton_mtIndex(lua_State* L)
+    {
+        Button* self = CheckButton(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_gettable(L, -2);
+        lua_remove(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            // check UIButton
+            lua_pop(L, 1);
+            lua_getglobal(L, "UIButton");
+            lua_pushvalue(L, 2);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
+            if(lua_isnil(L, -1))
+            {
+                // check UIFrame's metamethod index
+                lua_pop(L, 1);
+                lua_pushcfunction(L, lua_ErrorHandler);
+                lua_pushcfunction(L, lua_UIFrame_mtIndex);
+                lua_pushvalue(L, 1);
+                lua_pushvalue(L, 2);
+                lua_pcall(L, 2, 1, -4);
+                lua_remove(L, -2);
+            }
+        }
+        return 1;
+    }
+
+    static int lua_UIButton_mtNewIndex(lua_State* L)
+    {
+        Button* self = CheckButton(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_pushvalue(L, 3);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        return 0;
+    }
+
+    static int lua_UIButton_mtGC(lua_State* L)
+    {
+        Button* self = CheckButton(L, 1);
+        self->~Button();
+        return 0;
+    }
+
+    static int lua_UILabel_New(lua_State* L)
+    {
+        Object* parent;
+        if(lua_isnil(L, 1))
+            parent = Root::Get();
+        else
+            parent = CheckObject(L, 1);
+        std::string text = luaL_checkstring(L, 2);
+        std::string fontAlias = luaL_checkstring(L, 3);
+        float r = (float)luaL_checknumber(L, 4);
+        float g = (float)luaL_checknumber(L, 5);
+        float b = (float)luaL_checknumber(L, 6);
+        float a = (float)luaL_checknumber(L, 7);
+        Label *label = (Label*)lua_newuserdata(L, sizeof(Label));
+        label = new (label) Label(parent, text, fontAlias, {r,g,b,a});
+        luaL_setmetatable(L, IS_LABEL);
+        lua_newtable(L);
+        lua_pushstring(L, "parent");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
+        lua_setuservalue(L, -2);
+        return 1;
+    }
+
+    static int lua_UILabel_SetText(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        std::string text = luaL_checkstring(L, 2);
+        self->SetText(text);
+        return 0;
+    }
+
+    static int lua_UILabel_mtIndex(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_gettable(L, -2);
+        lua_remove(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            // check UILabel
+            lua_pop(L, 1);
+            lua_getglobal(L, "UILabel");
+            lua_pushvalue(L, 2);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
+            if(lua_isnil(L, -1))
+            {
+                // still nil so check UIObject
+                lua_pop(L, 1);
+                lua_getglobal(L, "UIObject");
+                lua_pushvalue(L, 2);
+                lua_gettable(L, -2);
+                lua_remove(L, -2);
+            }
+        }
+        return 1;
+    }
+
+    static int lua_UILabel_mtNewIndex(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_pushvalue(L, 3);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        return 0;
+    }
+
+    static int lua_UILabel_mtGC(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        self->~Label();
+        return 0;
+    }
+
+    static int lua_UILabel_mtToString(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        std::stringstream ss;
+        ss << "UILabel " << std::hex << self;
+        std::string result = ss.str();
+        lua_pushstring(L, result.c_str());
+        return 1;
+    }
+
+    Button* CheckButton(lua_State* L, int index)
+    {
+        if(!lua_isuserdata(L, index))
+        {
+            luaL_error(L, "%s: Not a userdata", __FUNCTION__);
+            return nullptr;
+        }
+
+        Button* btn = (Button*)lua_touserdata(L, index);
+
+        GetRTTI(L, index);
+        bool isButton = CheckRTTI(L, IS_BUTTON);
+        lua_pop(L, 1);
+        if(!isButton)
+        {
+            luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_BUTTON);
+            return nullptr;
+        }
+        return btn;
+    }
+
+    Label* CheckLabel(lua_State* L, int index)
+    {
+        if(!lua_isuserdata(L, index))
+        {
+            luaL_error(L, "%s: Not a userdata", __FUNCTION__);
+            return nullptr;
+        }
+
+        Label* label = (Label*)lua_touserdata(L, index);
+
+        GetRTTI(L, index); // rtti{}
+        bool isLabel = CheckRTTI(L, IS_LABEL);
+        lua_pop(L, 1); // pop RTTI table
+        if(!isLabel)
+        {
+            luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_LABEL);
+            return nullptr;
+        }
+        return label;   
+    }
+
     Object* CheckObject(lua_State* L, int index)
     {
         if(!lua_isuserdata(L, index))
@@ -335,14 +613,12 @@ namespace engine { namespace ui {
 
         GetRTTI(L, index); // rtti{}
         bool isObject = CheckRTTI(L, IS_OBJECT);
+        lua_pop(L, 1); // pop RTTI table
         if(!isObject)
         {
-            lua_pop(L, 1); // pop RTTI table
             luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_OBJECT);
             return nullptr;
         }
-
-        lua_pop(L, 1); // remove RTTI{}
         return o;
     }
 
@@ -357,15 +633,13 @@ namespace engine { namespace ui {
         Frame* frame = (Frame*)lua_touserdata(L, index);
 
         GetRTTI(L, index); // rtti{}
-        bool isObject = CheckRTTI(L, IS_FRAME);
-        if(!isObject)
+        bool isFrame = CheckRTTI(L, IS_FRAME);
+        lua_pop(L, 1); // pop RTTI table
+        if(!isFrame)
         {
-            lua_pop(L, 1); // pop RTTI table
             luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_FRAME);
             return nullptr;
         }
-
-        lua_pop(L, 1); // remove RTTI{}
         return frame;   
     }
 
@@ -378,6 +652,16 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    // lua : LoadFont(alias, path)
+    static int lua_LoadFont(lua_State* L)
+    {
+        const char* alias = luaL_checkstring(L, 1);
+        const char* path = luaL_checkstring(L, 2);
+        int size = (int)luaL_checkinteger(L, 3);
+        GameEngine::Get().GetTextRenderer().LoadFont(path, alias, size);
+        return 0;
+    }
+
 #define BIND_METHOD(c,m) lua_pushstring(L, #m); lua_pushcfunction(L, lua_ ## c ## _ ## m); lua_settable(L, -3);
 
     LuaBindings::LuaBindings(lua_State* L)
@@ -386,7 +670,7 @@ namespace engine { namespace ui {
         if(writerData.find(L) != writerData.end())
         {
             GameEngine::Get().GetLogger().Logf(Logger::Severity::FATAL, 
-                "%s: Only 1 to 1 assocation between LuaBindings and lua_State allowed", __FUNCTION__);
+                "%s: Only 1 to 1 association between LuaBindings and lua_State allowed", __FUNCTION__);
             return;
         }
         else
@@ -396,6 +680,8 @@ namespace engine { namespace ui {
         // set LoadTexture(alias,path)
         lua_pushcfunction(L, lua_LoadTexture);
         lua_setglobal(L, "LoadTexture");
+        lua_pushcfunction(L, lua_LoadFont);
+        lua_setglobal(L, "LoadFont");
         // UIObject
         lua_newtable(L);
         BIND_METHOD(UIObject, AddOnClicked);
@@ -412,11 +698,27 @@ namespace engine { namespace ui {
         BIND_METHOD(UIObject, GetYPos);
         BIND_METHOD(UIObject, SetYPos);
         lua_setglobal(L, "UIObject");
+        // UIButton
+        lua_newtable(L);
+        BIND_METHOD(UIButton, New);
+        BIND_METHOD(UIButton, SetText);
+        BIND_METHOD(UIButton, SetTextColor);
+        lua_setglobal(L, "UIButton");
         // UIFrame
         lua_newtable(L);
         BIND_METHOD(UIFrame, New);
+        BIND_METHOD(UIFrame, GetColor);
         BIND_METHOD(UIFrame, SetColor);
+        BIND_METHOD(UIFrame, GetBorderColor);
+        BIND_METHOD(UIFrame, SetBorderColor);
+        BIND_METHOD(UIFrame, GetBorderSize);
+        BIND_METHOD(UIFrame, SetBorderSize);
         lua_setglobal(L, "UIFrame");
+        // UILabel
+        lua_newtable(L);
+        BIND_METHOD(UILabel, New);
+        BIND_METHOD(UILabel, SetText);
+        lua_setglobal(L, "UILabel");
         // create UIFrame's metatable
         luaL_newmetatable(L, IS_FRAME);
         lua_pushstring(L, "classes");
@@ -441,6 +743,54 @@ namespace engine { namespace ui {
         lua_pushcfunction(L, lua_UIFrame_mtNewIndex);
         lua_settable(L, -3);
         lua_pop(L, 1);
+        // create UIButton's metatable
+        luaL_newmetatable(L, IS_BUTTON);
+        lua_pushstring(L, "classes");
+        lua_newtable(L);
+        lua_pushstring(L, IS_BUTTON);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_FRAME);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_OBJECT);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__index");
+        lua_pushcfunction(L, lua_UIButton_mtIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, lua_UIButton_mtNewIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__gc");
+        lua_pushcfunction(L, lua_UIButton_mtGC);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        // create UILabel's metatable
+        luaL_newmetatable(L, IS_LABEL);
+        lua_pushstring(L, "classes");
+        lua_newtable(L);
+        lua_pushstring(L, IS_OBJECT);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_LABEL);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__index");
+        lua_pushcfunction(L, lua_UILabel_mtIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, lua_UILabel_mtNewIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__gc");
+        lua_pushcfunction(L, lua_UILabel_mtGC);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__tostring");
+        lua_pushcfunction(L, lua_UILabel_mtToString);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
     }
 
     LuaBindings::~LuaBindings()
@@ -449,6 +799,8 @@ namespace engine { namespace ui {
         {
             free(data.bytecode);
         }
+        // writerData[luastate_].erase(writerData[luastate_].begin(), writerData[luastate_].end());
+        writerData.erase(writerData.find(luastate_));
     }
 
 }}

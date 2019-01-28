@@ -79,8 +79,17 @@ namespace engine { namespace ui {
         if(ContainsPoint(x,y) && IsVisible())
         {
             result = this;
-            for(auto child : children_)
+            /*for(auto child : children_)
             {
+                if(child->ContainsPoint(x - xPos_, y - yPos_) && child->IsVisible())
+                {
+                    result = child->CheckPoint(x - xPos_, y - yPos_);
+                    break;
+                }
+            }*/
+            for(int i=(int)children_.size() - 1; i >= 0; --i)
+            {
+                auto child = children_[i];
                 if(child->ContainsPoint(x - xPos_, y - yPos_) && child->IsVisible())
                 {
                     result = child->CheckPoint(x - xPos_, y - yPos_);

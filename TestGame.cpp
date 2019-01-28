@@ -44,8 +44,8 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     uiRoot_ = engine::ui::Root::Get();
     frame_ = new engine::ui::Frame(uiRoot_, 400, 300, 25, 25, uiblank, {0.f,0.f,1.f,1.f});
     blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, BUTTON_OFF_COLOR);
-    helloLabel_ = new engine::ui::Label(blueButton_, "Hi", "mono", 7, {0.4f,8.f,6.f,1.f});
-    closeButton_ = new engine::ui::Button(frame_, uiblank, {0.5f,0.f,0.5f,1.f}, "X", "mono", 6, {0.f,1.f,0.f,1.f},6);
+    helloLabel_ = new engine::ui::Label(blueButton_, "Hi", "mono", {0.4f,8.f,6.f,1.f});
+    closeButton_ = new engine::ui::Button(frame_, uiblank, {0.5f,0.f,0.5f,1.f}, "X", "mono", {0.f,1.f,0.f,1.f},6);
 
     scripting_ = luaL_newstate();
     luaL_openlibs(scripting_);

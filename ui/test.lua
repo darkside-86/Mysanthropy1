@@ -1,12 +1,38 @@
 LoadTexture('uiblank', 'res/textures/uiblank.png')
-print('lol')
-s = UIFrame.New(nil,100,100,100,100,'uiblank')
-t = UIFrame.New(s, 25,30,1,1, 'uiblank')
-s:SetColor(1,0,0,1)
-t:SetColor(0.5,0,0.5,1)
-s.foo = 'Foo'
-print(s.foo)
-print(s)
-s:AddOnClicked(function(x,y,btn) 
-    t:SetXPos(t:GetXPos() + 1);
+LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 12);
+testFrame = UIFrame.New(nil, 200, 200, 100, 100, 'uiblank')
+testFrame:SetColor(1,0.2,0.2,1)
+testFrame:SetBorderColor(0.2,1,1,1)
+testFrame:SetBorderSize(2)
+testLabel = UILabel.New(testFrame, 'Test frame', 'sans', 0,0,0,1)
+testButton = UIButton.New(testFrame, 'uiblank', 'Click', 'sans', 4)
+testButton:SetColor(0.5,0.4,0.3,1)
+testButton:SetTextColor(1,0.4,0.4,1)
+print( testFrame:GetWidth() / 2 - testButton:GetWidth() / 2)
+print( testFrame:GetHeight() / 2 - testButton:GetHeight() / 2)
+testButton:SetBorderSize(1)
+testButton:SetBorderColor(0,0,0.3,1)
+testButton:SetXPos( testFrame:GetWidth() / 2 - testButton:GetWidth() / 2)
+testButton:SetYPos( testFrame:GetHeight() / 2 - testButton:GetHeight() / 2)
+testButton:AddOnClicked(function() 
+    testLabel:SetText("Button was clicked!")
+end)
+testLabel:AddOnHover(function(x,y,sx,sy,over)
+    if over then 
+        testLabel:SetText("Hover on")
+    else
+        testLabel:SetText("Hover off")
+    end
+end)
+
+closeButton = UIButton.New(testFrame, 'uiblank', 'X', 'sans', 3)
+closeButton:SetXPos(testFrame:GetWidth() - closeButton:GetWidth() - 2)
+closeButton:SetYPos(2)
+closeButton:SetColor(1,0,0,1)
+closeButton:SetTextColor(1,1,1,1)
+closeButton:SetBorderColor(1,1,1,1)
+closeButton:SetBorderSize(1)
+closeButton:AddOnClicked(function() 
+    testFrame:SetVisible(false)
+    testFrame = nil
 end)
