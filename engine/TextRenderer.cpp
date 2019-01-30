@@ -69,7 +69,10 @@ namespace engine
 		TTF_Font* font = GetFont(fontName);
 		if (font == nullptr)
 			return nullptr;
-        rendered = solid? TTF_RenderText_Solid(font, text.c_str(), fg_) :
+		if(text.length() == 0)
+			rendered = TTF_RenderText_Solid(font, " ", fg_);
+        else 
+			rendered = solid? TTF_RenderText_Solid(font, text.c_str(), fg_) :
                           TTF_RenderText_Blended(font, text.c_str(), fg_);
 		if (rendered == nullptr)
 		{
@@ -101,11 +104,13 @@ namespace engine
 
 	ogl::Texture* TextRenderer::RenderTextShaded(const std::string& fontName, const std::string& text)
     {
+		if(text.length() == 0)
+			return nullptr;
 		SDL_Surface* rendered;
 		TTF_Font* font = GetFont(fontName);
 		if (font == nullptr)
 			return nullptr;
-		rendered = TTF_RenderText_Shaded(font, text.c_str(), fg_, bg_);
+		rendered = TTF_RenderText_Shaded(font, text.length() != 0 ? text.c_str() : " ", fg_, bg_);
 		if (rendered == nullptr)
 		{
             GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,

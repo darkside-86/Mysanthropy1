@@ -26,7 +26,7 @@ namespace engine { namespace ui {
     {
     public:
         enum class Type {
-            CLICKED, HOVER
+            CLICKED, HOVER, KEYPRESSED, DRAGGED
         };
         Event(Type t) : type(t) {}
         Type type;
@@ -49,6 +49,25 @@ namespace engine { namespace ui {
         bool over; // false when mouse moves away
     };
 
+    class KeypressedEvent : Event 
+    {
+    public:
+        KeypressedEvent(int keycode, int scancode, int modifiers, bool repeat) : Event(Type::KEYPRESSED),
+            keyCode(keycode), scanCode(scancode), mod(modifiers), repeated(repeat) {}
+        int keyCode, scanCode, mod;
+        bool repeated;
+    };
+
+    class DraggedEvent : Event
+    {
+    public:
+        DraggedEvent(int sx, int sy, int dx, int dy) : Event(Type::DRAGGED),
+            x(sx), y(sy), xrel(dx), yrel(dy) {}
+        int x, y, xrel, yrel;
+    };
+
     typedef std::function<void(const ClickedEvent&)> ClickedEventCallback;
     typedef std::function<void(const HoverEvent&)> HoverEventCallback;
+    typedef std::function<void(const KeypressedEvent&)> KeypressedEventCallback;
+    typedef std::function<void(const DraggedEvent&)> DraggedEventCallback;
 }}

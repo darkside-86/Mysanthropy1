@@ -33,6 +33,7 @@ namespace engine { namespace ui {
         virtual void Render(GraphicsContext& gc) override;
         void ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe);
         void ProcessMouseMotionEvent(const SDL_MouseMotionEvent& mme);
+        void ProcessKeyboardEvent(const SDL_KeyboardEvent& kbe);
         static Root* Get() 
         {
             static Root* root = nullptr;
@@ -50,6 +51,7 @@ namespace engine { namespace ui {
         }
         Object*     mousePressed_ = nullptr;
         Object*     mouseOver_ = nullptr;
+        bool        mouseDown_ = false;
     };
 
 }}

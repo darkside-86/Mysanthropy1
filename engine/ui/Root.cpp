@@ -28,9 +28,11 @@ namespace engine { namespace ui {
         if(mbe.type == SDL_MOUSEBUTTONDOWN)
         {
             mousePressed_ = CheckPoint(x,y);
+            mouseDown_ = true;
         }
         else
         {
+            mouseDown_ = false;
             Object* unpressed = CheckPoint(x,y);
             if(mousePressed_ == unpressed && unpressed != nullptr)
             {
@@ -46,6 +48,12 @@ namespace engine { namespace ui {
         GameEngine::Get().SetLogicalXY(x,y);
         GameEngine::Get().SetLogicalXY(dx,dy);
         Object* over =  CheckPoint(x,y);
+        // drag
+        if(mouseDown_ && mousePressed_ != nullptr)
+        {
+            mousePressed_->OnDragged(DraggedEvent(x,y,dx,dy));
+        }
+        // hover
         if(over != nullptr)
         {
             if(over != mouseOver_)
@@ -57,6 +65,18 @@ namespace engine { namespace ui {
                         mouseOver_->OnHover(HoverEvent(x,y,dx,dy,false));
                 }
                 mouseOver_ = over;
+            }
+        }
+    }
+
+    void Root::ProcessKeyboardEvent(const SDL_KeyboardEvent& kbe)
+    {
+        if(kbe.type == SDL_KEYDOWN)
+        {
+            if(mousePressed_ != nullptr)
+            {
+                mousePressed_->OnKeypressed(KeypressedEvent(kbe.keysym.sym, kbe.keysym.scancode, kbe.keysym.mod, 
+                    kbe.repeat));
             }
         }
     }

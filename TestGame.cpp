@@ -51,11 +51,18 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     luaL_openlibs(scripting_);
     luaBindings_ = new engine::ui::LuaBindings(scripting_);
     engine::GameEngine::Get().GetTextureManager().UnloadTexture("uiblank");
-    int numErrors = luaL_dofile(scripting_, "ui/test.lua");
-    if(numErrors != 0)
+    try 
+    {
+        int errCode = 0;
+        errCode = luaL_dofile(scripting_, "ui/keycodes.lua");
+        if(errCode != 0) throw errCode;
+        errCode = luaL_dofile(scripting_, "ui/test.lua");
+        if(errCode != 0) throw errCode;
+    }
+    catch(int numErrors)
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-            "Lua error: %s", lua_tostring(scripting_, -1));
+                "Lua error %d: %s", numErrors, lua_tostring(scripting_, -1));
     }
 }
 
@@ -80,6 +87,10 @@ bool TestGame::Initialize()
         this->uiRoot_->ProcessMouseMotionEvent(e);
     });
 
+    engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e) {
+        this->uiRoot_->ProcessKeyboardEvent(e);
+    });
+
     frame_->SetBorderColor({0.5f,0.f,0.f,1.f});
     frame_->SetBorderSize(3);
 
@@ -93,6 +104,13 @@ bool TestGame::Initialize()
     closeButton_->SetBorderColor({0.f,0.f,0.f,1.f});
     closeButton_->SetXPos(frame_->GetWidth() - closeButton_->GetWidth() - 5);
     closeButton_->SetYPos(5);
+
+    frame_->AddOnDragged([this](const engine::ui::DraggedEvent& e){
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                "Dragged frame: %d, %d, %d, %d", e.x, e.y, e.xrel, e.yrel);
+                this->frame_->SetXPos(this->frame_->GetXPos() + e.xrel);
+                this->frame_->SetYPos(this->frame_->GetYPos() + e.yrel);
+    });
 
     blueButton_->AddOnHover([this](const engine::ui::HoverEvent& e){
         if(e.over)
@@ -112,6 +130,11 @@ bool TestGame::Initialize()
                 "Button was clicked!");
         this->RandomizeRectColors();
     } );
+
+    blueButton_->AddOnKeypressed([this](const engine::ui::KeypressedEvent& e){
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                "Key was pressed on blueButton_, %c, %d", e.keyCode, e.mod);
+    });
 
     closeButton_->AddOnClicked([this](const engine::ui::ClickedEvent&){
         this->frame_->SetVisible(false);

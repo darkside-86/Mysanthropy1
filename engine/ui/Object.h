@@ -38,6 +38,10 @@ namespace engine { namespace ui {
         virtual void OnClicked(const ClickedEvent& e);
         virtual void AddOnHover(const HoverEventCallback& cb);
         virtual void OnHover(const HoverEvent& e);
+        virtual void AddOnKeypressed(const KeypressedEventCallback& cb);
+        virtual void OnKeypressed(const KeypressedEvent& e);
+        virtual void AddOnDragged(const DraggedEventCallback& cb);
+        virtual void OnDragged(const DraggedEvent& e);
         bool ContainsPoint(int x, int y);
         // get the innermost child object that contains the point if any
         Object* CheckPoint(int x, int y);
@@ -58,6 +62,8 @@ namespace engine { namespace ui {
         std::vector<Object*>                children_;
         std::vector<ClickedEventCallback>   onClicked_;
         std::vector<HoverEventCallback>     onHover_;
+        std::vector<KeypressedEventCallback> onKeypressed_;
+        std::vector<DraggedEventCallback>   onDragged_;
         Object*                             parent_;
         bool                                visible_;
         int                                 width_=1, height_=1;

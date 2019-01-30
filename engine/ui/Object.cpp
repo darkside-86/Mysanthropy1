@@ -63,8 +63,61 @@ namespace engine { namespace ui {
 
     void Object::OnHover(const HoverEvent& e)
     {
-        for(auto& handler : onHover_)
-            handler(e);
+        // if there are no event handlers for this object, propagate event
+        //  to the parent
+        if(onHover_.size() == 0)
+        {
+            if(parent_ != nullptr)
+                parent_->OnHover(e);
+        }
+        else
+        {
+            for(auto& handler : onHover_)
+                handler(e);
+        }
+
+    }
+
+    void Object::AddOnKeypressed(const KeypressedEventCallback& cb)
+    {
+        onKeypressed_.push_back(cb);
+    }
+
+    void Object::OnKeypressed(const KeypressedEvent& e)
+    {
+        // if there are no event handlers for this object, propagate event
+        //  to the parent
+        if(onKeypressed_.size() == 0)
+        {
+            if(parent_ != nullptr)
+                parent_->OnKeypressed(e);
+        }
+        else
+        {
+            for(auto& handler : onKeypressed_)
+                handler(e);
+        }
+    }
+
+    void Object::AddOnDragged(const DraggedEventCallback& cb)
+    {
+        onDragged_.push_back(cb);
+    }
+        
+    void Object::OnDragged(const DraggedEvent& e)
+    {
+        // if there are no event handlers for this object, propagate event
+        //  to the parent
+        if(onDragged_.size() == 0)
+        {
+            if(parent_ != nullptr)
+                parent_->OnDragged(e);
+        }
+        else
+        {
+            for(auto& handler : onDragged_)
+                handler(e);
+        }
     }
 
     bool Object::ContainsPoint(int x, int y)
