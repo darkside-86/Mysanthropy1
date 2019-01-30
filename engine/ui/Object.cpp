@@ -31,6 +31,21 @@ namespace engine { namespace ui {
 
     Object::~Object()
     {
+		for (auto it = children_.begin(); it != children_.end(); ++it)
+		{
+			(*it)->parent_ = nullptr;
+		}
+        if(parent_ != nullptr)
+        {
+            for(auto it = parent_->children_.begin(); it != parent_->children_.end(); ++it)
+            {
+                if(this==*it)
+                {
+                    parent_->children_.erase(it);
+                    break;
+                }
+            }
+        }
     }
 
     void Object::AddOnClicked(const ClickedEventCallback& cb)

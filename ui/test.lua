@@ -1,69 +1,9 @@
-
---[[ testFrame = UIFrame.New(nil, 200, 200, 100, 100, 'uiblank')
-testFrame:SetColor(0.4,0.3,0.2,1)
-testFrame:SetBorderColor(0.2,1,1,1)
-testFrame:SetBorderSize(2)
-testLabel = UILabel.New(testFrame, 'Test frame', 'sans', 0,0,0,1)
-testButton = UIButton.New(testFrame, 'uiblank', 'Click', 'sans', 4)
-testButton:SetColor(0.5,0.4,0.3,1)
-testButton:SetTextColor(1,0.4,0.4,1)
-print( testFrame:GetWidth() / 2 - testButton:GetWidth() / 2)
-print( testFrame:GetHeight() / 2 - testButton:GetHeight() / 2)
-testButton:SetBorderSize(1)
-testButton:SetBorderColor(0,0,0.3,1)
-testButton:SetXPos( testFrame:GetWidth() / 2 - testButton:GetWidth() / 2)
-testButton:SetYPos( testFrame:GetHeight() / 2 - testButton:GetHeight() / 2)
-testButton:AddOnClicked(function() 
-    testLabel:SetText("Button was clicked!")
-end)
-testLabel:AddOnHover(function(x,y,sx,sy,over)
-    if over then 
-        testLabel:SetText("Hover on")
-    else
-        testLabel:SetText("Hover off")
-    end
-end)]]
-
---[[closeButton = UIButton.New(testFrame, 'uiblank', 'X', 'sans', 3)
-closeButton:SetXPos(testFrame:GetWidth() - closeButton:GetWidth() - 2)
-closeButton:SetYPos(2)
-closeButton:SetColor(1,0,0,1)
-closeButton:SetTextColor(1,1,1,1)
-closeButton:SetBorderColor(1,1,1,1)
-closeButton:SetBorderSize(1)
-closeButton:AddOnClicked(function() 
-    testFrame:SetVisible(false)
-    testFrame = nil
-end)]]
+RunFile("ui/window.lua")
 
 LoadTexture('uiblank', 'res/textures/uiblank.png')
 LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 12);
 
 math.randomseed(os.time())
-
-function CreateWindow(width, height, title)
-    local frame = UIFrame.New(nil, width, height, 0, 0, 'uiblank')
-    frame:SetColor(0,0,0.5,0.6)
-    frame:SetBorderSize(2)
-    frame:SetBorderColor(0,0,0.9,1)
-    frame.title = UILabel.New(frame, title, 'sans', 1,1,1,1)
-    closeButton = UIButton.New(frame, 'uiblank', 'X', 'sans', 3)
-    closeButton:SetColor(0.5,0,0,1)
-    closeButton:SetTextColor(1,1,1,1)
-    closeButton:SetBorderSize(1)
-    closeButton:SetBorderColor(1,0,0,1)
-    closeButton:SetXPos(frame:GetWidth() - closeButton:GetWidth() - 2)
-    closeButton:SetYPos(2)
-    closeButton:AddOnClicked(function()
-        frame:SetVisible(false)
-    end)
-    frame.closeBtn = closeButton
-    frame:AddOnDragged(function(x,y,dx,dy) 
-        frame:SetXPos(frame:GetXPos() + dx)
-        frame:SetYPos(frame:GetYPos() + dy)
-    end)    
-    return frame
-end
 
 function CreateTextField(parent, width, text)
     text = text or ""
@@ -94,7 +34,9 @@ function CreateTextField(parent, width, text)
                     end
                 end
             end
-            frame.label:SetText( frame.label:GetText() .. character )
+            if character ~= '\n' and character ~= '\r' then  
+                frame.label:SetText( frame.label:GetText() .. character )
+            end
         elseif keyCode == SDLK_BACKSPACE then 
             local text = frame.label:GetText()
             if text:len() > 0 then 
@@ -106,7 +48,55 @@ function CreateTextField(parent, width, text)
     return frame
 end
 
-myWindow = CreateWindow(500, 400, 'My window')
+function CreateHSlider(parent, width, height)
+    local frame = UIFrame.New(parent, width, height, 0, 0, 'uiblank')
+    frame:SetColor(0.9,0.9,0.9,0.1)
+    frame.slide = UIFrame.New(frame, width, height / 10, 0, 0, 'uiblank')
+    frame.slide:SetYPos(frame:GetHeight() / 2 - frame.slide:GetHeight() / 2)
+    frame.slide:SetColor(0.2,0.2,0.2,1)
+    frame.knob = UIFrame.New(frame, width / 25, height, 0, 0, 'uiblank')
+    frame.knob:SetColor(0.7,0.7,0.7,1)
+    frame.onUpdate = function(value) end
+    frame.getValue = function() 
+        return frame.knob:GetXPos() / (frame.slide:GetWidth() - frame.knob:GetWidth())
+    end
+    frame:AddOnDragged(function(x,y,dx,dy) 
+        frame.knob:SetXPos(frame.knob:GetXPos() + dx)
+        if frame.knob:GetXPos() < 0 then
+            frame.knob:SetXPos(0)
+        elseif frame.knob:GetXPos() > frame.slide:GetWidth() - frame.knob:GetWidth() then 
+            frame.knob:SetXPos(frame.slide:GetWidth() - frame.knob:GetWidth())
+        end
+        frame.onUpdate(frame.getValue())
+    end)
+    return frame
+end
+
+function CreateVSlider(parent, width, height)
+    local frame = UIFrame.New(parent, width, height, 0, 0, 'uiblank')
+    frame:SetColor(0.9,0.9,0.9,0.1)
+    frame.slide = UIFrame.New(frame, width / 10, height, 0, 0, 'uiblank')
+    frame.slide:SetXPos(frame:GetWidth() / 2 - frame.slide:GetWidth() / 2)
+    frame.slide:SetColor(0.2,0.2,0.2,1)
+    frame.knob = UIFrame.New(frame, width, height / 25, 0, 0, 'uiblank')
+    frame.knob:SetColor(0.7,0.7,0.7,1)
+    frame.onUpdate = function(value) end
+    frame.getValue = function() 
+        return frame.knob:GetYPos() / (frame.slide:GetHeight() - frame.knob:GetHeight())
+    end
+    frame:AddOnDragged(function(x,y,dx,dy) 
+        frame.knob:SetYPos(frame.knob:GetYPos() + dy)
+        if frame.knob:GetYPos() < 0 then
+            frame.knob:SetYPos(0)
+        elseif frame.knob:GetYPos() > frame.slide:GetHeight() - frame.knob:GetHeight() then 
+            frame.knob:SetYPos(frame.slide:GetHeight() - frame.knob:GetHeight())
+        end
+        frame.onUpdate(frame.getValue())
+    end)
+    return frame
+end
+
+myWindow = Window.New(nil, 500, 400, 'My window', 'sans')
 myWindow:SetXPos(GetScreenWidth() / 2 - myWindow:GetWidth() / 2)
 myWindow:SetYPos(GetScreenHeight() / 2 - myWindow:GetHeight() / 2)
 myWindow.colorBtn = UIButton.New(myWindow, 'uiblank', 'Colors', 'sans', 5)
@@ -129,8 +119,27 @@ end)
 myWindow:AddOnKeypressed(function(keycode, scancode, mod, rep)
     print(keycode,scancode,mod,rep)
 end)
-myWindow.textField = CreateTextField(myWindow, 200, "")
+myWindow.textField = CreateTextField(myWindow, 400, "")
 myWindow.textField:SetXPos(5)
 myWindow.textField:SetYPos(30)
+myWindow.textField:AddOnKeypressed(function(keyCode, scanCode, mod, rep) 
+    if keyCode == SDLK_RETURN then
+        local f, er = load(myWindow.textField.label:GetText())
+        if f == nil then 
+            print("Error: " .. er)
+        else
+            f() 
+        end
+    end
+end)
+myWindow.slider = CreateHSlider(myWindow, 200, 30)
+myWindow.slider:SetYPos(60)
+myWindow.slider.onUpdate = function(value)
+    print(value * 100)
+    local r,g,b,a = myWindow:GetColor()
+    myWindow:SetColor(r,g,b,value)
+end
 
-print(SDLK_a)
+myWindow.vslider = CreateVSlider(myWindow, 30, 200)
+myWindow.vslider:SetXPos(myWindow:GetWidth() - myWindow.vslider:GetWidth() - 5)
+myWindow.vslider:SetYPos(33)

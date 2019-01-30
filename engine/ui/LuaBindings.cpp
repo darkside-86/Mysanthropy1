@@ -300,10 +300,10 @@ namespace engine { namespace ui {
         else
             parent = CheckObject(L, 1);
         
-        int width = (int)luaL_checkinteger(L, 2);
-        int height = (int)luaL_checkinteger(L, 3);
-        int xpos = (int)luaL_checkinteger(L, 4);
-        int ypos = (int)luaL_checkinteger(L, 5);
+        int width = (int)lua_tointeger(L, 2);
+        int height = (int)lua_tointeger(L, 3);
+        int xpos = (int)lua_tointeger(L, 4);
+        int ypos = (int)lua_tointeger(L, 5);
         const char* textureAlias = luaL_checkstring(L, 6);
         engine::ui::Color white = {1.f,1.f,1.f,1.f};
         ogl::Texture* texture = GameEngine::Get().GetTextureManager().GetTexture(textureAlias);
@@ -745,6 +745,20 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    // runs lua files from the current working directory of host app
+    static int lua_RunFile(lua_State* L)
+    {
+        const char* path = luaL_checkstring(L, 1);
+        int errCode = luaL_dofile(L, path);
+        if(errCode != LUA_OK)
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
+                    "%s: %s", __FUNCTION__, lua_tostring(L, -1));
+            lua_pop(L, 1);
+        }
+        return 0;
+    }
+
 #define BIND_METHOD(c,m) lua_pushstring(L, #m); lua_pushcfunction(L, lua_ ## c ## _ ## m); lua_settable(L, -3);
 
     LuaBindings::LuaBindings(lua_State* L)
@@ -772,6 +786,8 @@ namespace engine { namespace ui {
         lua_setglobal(L, "GetScreenWidth");
         lua_pushcfunction(L, lua_GetScreenHeight);
         lua_setglobal(L, "GetScreenHeight");
+        lua_pushcfunction(L, lua_RunFile);
+        lua_setglobal(L, "RunFile");
         // UIObject
         lua_newtable(L);
         BIND_METHOD(UIObject, AddOnClicked);

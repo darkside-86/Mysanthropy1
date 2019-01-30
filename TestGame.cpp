@@ -68,9 +68,9 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
 
 TestGame::~TestGame()
 {
+	delete helloLabel_;
     delete blueButton_;
     delete frame_;
-    delete helloLabel_;
     delete uiRoot_;
 
     delete luaBindings_;

@@ -70,7 +70,9 @@ namespace engine { namespace ui {
         }
         for(auto eachChild : children_)
         {
-            eachChild->Render(gc);
+            if(eachChild->GetXPos() >= 0 && eachChild->GetXPos() <= GetWidth()
+               && eachChild->GetYPos() >= 0 && eachChild->GetYPos() <= GetHeight())
+                eachChild->Render(gc);
         }
         gc.PopModel();
     }
@@ -79,12 +81,14 @@ namespace engine { namespace ui {
     {
         width_ = w; 
         CreateRectangle((float)width_, (float)height_, color_);
+        CreateBorder();
     }
 
     void Frame::SetHeight(int h)
     {
         height_ = h; 
         CreateRectangle((float)width_, (float)height_, color_);
+        CreateBorder();
     }
 
     void Frame::CreateRectangle(float w, float h, const Color& color)
