@@ -44,9 +44,9 @@ namespace engine { namespace ui {
         gc.PushModel();
         gc.TranslateModel((float)(xPos_+padding_), (float)(yPos_+padding_), 0.f);
         gc.SetMVP();
-        labelVao_->Bind();
-        labelVbo_->Bind();
-        labelTexture_->Bind();
+        if(labelVao_ != nullptr) labelVao_->Bind();
+        if(labelVbo_ != nullptr) labelVbo_->Bind();
+        if(labelTexture_ != nullptr) labelTexture_->Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
         gc.PopModel();
     }
@@ -57,6 +57,8 @@ namespace engine { namespace ui {
         delete labelTexture_;
         tr.SetFGColor(labelColor_.r, labelColor_.g, labelColor_.b, labelColor_.a);
         labelTexture_ = tr.RenderText(font_, text_, false);
+        if(labelTexture_ == nullptr)
+            return;
         float labelWidth = (float)labelTexture_->GetWidth();
         float labelHeight = (float)labelTexture_->GetHeight();
         float buttonWidth = labelWidth + padding_ * 2.f;

@@ -24,9 +24,10 @@
 #include "engine/ui/Button.h"
 #include "engine/ui/Frame.h"
 #include "engine/ui/Label.h"
+#include "engine/ui/LuaBindings.h"
 #include "engine/ui/Root.h"
 #include "engine/ui/Slider.h"
-#include "engine/ui/LuaBindings.h"
+#include "engine/ui/TextField.h"
 #include "ogl/Texture.h"
 
 class TestGame : public engine::Game
@@ -46,6 +47,7 @@ private:
     engine::ui::Label* helloLabel_;
     engine::ui::Button* closeButton_;
     engine::ui::Slider* slider_;
+    engine::ui::TextField* textField_;
     engine::ui::LuaBindings* luaBindings_;
     ogl::Texture groundTexture;
     ogl::Texture frameTexture;

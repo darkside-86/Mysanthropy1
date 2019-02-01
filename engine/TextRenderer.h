@@ -36,11 +36,11 @@ namespace engine
 		ogl::Texture* RenderTextShaded(const std::string& fontName, const std::string& text);
         void SetFGColor(float r, float g, float b, float a);
         void SetBGColor(float r, float g, float b, float a);
+		TTF_Font* GetFont(const std::string & name);
 	private:
 		TextRenderer(const TextRenderer&) {}
 		void operator=(const TextRenderer&) {}
 
-		TTF_Font* GetFont(const std::string & name);
         SDL_Color fg_, bg_;
 		std::unordered_map<std::string, TTF_Font*> fonts_;
 	};

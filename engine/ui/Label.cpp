@@ -43,9 +43,9 @@ namespace engine { namespace ui {
         gc.PushModel();
         gc.TranslateModel((float)this->xPos_, (float)this->yPos_, 0.0f);
         gc.SetMVP();
-        vao_->Bind();
-        vbo_->Bind();
-        texture_->Bind();
+		if(vao_ != nullptr) vao_->Bind();
+        if(vbo_ != nullptr) vbo_->Bind();
+        if(texture_ != nullptr) texture_->Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
         gc.PopModel();
     }
@@ -57,6 +57,8 @@ namespace engine { namespace ui {
         tr.SetFGColor(color_.r, color_.g, color_.b, color_.a);
         delete texture_;
         texture_ = tr.RenderText(font_, text_, false);
+        if(texture_ == nullptr)
+            return;
         delete vao_;
         vao_ = new ogl::VertexArray();
         delete vbo_;

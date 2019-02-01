@@ -69,6 +69,7 @@ set (
         engine/ui/Object.cpp
         engine/ui/Root.cpp
         engine/ui/Slider.cpp
+        engine/ui/TextField.cpp
 )
 
 add_executable ( 
