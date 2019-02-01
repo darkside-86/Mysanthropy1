@@ -1,4 +1,4 @@
-// Label.h
+// Slider.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,36 +18,31 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <string>
-
-#include "Color.h"
-#include "Object.h"
-#include "ogl/Texture.h"
-#include "ogl/VertexArray.h"
-#include "ogl/VertexBuffer.h"
+#include "Frame.h"
 
 namespace engine { namespace ui {
 
-    class Label : public Object
+    class Slider : public Frame
     {
     public:
-        Label(Object* parent, const std::string& text, const std::string& fontAlias, const Color& color);
-        virtual ~Label();
-        virtual void Render(GraphicsContext& gc) override;
+        enum ORIENTATION { HORIZONTAL, VERTICAL };
 
-        void SetText(const std::string& text) { text_ = text; CreateText(); }
-        std::string GetText() { return text_; }
-        void SetColor(const Color& color) { color_ = color; CreateText(); }
-        Color GetColor() { return color_; }
+        Slider(Object* parent, int width, int height, ORIENTATION orientation, ogl::Texture* texture);
+        virtual ~Slider();
+
+        ORIENTATION GetOrientation() { return orientation_; }
+
+        void SetSlideColor(const Color& c);
+        Color GetSlideColor();
+        void SetKnobColor(const Color& c);
+        Color GetKnobColor();
+
+        void SetValue(double value);
+        double GetValue();
     private:
-        void CreateText();
-
-        std::string text_;
-        std::string font_;
-        Color color_;
-        ogl::VertexArray* vao_ = nullptr;
-        ogl::VertexBuffer* vbo_ = nullptr;
-        ogl::Texture* texture_ = nullptr;
+        ORIENTATION orientation_;
+        Frame* slide_;
+        Frame* knob_;
     };
 
 }}

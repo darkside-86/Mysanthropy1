@@ -25,6 +25,7 @@
 #include "engine/ui/Frame.h"
 #include "engine/ui/Label.h"
 #include "engine/ui/Root.h"
+#include "engine/ui/Slider.h"
 #include "engine/ui/LuaBindings.h"
 #include "ogl/Texture.h"
 
@@ -44,6 +45,7 @@ private:
     engine::ui::Frame* blueButton_;
     engine::ui::Label* helloLabel_;
     engine::ui::Button* closeButton_;
+    engine::ui::Slider* slider_;
     engine::ui::LuaBindings* luaBindings_;
     ogl::Texture groundTexture;
     ogl::Texture frameTexture;

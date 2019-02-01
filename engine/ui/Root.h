@@ -34,6 +34,7 @@ namespace engine { namespace ui {
         void ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe);
         void ProcessMouseMotionEvent(const SDL_MouseMotionEvent& mme);
         void ProcessKeyboardEvent(const SDL_KeyboardEvent& kbe);
+        void GetNodePosition(Object* node, int& x, int &y);
         static Root* Get() 
         {
             static Root* root = nullptr;

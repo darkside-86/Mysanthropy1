@@ -40,7 +40,7 @@ namespace engine { namespace ui {
 
     Frame::~Frame()
     {
-        GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "Destructor on Frame %llx", this);
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "Destructor on Frame %llx", this);
         delete vbo_;
         delete vao_;
         delete borderVao_;

@@ -28,15 +28,17 @@
 #include "Label.h"
 #include "Object.h"
 #include "Root.h"
+#include "Slider.h"
 
 namespace engine { namespace ui {
 
     // keys for RTTI table
     static const char* RTTI_TABLE_KEY = "classes";
-    static const char* IS_BUTTON = "Button";
-    static const char* IS_LABEL = "Label";
-    static const char* IS_OBJECT = "Object"; 
-    static const char* IS_FRAME = "Frame";
+    static const char* IS_BUTTON = "UIButton";
+    static const char* IS_FRAME = "UIFrame";
+    static const char* IS_LABEL = "UILabel";
+    static const char* IS_OBJECT = "UIObject"; 
+    static const char* IS_SLIDER = "UISlider";
 
     // general functions
     static int lua_ErrorHandler(lua_State* L);
@@ -46,7 +48,9 @@ namespace engine { namespace ui {
     Label* CheckLabel(lua_State* L, int index);
     Object* CheckObject(lua_State* L, int index);
     Frame* CheckFrame(lua_State* L, int index);
+    Slider* CheckSlider(lua_State* L, int index);
 
+    // error handling function for running event callbacks
     static int lua_ErrorHandler(lua_State* L)
     {
         const char* errorMsg = lua_tostring(L, 1);
@@ -54,7 +58,7 @@ namespace engine { namespace ui {
         return 0;
     }
 
-    // Place RTTI table on to stack
+    // Places RTTI table on to stack
     static void GetRTTI(lua_State* L, int index)
     {
         lua_getmetatable(L, index); // m{}
@@ -68,7 +72,7 @@ namespace engine { namespace ui {
         // RTTI is now on the stack
     }
 
-    // Check RTTI table at stack = -1
+    // Checks RTTI table at stack = -1
     static bool CheckRTTI(lua_State* L, const char* className)
     {
         lua_pushstring(L, className);
@@ -78,7 +82,7 @@ namespace engine { namespace ui {
         return isInstance;
     }
 
-    // lua : UIObject.AddOnClicked(self, luaFunction)
+    // lua : UIObject.AddOnClicked(self, someFunction)
     static int lua_UIObject_AddOnClicked(lua_State *L)
     {
         static lua_Integer counter = 0;
@@ -112,6 +116,7 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    // lua : UIObject.AddOnHover(self, someFunction)
     static int lua_UIObject_AddOnHover(lua_State* L)
     {
         static lua_Integer counter = 0;
@@ -319,7 +324,7 @@ namespace engine { namespace ui {
         return 1;
     }
 
-    // lua : UIFrame.GetColor() : r,g,b,a
+    // lua : r,g,b,a = UIFrame.GetColor()
     static int lua_UIFrame_GetColor(lua_State* L)
     {
         Frame* self = CheckFrame(L, 1);
@@ -383,7 +388,7 @@ namespace engine { namespace ui {
     static int lua_UIFrame_mtGC(lua_State* L)
     {
         Frame* frame = CheckFrame(L, 1);
-        GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "Deleting frame %llx", frame);
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "__gc on UIFrame %llx", frame);
         frame->~Frame();
         return 0;
     }
@@ -572,6 +577,29 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    static int lua_UILabel_GetColor(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        Color c = self->GetColor();
+        lua_pushnumber(L, c.r);
+        lua_pushnumber(L, c.g);
+        lua_pushnumber(L, c.b);
+        lua_pushnumber(L, c.a);
+        return 4;
+    }
+
+    static int lua_UILabel_SetColor(lua_State* L)
+    {
+        Label* self = CheckLabel(L, 1);
+        Color c;
+        c.r = (float)lua_tonumber(L, 2);
+        c.g = (float)lua_tonumber(L, 3);
+        c.b = (float)lua_tonumber(L, 4);
+        c.a = (float)lua_tonumber(L, 5);
+        self->SetColor(c);
+        return 0;
+    }
+
     static int lua_UILabel_mtIndex(lua_State* L)
     {
         Label* self = CheckLabel(L, 1);
@@ -626,6 +654,152 @@ namespace engine { namespace ui {
         std::string result = ss.str();
         lua_pushstring(L, result.c_str());
         return 1;
+    }
+
+    static int lua_UISlider_New(lua_State* L)
+    {
+        Object* parent;
+        if(lua_isnil(L, 1))
+            parent = Root::Get();
+        else
+            parent = CheckObject(L, 1);
+        
+        int width = (int)luaL_checkinteger(L, 2);
+        int height = (int)luaL_checkinteger(L, 3);
+        const char* s = luaL_checkstring(L, 4);
+        const char* textureAlias = luaL_checkstring(L, 5);
+
+        Slider::ORIENTATION orientation = strcmp(s, "horizontal") == 0 ? 
+                Slider::ORIENTATION::HORIZONTAL
+                : Slider::ORIENTATION::VERTICAL;
+
+        ogl::Texture* texture = GameEngine::Get().GetTextureManager().GetTexture(textureAlias);
+
+        Slider* slider = (Slider*)lua_newuserdata(L, sizeof(Slider));
+        luaL_setmetatable(L, IS_SLIDER);
+        slider = new (slider) Slider(parent, width, height, orientation, texture);
+        lua_newtable(L);
+        lua_pushstring(L, "parent");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
+        lua_setuservalue(L, -2);
+        return 1;
+    }
+
+    static int lua_UISlider_GetOrientation(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        const char* ori = self->GetOrientation() == Slider::ORIENTATION::HORIZONTAL ?
+                "horizontal" : "vertical";
+        lua_pushstring(L, ori);
+        return 1;
+    }
+
+    static int lua_UISlider_GetSlideColor(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        Color c = self->GetSlideColor();
+        lua_pushnumber(L, c.r);
+        lua_pushnumber(L, c.g);
+        lua_pushnumber(L, c.b);
+        lua_pushnumber(L, c.a);
+        return 4;
+    }
+
+    static int lua_UISlider_SetSlideColor(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        float r = (float)luaL_checknumber(L, 2);
+        float g = (float)luaL_checknumber(L, 3);
+        float b = (float)luaL_checknumber(L, 4);
+        float a = (float)luaL_checknumber(L, 5);
+        self->SetSlideColor({r,g,b,a});
+        return 0;
+    }
+
+    static int lua_UISlider_GetKnobColor(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        Color c = self->GetKnobColor();
+        lua_pushnumber(L, c.r);
+        lua_pushnumber(L, c.g);
+        lua_pushnumber(L, c.b);
+        lua_pushnumber(L, c.a);
+        return 4;
+    }
+
+    static int lua_UISlider_SetKnobColor(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        float r = (float)luaL_checknumber(L, 2);
+        float g = (float)luaL_checknumber(L, 3);
+        float b = (float)luaL_checknumber(L, 4);
+        float a = (float)luaL_checknumber(L, 5);
+        self->SetKnobColor({r,g,b,a});
+        return 0;    
+    }
+
+    static int lua_UISlider_GetValue(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        lua_pushnumber(L, self->GetValue());
+        return 1;
+    }
+
+    static int lua_UISlider_SetValue(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        double value = luaL_checknumber(L, 2);
+        self->SetValue(value);
+        return 0;
+    }
+
+    static int lua_UISlider_mtIndex(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_gettable(L, -2);
+        lua_remove(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            // check UIButton
+            lua_pop(L, 1);
+            lua_getglobal(L, "UISlider");
+            lua_pushvalue(L, 2);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
+            if(lua_isnil(L, -1))
+            {
+                // check UIFrame's metamethod index
+                lua_pop(L, 1);
+                lua_pushcfunction(L, lua_ErrorHandler);
+                lua_pushcfunction(L, lua_UIFrame_mtIndex);
+                lua_pushvalue(L, 1);
+                lua_pushvalue(L, 2);
+                lua_pcall(L, 2, 1, -4);
+                lua_remove(L, -2);
+            }
+        }
+        return 1;
+    }
+
+    static int lua_UISlider_mtNewIndex(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_pushvalue(L, 3);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        return 0;
+    }
+
+    static int lua_UISlider_mtGC(lua_State* L)
+    {
+        Slider* self = CheckSlider(L, 1);
+        self->~Slider();
+        return 0;
     }
 
     Button* CheckButton(lua_State* L, int index)
@@ -710,6 +884,27 @@ namespace engine { namespace ui {
             return nullptr;
         }
         return frame;   
+    }
+
+    Slider* CheckSlider(lua_State* L, int index)
+    {
+        if(!lua_isuserdata(L, index))
+        {
+            luaL_error(L, "%s: Not a userdata", __FUNCTION__);
+            return nullptr;
+        }
+
+        Slider* slider = (Slider*)lua_touserdata(L, index);
+
+        GetRTTI(L, index); // rtti{}
+        bool isSlider = CheckRTTI(L, IS_SLIDER);
+        lua_pop(L, 1); // pop RTTI table
+        if(!isSlider)
+        {
+            luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_SLIDER);
+            return nullptr;
+        }
+        return slider;       
     }
 
     // lua : GetScreenWidth()
@@ -827,7 +1022,20 @@ namespace engine { namespace ui {
         BIND_METHOD(UILabel, New);
         BIND_METHOD(UILabel, GetText);
         BIND_METHOD(UILabel, SetText);
+        BIND_METHOD(UILabel, GetColor);
+        BIND_METHOD(UILabel, SetColor);
         lua_setglobal(L, "UILabel");
+        // UISlider
+        lua_newtable(L);
+        BIND_METHOD(UISlider, New);
+        BIND_METHOD(UISlider, GetOrientation);
+        BIND_METHOD(UISlider, GetSlideColor);
+        BIND_METHOD(UISlider, SetSlideColor);
+        BIND_METHOD(UISlider, GetKnobColor);
+        BIND_METHOD(UISlider, SetKnobColor);
+        BIND_METHOD(UISlider, GetValue);
+        BIND_METHOD(UISlider, SetValue);
+        lua_setglobal(L, "UISlider");
         // create UIFrame's metatable
         luaL_newmetatable(L, IS_FRAME);
         lua_pushstring(L, "classes");
@@ -898,6 +1106,30 @@ namespace engine { namespace ui {
         lua_settable(L, -3);
         lua_pushstring(L, "__tostring");
         lua_pushcfunction(L, lua_UILabel_mtToString);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        // create UISlider's metatable
+        luaL_newmetatable(L, IS_SLIDER);
+        lua_pushstring(L, "classes");
+        lua_newtable(L);
+        lua_pushstring(L, IS_OBJECT);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_FRAME);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_SLIDER);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__gc");
+        lua_pushcfunction(L, lua_UISlider_mtGC);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__index");
+        lua_pushcfunction(L, lua_UISlider_mtIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, lua_UISlider_mtNewIndex);
         lua_settable(L, -3);
         lua_pop(L, 1);
     }

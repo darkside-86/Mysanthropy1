@@ -1,7 +1,7 @@
 RunFile("ui/window.lua")
 
 LoadTexture('uiblank', 'res/textures/uiblank.png')
-LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 12);
+LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 14);
 
 math.randomseed(os.time())
 

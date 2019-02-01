@@ -1,0 +1,5 @@
+window = Window.New(nil, 500, 500, 'title', 'mono')
+window.slider = UISlider.New(window, 300, 30, "horizontal", "uiblank")
+window:AddOnClicked(function() 
+    print(window.slider:GetValue())
+end)

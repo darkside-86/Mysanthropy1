@@ -46,18 +46,30 @@ TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
     blueButton_ = new engine::ui::Frame(frame_, 30, 30, 4, 5, uiblank, BUTTON_OFF_COLOR);
     helloLabel_ = new engine::ui::Label(blueButton_, "Hi", "mono", {0.4f,8.f,6.f,1.f});
     closeButton_ = new engine::ui::Button(frame_, uiblank, {0.5f,0.f,0.5f,1.f}, "X", "mono", {0.f,1.f,0.f,1.f},6);
+    slider_ = new engine::ui::Slider(frame_, 200, 50, engine::ui::Slider::ORIENTATION::HORIZONTAL, uiblank);
+    slider_->SetColor({1.f, 1.f, 1.f, 0.2f});
+    slider_->SetKnobColor({1.f, 0.f, 1.f, 1.f});
+    slider_->SetSlideColor({1.f,0.5f,1.f,1.f});
+    slider_->AddOnClicked([this](const engine::ui::ClickedEvent& e){
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                "Value is %f", slider_->GetValue());
+    });
 
     scripting_ = luaL_newstate();
     luaL_openlibs(scripting_);
     luaBindings_ = new engine::ui::LuaBindings(scripting_);
     engine::GameEngine::Get().GetTextureManager().UnloadTexture("uiblank");
+    std::vector<const char*> CORE_UI_LIB = {
+        "ui/keycodes.lua", "ui/fonts.lua", "ui/window.lua", "ui/main.lua"
+    };
     try 
     {
         int errCode = 0;
-        errCode = luaL_dofile(scripting_, "ui/keycodes.lua");
-        if(errCode != 0) throw errCode;
-        errCode = luaL_dofile(scripting_, "ui/test.lua");
-        if(errCode != 0) throw errCode;
+        for(auto luaFile : CORE_UI_LIB)
+        {
+            errCode = luaL_dofile(scripting_, luaFile);
+            if(errCode != 0) throw errCode;
+        }
     }
     catch(int numErrors)
     {
@@ -71,6 +83,7 @@ TestGame::~TestGame()
 	delete helloLabel_;
     delete blueButton_;
     delete frame_;
+    delete slider_;
     delete uiRoot_;
 
     delete luaBindings_;

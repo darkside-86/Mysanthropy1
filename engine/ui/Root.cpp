@@ -36,6 +36,7 @@ namespace engine { namespace ui {
             Object* unpressed = CheckPoint(x,y);
             if(mousePressed_ == unpressed && unpressed != nullptr)
             {
+                GetNodePosition(unpressed, x, y);
                 unpressed->OnClicked(ClickedEvent(x, y, mbe.button));
             }
         }
@@ -51,6 +52,7 @@ namespace engine { namespace ui {
         // drag
         if(mouseDown_ && mousePressed_ != nullptr)
         {
+            GetNodePosition(mousePressed_, x, y);
             mousePressed_->OnDragged(DraggedEvent(x,y,dx,dy));
         }
         // hover
@@ -62,7 +64,10 @@ namespace engine { namespace ui {
                 if(mouseOver_ != nullptr)
                 {
                     if(mouseOver_ != over->GetParent())
+                    {
+                        GetNodePosition(mouseOver_, x, y);
                         mouseOver_->OnHover(HoverEvent(x,y,dx,dy,false));
+                    }
                 }
                 mouseOver_ = over;
             }
@@ -78,6 +83,17 @@ namespace engine { namespace ui {
                 mousePressed_->OnKeypressed(KeypressedEvent(kbe.keysym.sym, kbe.keysym.scancode, kbe.keysym.mod, 
                     kbe.repeat));
             }
+        }
+    }
+
+    void Root::GetNodePosition(Object* node, int& x, int &y)
+    {
+        Object* p = node;
+        while(p != nullptr)
+        {
+            x -= p->GetXPos();
+            y -= p->GetYPos();
+            p = p->GetParent();
         }
     }
 
