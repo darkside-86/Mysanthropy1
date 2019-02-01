@@ -90,7 +90,7 @@ namespace engine { namespace  ui {
         }
         else
         {
-            knob_->SetYPos((int)(value * (double)(GetHeight() - knob_->GetHeight())));
+            knob_->SetYPos((int)((1.0 - value) * (double)(GetHeight() - knob_->GetHeight())));
         }
     }
     
@@ -103,7 +103,7 @@ namespace engine { namespace  ui {
         }
         else 
         {
-            value = (double)(knob_->GetYPos()) / (double)((GetHeight() - knob_->GetHeight()));
+            value = 1.0 - (double)(knob_->GetYPos()) / (double)((GetHeight() - knob_->GetHeight()));
         }
         return value;
     }
