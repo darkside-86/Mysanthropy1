@@ -29,6 +29,7 @@
 #include "Object.h"
 #include "Root.h"
 #include "Slider.h"
+#include "TextField.h"
 
 namespace engine { namespace ui {
 
@@ -39,6 +40,7 @@ namespace engine { namespace ui {
     static const char* IS_LABEL = "UILabel";
     static const char* IS_OBJECT = "UIObject"; 
     static const char* IS_SLIDER = "UISlider";
+    static const char* IS_TEXTFIELD = "UITextField";
 
     // general functions
     static int lua_ErrorHandler(lua_State* L);
@@ -49,6 +51,7 @@ namespace engine { namespace ui {
     Object* CheckObject(lua_State* L, int index);
     Frame* CheckFrame(lua_State* L, int index);
     Slider* CheckSlider(lua_State* L, int index);
+    TextField* CheckTextField(lua_State* L, int index);
 
     // error handling function for running event callbacks
     static int lua_ErrorHandler(lua_State* L)
@@ -81,6 +84,9 @@ namespace engine { namespace ui {
         lua_pop(L, 1); // pop nil or true from stack
         return isInstance;
     }
+
+// UIObject ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
     // lua : UIObject.AddOnClicked(self, someFunction)
     static int lua_UIObject_AddOnClicked(lua_State *L)
@@ -296,6 +302,9 @@ namespace engine { namespace ui {
         return 0;
     }
 
+// UIFrame ////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
     // lua : UIFrame.New(parent,width,height,xpos,ypos,'texture')
     static int lua_UIFrame_New(lua_State* L)
     {
@@ -447,6 +456,9 @@ namespace engine { namespace ui {
         return 0;
     }
 
+// UIButton ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
     static int lua_UIButton_New(lua_State* L)
     {
         Object* parent;
@@ -537,6 +549,9 @@ namespace engine { namespace ui {
         self->~Button();
         return 0;
     }
+
+// UILabel ////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
     static int lua_UILabel_New(lua_State* L)
     {
@@ -655,6 +670,9 @@ namespace engine { namespace ui {
         lua_pushstring(L, result.c_str());
         return 1;
     }
+
+// UISlider ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
     static int lua_UISlider_New(lua_State* L)
     {
@@ -802,6 +820,115 @@ namespace engine { namespace ui {
         return 0;
     }
 
+// UITextField ////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+    static int lua_UITextField_New(lua_State* L)
+    {
+        Object* parent;
+        if(lua_isnil(L, 1))
+            parent = Root::Get();
+        else
+            parent = CheckObject(L, 1);
+        
+        int width = (int)luaL_checkinteger(L, 2);
+        int height = (int)luaL_checkinteger(L, 3);
+        const char* fontAlias = luaL_checkstring(L, 4);
+        const char* textureAlias = luaL_checkstring(L, 5);
+        ogl::Texture* texture = GameEngine::Get().GetTextureManager().GetTexture(textureAlias);
+
+        TextField* tf = (TextField*)lua_newuserdata(L, sizeof(TextField));
+        luaL_setmetatable(L, IS_TEXTFIELD);
+        tf = new (tf) TextField(parent, width, height, fontAlias, texture);
+        lua_newtable(L);
+        lua_pushstring(L, "parent");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
+        lua_setuservalue(L, -2);
+        return 1;
+    }
+
+    static int lua_UITextField_GetText(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        std::string text = self->GetText();
+        lua_pushstring(L, text.c_str());
+        return 1;
+    }
+
+    static int lua_UITextField_SetText(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        const char* text = luaL_checkstring(L, 2);
+        self->SetText(text);
+        return 0;
+    }
+
+    static int lua_UITextField_IsEditable(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        lua_pushboolean(L, self->IsEditable());
+        return 1;
+    }
+
+    static int lua_UITextField_SetEditable(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        bool isEditable = lua_toboolean(L, 2);
+        self->SetEditable(isEditable);
+        return 0;
+    }
+
+    static int lua_UITextField_mtGC(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        self->~TextField();
+        return 0;
+    }
+
+    static int lua_UITextField_mtIndex(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_gettable(L, -2);
+        lua_remove(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            // check UIButton
+            lua_pop(L, 1);
+            lua_getglobal(L, "UITextField");
+            lua_pushvalue(L, 2);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
+            if(lua_isnil(L, -1))
+            {
+                // check UIFrame's metamethod index
+                lua_pop(L, 1);
+                lua_pushcfunction(L, lua_ErrorHandler);
+                lua_pushcfunction(L, lua_UIFrame_mtIndex);
+                lua_pushvalue(L, 1);
+                lua_pushvalue(L, 2);
+                lua_pcall(L, 2, 1, -4);
+                lua_remove(L, -2);
+            }
+        }
+        return 1;
+    }
+
+    static int lua_UITextField_mtNewIndex(lua_State* L)
+    {
+        TextField* self = CheckTextField(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_pushvalue(L, 3);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        return 0;
+    }
+
+// check functions ////////////////////////////////////////////////////////////
+
     Button* CheckButton(lua_State* L, int index)
     {
         if(!lua_isuserdata(L, index))
@@ -906,6 +1033,29 @@ namespace engine { namespace ui {
         }
         return slider;       
     }
+
+    TextField* CheckTextField(lua_State* L, int index)
+    {
+        if(!lua_isuserdata(L, index))
+        {
+            luaL_error(L, "%s: Not a userdata", __FUNCTION__);
+            return nullptr;
+        }
+
+        TextField* tf = (TextField*)lua_touserdata(L, index);
+
+        GetRTTI(L, index); // rtti{}
+        bool isTextField = CheckRTTI(L, IS_TEXTFIELD);
+        lua_pop(L, 1); // pop RTTI table
+        if(!isTextField)
+        {
+            luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_TEXTFIELD);
+            return nullptr;
+        }
+        return tf;        
+    }
+
+// global functions ///////////////////////////////////////////////////////////
 
     // lua : GetScreenWidth()
     static int lua_GetScreenWidth(lua_State* L)
@@ -1036,6 +1186,14 @@ namespace engine { namespace ui {
         BIND_METHOD(UISlider, GetValue);
         BIND_METHOD(UISlider, SetValue);
         lua_setglobal(L, "UISlider");
+        // UITextField
+        lua_newtable(L);
+        BIND_METHOD(UITextField, New);
+        BIND_METHOD(UITextField, GetText);
+        BIND_METHOD(UITextField, SetText);
+        BIND_METHOD(UITextField, IsEditable);
+        BIND_METHOD(UITextField, SetEditable);
+        lua_setglobal(L, "UITextField");
         // create UIFrame's metatable
         luaL_newmetatable(L, IS_FRAME);
         lua_pushstring(L, "classes");
@@ -1130,6 +1288,30 @@ namespace engine { namespace ui {
         lua_settable(L, -3);
         lua_pushstring(L, "__newindex");
         lua_pushcfunction(L, lua_UISlider_mtNewIndex);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        // create UITextField's metatable
+        luaL_newmetatable(L, IS_TEXTFIELD);
+        lua_pushstring(L, "classes");
+        lua_newtable(L);
+        lua_pushstring(L, IS_OBJECT);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_FRAME);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_pushstring(L, IS_TEXTFIELD);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__gc");
+        lua_pushcfunction(L, lua_UITextField_mtGC);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__index");
+        lua_pushcfunction(L, lua_UITextField_mtIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, lua_UITextField_mtNewIndex);
         lua_settable(L, -3);
         lua_pop(L, 1);
     }

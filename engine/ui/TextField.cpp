@@ -44,9 +44,36 @@ namespace engine { namespace ui {
     static char ProcessKeystroke(const KeypressedEvent& e)
     {
         if(e.keyCode == SDLK_RETURN)
+        {
             return '\n';
+        }
+        else if(e.mod & KMOD_LSHIFT || e.mod & KMOD_RSHIFT)
+        {
+            if(e.keyCode >= 11 && e.keyCode <= 255)
+            {
+                switch(e.keyCode)
+                {
+                    case 'a': return 'A'; case 'b': return 'B'; case 'c': return 'C'; case 'd': return 'D';
+                    case 'e': return 'E'; case 'f': return 'F'; case 'g': return 'G'; case 'h': return 'H';
+                    case 'i': return 'I'; case 'j': return 'J'; case 'k': return 'K'; case 'l': return 'L';
+                    case 'm': return 'M'; case 'n': return 'N'; case 'o': return 'O'; case 'p': return 'P';
+                    case 'q': return 'Q'; case 'r': return 'R'; case 's': return 'S'; case 't': return 'T';
+                    case 'u': return 'U'; case 'v': return 'V'; case 'w': return 'W'; case 'x': return 'X';
+                    case 'y': return 'Y'; case 'z': return 'Z';
+                    case '`': return '~'; case '1': return '!'; case '2': return '@'; case '3': return '#';
+                    case '4': return '$'; case '5': return '%'; case '6': return '^'; case '7': return '&';
+                    case '8': return '*'; case '9': return '('; case '0': return ')'; case '-': return '_';
+                    case '=': return '+'; case '[': return '{'; case ']': return '}'; case '\\': return '|';
+                    case ';': return ':'; case '\'': return '\"';
+                    case ',': return '<'; case '.': return '>'; case '/': return '?';
+                }
+            }
+            return 0;
+        }
         else
+        {
             return e.keyCode;
+        }
     }
 
     TextField::TextField(Object* parent, int width, int height, const std::string& fontAlias, ogl::Texture* texture)
@@ -66,7 +93,18 @@ namespace engine { namespace ui {
     {
         if(editable_)
         {
-            text_ += ProcessKeystroke(e);
+            char c = ProcessKeystroke(e);
+            if(e.keyCode == SDLK_BACKSPACE)
+            {
+                if(text_.length() > 0)
+                {
+                    text_.erase(text_.length()-1);
+                }
+            }
+            else if(c != 0)
+            {
+                text_ += c;
+            }
             CreateText();
         }
         Object::OnKeypressed(e);
@@ -91,6 +129,8 @@ namespace engine { namespace ui {
 
         // split text by line
         std::vector<std::string> textLines = SplitString(text_, "\n");
+
+        // TODO: if wrap, split further by using TTF_SizeUTF8
         
         int lineY = 0;
         int inc = TTF_FontHeight(font);
