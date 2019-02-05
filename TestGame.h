@@ -20,6 +20,7 @@
 
 #include <lua/lua.hpp>
 
+#include "engine/Camera.h"
 #include "engine/Game.h"
 #include "engine/ui/Button.h"
 #include "engine/ui/Frame.h"
@@ -30,6 +31,8 @@
 #include "engine/ui/TextField.h"
 #include "ogl/Texture.h"
 
+#include "TestObject.h"
+
 class TestGame : public engine::Game
 {
 public:
@@ -39,6 +42,13 @@ public:
     void Update(float dtime) override;
     void Render(engine::GraphicsContext& gc) override;
     void Cleanup() override;
+    TestObject* GetTestObject() { return testObject_; }
+
+    static int SetR(lua_State* L);
+    static int SetG(lua_State* L);
+    static int SetB(lua_State* L);
+    static int SetA(lua_State* L);
+    static int SetAngle(lua_State* L);
 private:
     void RandomizeRectColors();
     engine::ui::Root* uiRoot_;
@@ -51,5 +61,7 @@ private:
     engine::ui::LuaBindings* luaBindings_;
     ogl::Texture groundTexture;
     ogl::Texture frameTexture;
+    TestObject* testObject_;
     lua_State* scripting_ = nullptr;
+    float angle = 0.f;
 };

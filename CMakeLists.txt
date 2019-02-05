@@ -76,6 +76,7 @@ add_executable (
     Mysanthropy1
 	    main.cpp
         TestGame.cpp
+        TestObject.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )

@@ -67,6 +67,8 @@ namespace engine
         inline void SetView(const glm::mat4 view) { view_ = view; }
         // performs a translate operation on the model matrix
         void TranslateModel(float x, float y, float z);
+        // rotate
+        void RotateModel(float angle, float x, float y, float z);
         // resets the model matrix
         inline void ResetModel() { model_ = glm::mat4(1.0f); }
 

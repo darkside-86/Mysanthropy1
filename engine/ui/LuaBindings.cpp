@@ -314,10 +314,10 @@ namespace engine { namespace ui {
         else
             parent = CheckObject(L, 1);
         
-        int width = (int)lua_tointeger(L, 2);
-        int height = (int)lua_tointeger(L, 3);
-        int xpos = (int)lua_tointeger(L, 4);
-        int ypos = (int)lua_tointeger(L, 5);
+        int width = (int)lua_tonumber(L, 2);
+        int height = (int)lua_tonumber(L, 3);
+        int xpos = (int)lua_tonumber(L, 4);
+        int ypos = (int)lua_tonumber(L, 5);
         const char* textureAlias = luaL_checkstring(L, 6);
         engine::ui::Color white = {1.f,1.f,1.f,1.f};
         ogl::Texture* texture = GameEngine::Get().GetTextureManager().GetTexture(textureAlias);

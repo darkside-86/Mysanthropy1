@@ -145,6 +145,11 @@ namespace engine
         model_ = glm::translate(model_, glm::vec3(x,y,z));
     }
 
+    void GraphicsContext::RotateModel(float angle, float x, float y, float z)
+    {
+        model_ = glm::rotate(model_, glm::radians(angle), glm::vec3(x,y,z));
+    }
+
     void GraphicsContext::PushModel()
     {
         modelStack_.push(model_);
