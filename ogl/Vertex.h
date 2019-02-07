@@ -48,7 +48,13 @@ namespace ogl
 		}
 		texCoords;
 
-        // TODO: normals?
+		struct Normal 
+		{
+			float x;
+			float y;
+			float z;
+		}
+		normal;
 
 		static void PushLayout(VertexBufferLayout& vbl);
     };

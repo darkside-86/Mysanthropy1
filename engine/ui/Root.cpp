@@ -110,4 +110,19 @@ namespace engine { namespace ui {
         }
     }
 
+    void Root::Initialize()
+    {
+        GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
+            this->ProcessMouseButtonEvent(e);
+        });
+
+        GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e) {
+            this->ProcessMouseMotionEvent(e);
+        });
+
+        GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e) {
+            this->ProcessKeyboardEvent(e);
+        });
+    }
+
 }}

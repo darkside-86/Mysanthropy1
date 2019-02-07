@@ -16,7 +16,7 @@ public:
 
     ogl::Vertex* GetVertices() { return vertices_; }
     void SetVerticesData() 
-        { vertexBuffer_->SetData((sizeof(ogl::Vertex)*4), vertices_, GL_STATIC_DRAW);}
+        { vertexBuffer_->SetData((sizeof(ogl::Vertex)*NUM_VERTICES), vertices_, GL_STATIC_DRAW);}
     static constexpr size_t NUM_VERTICES = 8;
 private:
     ogl::Vertex vertices_[NUM_VERTICES];

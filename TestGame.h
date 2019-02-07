@@ -42,7 +42,6 @@ public:
     void Update(float dtime) override;
     void Render(engine::GraphicsContext& gc) override;
     void Cleanup() override;
-    TestObject* GetTestObject() { return testObject_; }
 
     static int SetR(lua_State* L);
     static int SetG(lua_State* L);

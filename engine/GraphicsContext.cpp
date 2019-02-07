@@ -19,6 +19,9 @@
 
 #include "GraphicsContext.h"
 
+#include <fstream>
+#include <string>
+
 #include <GL/glew.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -28,7 +31,7 @@
 
 namespace engine
 {
-    static const char* FRAGMENT_SHADER_SRC = R"(
+    /*static const char* FRAGMENT_SHADER_SRC = R"(
         #version 330 core
 
         in vec4 v_color;
@@ -87,12 +90,41 @@ namespace engine
             // set the color
             v_color = color;
         }
-    )";
+    )";*/
 
     GraphicsContext::GraphicsContext()
     {
-        ogl::Shader fragment(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_SRC);
-        ogl::Shader vertex(GL_VERTEX_SHADER, VERTEX_SHADER_SRC);
+        // ogl::Shader fragment(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_SRC);
+        // ogl::Shader vertex(GL_VERTEX_SHADER, VERTEX_SHADER_SRC);
+        std::string vertexSrc, fragmentSrc, str;
+        std::ifstream inFile;
+        
+        inFile.open("res/shaders/basic.vs");
+        if(!inFile.is_open())
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,
+                "%s: Unable to open shader file", __FUNCTION__);
+        }
+        while(std::getline(inFile, str))
+        {
+            vertexSrc += str + "\n";
+        }
+        inFile.close();
+        
+        inFile.open("res/shaders/basic.frag");
+        if(!inFile.is_open())
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,
+                "%s: Unable to open shader file", __FUNCTION__);
+        }
+        while(std::getline(inFile,str))
+        {
+            fragmentSrc += str + "\n";
+        }
+        inFile.close();
+
+        ogl::Shader vertex(GL_VERTEX_SHADER, vertexSrc.c_str());
+        ogl::Shader fragment(GL_FRAGMENT_SHADER, fragmentSrc.c_str());
         if(!program_.CompileShaders(vertex, fragment))
         {
             GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,
@@ -117,9 +149,12 @@ namespace engine
 
     void GraphicsContext::SetMVP()
     {
-        glm::mat4 mvp = projection_ * view_ * model_;
+        // glm::mat4 mvp = projection_ * view_ * model_;
         program_.Use();
-        program_.SetUniform<glm::mat4>("u_MVP", mvp);
+        // program_.SetUniform<glm::mat4>("u_MVP", mvp);
+        program_.SetUniform<glm::mat4>("u_model", model_);
+        program_.SetUniform<glm::mat4>("u_view", view_);
+        program_.SetUniform<glm::mat4>("u_projection", projection_);
     }
 
     void GraphicsContext::SetOrthoProjection(float left, float right, float top, float bottom)

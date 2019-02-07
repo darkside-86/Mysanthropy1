@@ -24,15 +24,16 @@
 #include "engine/GameEngine.h"
 #include "engine/RectangleShape.h"
 
+#include "LightingTutorial/LightingTutorial.h"
 #include "TestGame.h"
 
 int main(int argc, char* argv[])
 {
     engine::GameEngine& ge = engine::GameEngine::Get();
     engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("test game", 1024, 576);
+    bool ok = ge.Initialize("LightingTutorial", 1024, 576);
     {
-        TestGame game;
+        LightingTutorial game;
         ok = ok && game.Initialize();
         if(!ok)
         {

@@ -107,17 +107,7 @@ TestGame::~TestGame()
 
 bool TestGame::Initialize()
 {
-    engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
-        this->uiRoot_->ProcessMouseButtonEvent(e);
-    });
-
-    engine::GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e) {
-        this->uiRoot_->ProcessMouseMotionEvent(e);
-    });
-
-    engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e) {
-        this->uiRoot_->ProcessKeyboardEvent(e);
-    });
+    uiRoot_->Initialize();
 
     frame_->SetBorderColor({0.5f,0.f,0.f,1.f});
     frame_->SetBorderSize(3);
@@ -138,7 +128,7 @@ bool TestGame::Initialize()
     slider_->SetSlideColor({1.f,0.5f,1.f,1.f});
 
     textField_->SetYPos(60);
-    textField_->SetText("Hello \nworld\nyo");
+    textField_->SetText("Hello \nworld\nnext line");
 
     frame_->AddOnDragged([this](const engine::ui::DraggedEvent& e){
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
@@ -211,7 +201,7 @@ void TestGame::Render(engine::GraphicsContext& gc)
     float width = (float)engine::GameEngine::Get().GetWidth();
     float height = (float)engine::GameEngine::Get().GetHeight();
     gc.ResetMVP();
-    gc.TranslateModel(0.f, 0.1f, -2.1f);
+    gc.TranslateModel(0.f, 0.1f, -5.1f);
     gc.RotateModel(angle, 0.f, 1.f, 0.f);
     gc.SetPerspectiveProjection(45.f, width/height, 0.01f, 45.f);
     gc.SetMVP();
@@ -239,10 +229,10 @@ int TestGame::SetR(lua_State* L)
     lua_gettable(L, LUA_REGISTRYINDEX);
     TestGame* tg = (TestGame*)lua_touserdata(L, -1);
     lua_pop(L,1);
-    tg->testObject_->GetVertices()[0].color.r = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[1].color.r = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[2].color.r = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[3].color.r = (unsigned char)(255.f * value);
+    for(int i = 0; i < tg->testObject_->NUM_VERTICES; ++i)
+    {
+        tg->testObject_->GetVertices()[i].color.r = (unsigned char)(255.f * value);
+    }
     tg->testObject_->SetVerticesData();
     return 0;
 }
@@ -254,10 +244,10 @@ int TestGame::SetG(lua_State* L)
     lua_gettable(L, LUA_REGISTRYINDEX);
     TestGame* tg = (TestGame*)lua_touserdata(L, -1);
     lua_pop(L,1);
-    tg->testObject_->GetVertices()[0].color.g = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[1].color.g = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[2].color.g = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[3].color.g = (unsigned char)(255.f * value);
+    for(int i = 0; i < tg->testObject_->NUM_VERTICES; ++i)
+    {
+        tg->testObject_->GetVertices()[i].color.g = (unsigned char)(255.f * value);
+    }
     tg->testObject_->SetVerticesData();
     return 0;
 }
@@ -269,10 +259,10 @@ int TestGame::SetB(lua_State* L)
     lua_gettable(L, LUA_REGISTRYINDEX);
     TestGame* tg = (TestGame*)lua_touserdata(L, -1);
     lua_pop(L,1);
-    tg->testObject_->GetVertices()[0].color.b = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[1].color.b = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[2].color.b = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[3].color.b = (unsigned char)(255.f * value);
+    for(int i = 0; i < tg->testObject_->NUM_VERTICES; ++i)
+    {
+        tg->testObject_->GetVertices()[i].color.b = (unsigned char)(255.f * value);
+    }
     tg->testObject_->SetVerticesData();
     return 0;
 }
@@ -284,10 +274,10 @@ int TestGame::SetA(lua_State* L)
     lua_gettable(L, LUA_REGISTRYINDEX);
     TestGame* tg = (TestGame*)lua_touserdata(L, -1);
     lua_pop(L,1);
-    tg->testObject_->GetVertices()[0].color.a = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[1].color.a = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[2].color.a = (unsigned char)(255.f * value);
-    tg->testObject_->GetVertices()[3].color.a = (unsigned char)(255.f * value);
+    for(int i = 0; i < tg->testObject_->NUM_VERTICES; ++i)
+    {
+        tg->testObject_->GetVertices()[i].color.a = (unsigned char)(255.f * value);
+    }
     tg->testObject_->SetVerticesData();
     return 0;
 }
@@ -299,6 +289,6 @@ int TestGame::SetAngle(lua_State* L)
     lua_gettable(L, LUA_REGISTRYINDEX);
     TestGame* tg = (TestGame*)lua_touserdata(L, -1);
     lua_pop(L,1);
-    tg->angle = (360.0) * value;
+    tg->angle = (360.0f) * (float)value;
     return 0;
 }

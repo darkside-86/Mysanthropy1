@@ -63,14 +63,22 @@ namespace engine
         //  fovy - Field of view angle in degrees
         //  ratio - The aspect ratio
         void SetPerspectiveProjection(float fovy, float ratio, float near, float far);
-        // Sets the view matrix
-        inline void SetView(const glm::mat4 view) { view_ = view; }
         // performs a translate operation on the model matrix
         void TranslateModel(float x, float y, float z);
         // rotate
         void RotateModel(float angle, float x, float y, float z);
         // resets the model matrix
         inline void ResetModel() { model_ = glm::mat4(1.0f); }
+        // retrieve the shader program
+        inline ogl::Program& GetProgram() { return program_; }
+
+        // direct access for model view projection
+        inline glm::mat4 GetModel() { return model_; }
+        inline glm::mat4 GetView() { return view_; }
+        inline glm::mat4 GetProjection() { return projection_; }
+        inline void SetModel(const glm::mat4& model) { model_ = model; }
+        inline void SetView(const glm::mat4& view) { view_ = view; }
+        inline void SetProjection(const glm::mat4& projection) { projection_  = projection; }
 
         void PushModel();
         void PopModel();

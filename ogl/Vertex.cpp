@@ -27,5 +27,6 @@ namespace ogl
         vbl.Push<float>(3, false);
         vbl.Push<unsigned char>(4, true);
         vbl.Push<float>(2, false);
+        vbl.Push<float>(3, true);
     }
 }

@@ -75,7 +75,10 @@ set (
 add_executable ( 
     Mysanthropy1
 	    main.cpp
-        TestGame.cpp
+        LightingTutorial/LampObject.cpp
+        LightingTutorial/LightingTutorial.cpp 
+        LightingTutorial/SimpleCube.cpp
+        TestGame.cpp 
         TestObject.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}

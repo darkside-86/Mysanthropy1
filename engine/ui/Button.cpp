@@ -40,6 +40,8 @@ namespace engine { namespace ui {
 
     void Button::Render(GraphicsContext& gc)
     {
+        if(!IsVisible())
+            return;
         Frame::Render(gc);
         gc.PushModel();
         gc.TranslateModel((float)(xPos_+padding_), (float)(yPos_+padding_), 0.f);
