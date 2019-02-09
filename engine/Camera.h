@@ -28,26 +28,18 @@ namespace engine
 	{
 	public:
 		Camera();
+		virtual ~Camera();
+		glm::mat4 CalculateView();
 
-		~Camera();
-
-		glm::mat4 GetViewMatrix();
-		void MoveForward(float n);
-		void MoveRight(float n);
-		void MoveUp(float n);
-
-		glm::vec3 position = glm::vec3(0.f, 0.f, 0.f);
-
-		inline float GetPitch() const { return pitch_; }
-		inline void SetPitch(float n) { pitch_ = n; }
-		inline float GetYaw() const { return yaw_; }
-		inline void SetYaw(float n) { yaw_ = n; }
-
+		inline glm::vec3 GetPosition() { return position_; }
+		inline void SetPosition(const glm::vec3& pos) { position_ = pos; }
+		inline glm::vec3 GetDirection() { return direction_; }
+		inline void SetDirection(const glm::vec3& dir) { direction_ = dir; }
+		inline glm::vec3 GetUp() { return up_; }
+		inline void SetUp(const glm::vec3& up) { up_ = up; }
 	private:
-
-		float pitch_ = 0.0f; // rotation around x
-		float yaw_ = 0.0f; // rotation around y
-		glm::vec3 direction_ = glm::vec3(0.f, 0.f, 1.f);
-		glm::vec3 up_ = glm::vec3(0.f, 1.f, 0.f);
+		glm::vec3 position_;
+		glm::vec3 direction_;
+		glm::vec3 up_;
 	};
 }

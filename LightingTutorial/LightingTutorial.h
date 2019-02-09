@@ -4,6 +4,7 @@
 
 #include "engine/Camera.h"
 #include "ogl/Program.h"
+#include "ogl/Texture.h"
 #include "LampObject.h"
 #include "SimpleCube.h"
 
@@ -21,5 +22,7 @@ private:
     LampObject*     lampObject_;
     SimpleCube*     simpleCube_;
     engine::Camera* camera_;
-    float xPos_=0.0f, zPos_=-10.0f;
+    ogl::Texture*   texture_;
+    ogl::Texture*   specular_;
+    float xPos_=0.0f, yPos_=0.f, zPos_=0.0f;
 };

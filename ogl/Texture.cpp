@@ -98,8 +98,8 @@ namespace ogl
 
 	void Texture::Bind(unsigned int slot) const
 	{
-		glBindTexture(GL_TEXTURE_2D, id_);
 		glActiveTexture(GL_TEXTURE0 + slot);
+		glBindTexture(GL_TEXTURE_2D, id_);
 	}
 
 	void Texture::Unbind() const
