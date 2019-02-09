@@ -24,7 +24,8 @@
 namespace engine
 {
 
-	Camera::Camera() : position_({0.f,0.f,0.f}), direction_({0.f,0.f,-1.f}), up_({0.f,1.0f,0.f})
+	Camera::Camera() : position_({0.f,0.f,0.f}), direction_({0.f,0.f,-1.f}), up_({0.f,1.0f,0.f}),
+		yaw_(-90.f), pitch_(0.f)
 	{
 	}
 
@@ -34,7 +35,26 @@ namespace engine
 
 	glm::mat4 Camera::CalculateView()
 	{
+		direction_.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+		direction_.y = sin(glm::radians(pitch_));
+		direction_.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+		direction_ = glm::normalize(direction_);
 		glm::mat4 view = glm::lookAt(position_, position_+direction_, up_);
 		return view;
+	}
+
+	void Camera::MoveSide(float amount)
+	{
+		position_ += glm::normalize(glm::cross(direction_, up_)) * amount;
+	}
+
+	void Camera::MoveFront(float amount)
+	{
+		position_ += glm::normalize(direction_) * amount;
+	}
+
+	void Camera::MoveUp(float amount)
+	{
+		position_ += glm::normalize(up_) * amount;
 	}
 }
