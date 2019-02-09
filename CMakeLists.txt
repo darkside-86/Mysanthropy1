@@ -17,10 +17,13 @@ if ( MSVC )
             "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2main.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_image.lib" 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_ttf.lib" 
+            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_ttf.lib"
+            "${PROJECT_SOURCE_DIR}/vendor/lib64/assimp-vc140-mt.lib"
+            "${PROJECT_SOURCE_DIR}/vendor/lib64/IrrXML.lib"
             "${PROJECT_SOURCE_DIR}/vendor/lib64/glew32.lib" 
             "${PROJECT_SOURCE_DIR}/vendor/lib64/lua5.3.5.lib"
             "${PROJECT_SOURCE_DIR}/vendor/lib64/tinyxml2.lib"
+            "${PROJECT_SOURCE_DIR}/vendor/lib64/zlib.lib"
     )
 else ( MSVC )
     find_library(OPENGL32_LIB NAMES libopengl32.a opengl32)
@@ -28,14 +31,19 @@ else ( MSVC )
     find_library(SDL2MAIN_LIB NAMES libSDL2main.a SDL2main)
     find_library(SDL2IMAGE_LIB NAMES libSDL2_image.a SDL2_image)
     find_library(SDL2TTF_LIB NAMES libSDL2_ttf.a SDL2_ttf)
+    find_library(ASSIMP_LIB NAMES libassimp.a assimp)
+    find_library(IRRXML_LIB NAMES libIrrXML.a IrrXML)
     find_library(GLEW32_LIB NAMES libglew32.a glew32)
     find_library(LUA535_LIB NAMES liblua5.3.5.a lua5.3.5)
     find_library(TINYXML2_LIB NAMES libtinyxml2.a tinyxml2)
+    find_library(ZLIB_LIB NAMES libzlib.a zlib)
     set (
         LIBRARIES
             ${OPENGL32_LIB} ${SDL2_LIB} ${SDL2MAIN_LIB} ${SDL2IMAGE_LIB}
-            ${SDL2IMAGE_LIB} ${SDL2TTF_LIB} ${GLEW32_LIB}
-            ${LUA535_LIB} ${TINYXML2_LIB}
+            ${SDL2IMAGE_LIB} ${SDL2TTF_LIB}
+            ${ASSIMP_LIB} ${IRRXML_LIB}
+            ${GLEW32_LIB}
+            ${LUA535_LIB} ${TINYXML2_LIB} ${ZLIB_LIB}
     )
 endif( MSVC )
 
