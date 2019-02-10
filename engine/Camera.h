@@ -41,15 +41,14 @@ namespace engine
 		inline void SetDirection(const glm::vec3& dir) { direction_ = dir; }
 		inline glm::vec3 GetUp() { return up_; }
 		inline void SetUp(const glm::vec3& up) { up_ = up; }
-		inline float GetPitch() { return pitch_; }
-		inline void SetPitch(float pitch) { pitch_ = pitch; }
-		inline float GetYaw() { return yaw_; }
-		inline void SetYaw(float yaw) { yaw_ = yaw; }
+
+		void RotateUp(float angle);
+		void RotateDirection(float angle);
+		void RotateUpSide(float angle);
 	private:
+		glm::vec3 RotateVector(const glm::vec3& v, const glm::vec3& k, float angle);
 		glm::vec3 position_;
 		glm::vec3 direction_;
 		glm::vec3 up_;
-		float pitch_;
-		float yaw_;
 	};
 }

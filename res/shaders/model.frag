@@ -10,10 +10,10 @@ struct Material
     float shininess;
 };
 
-// uniform sampler2D texture_diffuse1;
-uniform Material u_material[1];
+#define NUM_MATERIALS 8
+uniform Material u_material[NUM_MATERIALS];
 
 void main()
-{    
-    color = vec4(texture(u_material[0].diffuse, v2texCoords).rgb, 1.0);
+{
+    color = texture(u_material[0].diffuse, v2texCoords);
 }

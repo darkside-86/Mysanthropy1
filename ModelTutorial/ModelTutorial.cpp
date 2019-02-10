@@ -2,9 +2,11 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "engine/GameEngine.h"
 
+#include "ogl/ErrorCheck.h"
 
 ModelTutorial::ModelTutorial()
 {
@@ -26,7 +28,8 @@ ModelTutorial::ModelTutorial()
         ogl::Shader fs(GL_FRAGMENT_SHADER, fsSrc.c_str());
         lightProgram_->CompileShaders(vs, fs);
     }
-    model_ = new Model("res/models/nanosuit/nanosuit.obj");
+    // model_ = new Model("res/models/nanosuit/nanosuit.obj");
+    model_ = new Model("res/models/elefante/elefante.obj");
 
 }
     
@@ -41,7 +44,6 @@ ModelTutorial::~ModelTutorial()
     
 bool ModelTutorial::Initialize()
 {
-    camera_->SetYaw(-90.f);
     camera_->SetPosition(glm::vec3(0.0f, 0.0f, 5.f));
 
     engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
@@ -49,36 +51,18 @@ bool ModelTutorial::Initialize()
         {
             switch(e.keysym.sym)
             {
-            case SDLK_a:
-                camera_->MoveSide(-0.5f);
-                break;
-            case SDLK_d:
-                camera_->MoveSide(0.5f);
-                break;
-            case SDLK_w:
-                camera_->MoveFront(0.5f);
-                break;
-            case SDLK_s:
-                camera_->MoveFront(-0.5f);
-                break;
-            case SDLK_SPACE:
-                camera_->MoveUp(0.5f);
-                break;
-            case SDLK_LSHIFT:
-                camera_->MoveUp(-0.5f);
-                break;
-            case SDLK_LEFT:
-                camera_->SetYaw(camera_->GetYaw() - 15.f);
-                break;
-            case SDLK_RIGHT:
-                camera_->SetYaw(camera_->GetYaw() + 15.f);
-                break;
-            case SDLK_UP:
-                camera_->SetPitch(camera_->GetPitch() + 15.f);
-                break;
-            case SDLK_DOWN:
-                camera_->SetPitch(camera_->GetPitch() - 15.f);
-                break;
+            case SDLK_a:        camera_->MoveSide(-0.5f); break;
+            case SDLK_d:        camera_->MoveSide(0.5f); break;
+            case SDLK_w:        camera_->MoveFront(0.5f); break;
+            case SDLK_s:        camera_->MoveFront(-0.5f); break;
+            case SDLK_q:        camera_->RotateUp(-15.f); break;
+            case SDLK_e:        camera_->RotateUp(15.f); break;
+            case SDLK_SPACE:    camera_->MoveUp(0.5f); break;
+            case SDLK_LSHIFT:   camera_->MoveUp(-0.5f); break;
+            case SDLK_LEFT:     camera_->RotateDirection(15.f); break;
+            case SDLK_RIGHT:    camera_->RotateDirection(-15.f); break;
+            case SDLK_UP:       camera_->RotateUpSide(15.f);  break;
+            case SDLK_DOWN:     camera_->RotateUpSide(-15.f); break;
             }
         }
     });
@@ -123,6 +107,11 @@ void ModelTutorial::Render(engine::GraphicsContext& gc)
     lightProgram_->SetUniform<glm::mat4>("u_model", model);
     lightProgram_->SetUniform<glm::mat4>("u_view", view);
     lightProgram_->SetUniform<glm::mat4>("u_projection", projection);
+
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.direction", glm::vec3(0.f, -1.f, 0.f));
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.ambient", glm::vec3(1.f,1.f,1.f));
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.diffuse", glm::vec3(1.f,1.f,1.f));
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.specular", glm::vec3(1.f,1.f,1.f));
     model_->Draw(*modelProgram_);
 
 }

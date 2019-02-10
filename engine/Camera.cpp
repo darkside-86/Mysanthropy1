@@ -24,8 +24,7 @@
 namespace engine
 {
 
-	Camera::Camera() : position_({0.f,0.f,0.f}), direction_({0.f,0.f,-1.f}), up_({0.f,1.0f,0.f}),
-		yaw_(-90.f), pitch_(0.f)
+	Camera::Camera() : position_({0.f,0.f,0.f}), direction_({0.f,0.f,-1.f}), up_({0.f,1.0f,0.f})
 	{
 	}
 
@@ -35,9 +34,6 @@ namespace engine
 
 	glm::mat4 Camera::CalculateView()
 	{
-		direction_.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-		direction_.y = sin(glm::radians(pitch_));
-		direction_.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
 		direction_ = glm::normalize(direction_);
 		glm::mat4 view = glm::lookAt(position_, position_+direction_, up_);
 		return view;
@@ -56,5 +52,31 @@ namespace engine
 	void Camera::MoveUp(float amount)
 	{
 		position_ += glm::normalize(up_) * amount;
+	}
+
+	void Camera::RotateUp(float angle)
+	{
+		up_ = RotateVector(up_, direction_, angle);
+	}
+
+	void Camera::RotateDirection(float angle)
+	{
+		direction_ = RotateVector(direction_, up_, angle);
+	}
+
+	void Camera::RotateUpSide(float angle)
+	{
+		glm::vec3 k = glm::cross(up_, direction_);
+		up_ = RotateVector(up_, k, angle );
+		direction_ = RotateVector(direction_, k, angle);
+
+	}
+
+	glm::vec3 Camera::RotateVector(const glm::vec3& v, const glm::vec3& k, float angle)
+	{
+		angle = glm::radians(angle);
+		glm::vec3 rot = v * cos(angle) + (glm::cross(k,v) * sin(angle)) 
+                        + k * glm::dot(k,v) * (1.0f - cos(angle));
+		return rot;
 	}
 }

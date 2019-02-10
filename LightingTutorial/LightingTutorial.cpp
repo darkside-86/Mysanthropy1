@@ -52,16 +52,16 @@ bool LightingTutorial::Initialize()
                 camera_->MoveUp(-0.5f);
                 break;
             case SDLK_LEFT:
-                camera_->SetYaw(camera_->GetYaw() + 15.f);
+                // camera_->SetYaw(camera_->GetYaw() + 15.f);
                 break;
             case SDLK_RIGHT:
-                camera_->SetYaw(camera_->GetYaw() - 15.f);
+                // camera_->SetYaw(camera_->GetYaw() - 15.f);
                 break;
             case SDLK_UP:
-                camera_->SetPitch(camera_->GetPitch() + 15.f);
+                // camera_->SetPitch(camera_->GetPitch() + 15.f);
                 break;
             case SDLK_DOWN:
-                camera_->SetPitch(camera_->GetPitch() - 15.f);
+                // camera_->SetPitch(camera_->GetPitch() - 15.f);
                 break;
             }
         }

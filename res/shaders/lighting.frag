@@ -2,7 +2,7 @@
 
 out vec4 color;
 
-#define NR_POINT_LIGHTS 4
+#define NR_POINT_LIGHTS 1
 #define NUM_MATERIALS 8
 
 struct Material
