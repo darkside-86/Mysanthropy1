@@ -3,17 +3,17 @@ out vec4 color;
 
 in vec2 v2texCoords;
 
-struct Material
-{
-    sampler2D diffuse;
-    sampler2D specular;
-    float shininess;
-};
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_diffuse2;
+uniform sampler2D texture_diffuse3;
+uniform sampler2D texture_diffuse4;
 
-#define NUM_MATERIALS 8
-uniform Material u_material[NUM_MATERIALS];
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_specular2;
+uniform sampler2D texture_specular3;
+uniform sampler2D texture_specular4;
 
 void main()
 {
-    color = texture(u_material[0].diffuse, v2texCoords);
+    color = texture(texture_diffuse1, v2texCoords);
 }

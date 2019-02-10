@@ -27,6 +27,8 @@
 #include "ogl/VertexArray.h"
 #include "ogl/VertexBuffer.h"
 
+#include "Material.h"
+
 namespace engine
 {
     class Mesh
@@ -34,7 +36,8 @@ namespace engine
     public:
         Mesh(const std::vector<ogl::Vertex>& vertices, 
              const std::vector<unsigned int>& indices, 
-             const std::vector<ogl::Texture*>& textures);
+             const std::vector<ogl::Texture*>& textures,
+             const Material& material);
         virtual ~Mesh();
         void Draw(ogl::Program& program);
         void DestroyTextures();
@@ -43,6 +46,7 @@ namespace engine
         std::vector<ogl::Vertex> vertices_;
         std::vector<unsigned int> indices_;
         std::vector<ogl::Texture*> textures_;
+        Material material_;
         ogl::VertexArray vao_;
         ogl::VertexBuffer vbo_;
         ogl::ElementBuffer ebo_;

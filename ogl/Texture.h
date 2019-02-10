@@ -40,12 +40,8 @@ namespace ogl
 		inline unsigned int GetWidth() const { return width_; }
 		// Returns the image height in pixels
 		inline unsigned int GetHeight() const { return height_; }
-		// get/set ID
-		inline unsigned int GetID() const { return id_; }
-		inline void SetID(unsigned int id) { id_ = id; }
-		// get/set type
+		// get type
 		inline TYPE GetType () { return type_; }
-		inline void SetType(TYPE type) {type_=type;}
 		// TODO: Method for accessing read-write pixel data.
 	private:
 		Texture(const Texture&) {}

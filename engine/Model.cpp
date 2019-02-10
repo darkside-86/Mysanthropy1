@@ -28,6 +28,22 @@ namespace engine
         }
     }
 
+    Material Model::LoadMaterial(aiMaterial* mat)
+    {
+        Material material;
+        aiColor3D color;
+        float shininess;
+        mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        material.diffuse = {color.r, color.g, color.b};
+        mat->Get(AI_MATKEY_COLOR_SPECULAR, color);
+        material.specular = {color.r, color.g, color.b};
+        mat->Get(AI_MATKEY_COLOR_AMBIENT, color);
+        material.ambient = {color.r, color.g, color.b};
+        mat->Get(AI_MATKEY_SHININESS, shininess);
+        material.shininess = shininess;
+        return material;
+    }
+
     void Model::LoadModel(const std::string& path)
     {
         Assimp::Importer importer;
@@ -62,6 +78,8 @@ namespace engine
         std::vector<ogl::Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<ogl::Texture*> textures;
+        Material mat;
+
         // process vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; ++i)
         {
@@ -97,7 +115,7 @@ namespace engine
                 indices.push_back(face.mIndices[j]);
             }
         }
-        // process materials
+        // process textures
         if(mesh->mMaterialIndex >= 0)
         {
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
@@ -107,9 +125,11 @@ namespace engine
             std::vector<ogl::Texture*> specularMaps = LoadMaterialTextures(material,
                     aiTextureType_SPECULAR, ogl::Texture::TYPE::SPECULAR);
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+            mat = LoadMaterial(material);
         }
 
-        return new Mesh(vertices, indices, textures);
+        return new Mesh(vertices, indices, textures, mat);
     }
 
     std::vector<ogl::Texture*> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, ogl::Texture::TYPE t)
@@ -120,6 +140,8 @@ namespace engine
             aiString str;
             mat->GetTexture(type, i, &str);
             ogl::Texture* texture = new ogl::Texture(directory_ + "/" + std::string(str.C_Str()), true, t);
+            // GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "Loading texture %s of type %d", 
+            //        str.C_Str(), (int)t);
             textures.push_back(texture);
         }
         return textures;

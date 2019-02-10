@@ -22,6 +22,7 @@ namespace engine
         void Draw(ogl::Program& program);
     private:
         void LoadModel(const std::string& path);
+        Material LoadMaterial(aiMaterial* mat);
         void ProcessNode(aiNode* node, const aiScene* scene);
         Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
         std::vector<ogl::Texture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, ogl::Texture::TYPE t);

@@ -26,11 +26,13 @@ namespace engine
 
     Mesh::Mesh(const std::vector<ogl::Vertex>& vertices, 
                const std::vector<unsigned int>& indices, 
-               const std::vector<ogl::Texture*>& textures)
+               const std::vector<ogl::Texture*>& textures, 
+               const Material& material)
     {
         vertices_ = vertices;
         indices_ = indices;
         textures_ = textures;
+        material_ = material;
         SetupMesh();
     }
 
@@ -41,30 +43,39 @@ namespace engine
 
     void Mesh::Draw(Program& program)
     {
-        int diffuseCounter = 0;
-        int specularCounter = 0;
+        int diffuseCounter = 1;
+        int specularCounter = 1;
 
         for(int i=0; i < textures_.size(); ++i)
         {
             std::string typeStr, indexStr;
             if(textures_[i]->GetType() == Texture::TYPE::DIFFUSE)
             {
-                typeStr = "diffuse";
-                indexStr = std::string("[") + std::to_string(diffuseCounter++) + "]";
+                typeStr = "texture_diffuse";
+                indexStr = std::to_string(diffuseCounter++);
             }
             else   
             {
-                typeStr = "specular";
-                indexStr = std::string("[") + std::to_string(specularCounter++) + "]";
+                typeStr = "texture_specular";
+                indexStr = std::to_string(specularCounter++);
             }
             // std::string textureName = std::string("texture_") + typeStr + indexStr;
-            std::string materialName = std::string("u_material") + indexStr + "." + typeStr;
+            std::string uniformName = typeStr + indexStr;
             // program.SetUniform<int>(textureName, i);
-            program.SetUniform<int>(materialName, i);
+            OGL_ERROR_CHECK();
+            program.SetUniform<int>(uniformName, i);
+            OGL_ERROR_CHECK();
             textures_[i]->Bind(i);
         }
 
+        // set material properties
+        program.SetUniform<glm::vec3>("u_material.diffuse", material_.diffuse);
+        program.SetUniform<glm::vec3>("u_material.specular", material_.specular);
+        program.SetUniform<glm::vec3>("u_material.ambient", material_.ambient);
+        program.SetUniform<float>("u_material.shininess", material_.shininess);
+
         vao_.Bind();
+        OGL_ERROR_CHECK();
         glDrawElements(GL_TRIANGLES, (GLsizei)indices_.size(), GL_UNSIGNED_INT, nullptr);
         OGL_ERROR_CHECK();
         vao_.Unbind();
