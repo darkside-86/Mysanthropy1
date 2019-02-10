@@ -80,6 +80,8 @@ namespace engine
         inline TextureManager& GetTextureManager() { return textureManager_; }
         // Return the random number generator
         inline std::default_random_engine& GetRNG() { return rng_; }
+        // Return contents of a small text file as a string
+        std::string ReadFileAsString(const std::string& path);
     private:
         GameEngine() {}
         ~GameEngine() {}

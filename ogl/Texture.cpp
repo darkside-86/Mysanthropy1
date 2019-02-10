@@ -30,7 +30,7 @@
 namespace ogl
 {
 
-	Texture::Texture(const std::string& filePath, bool linear)
+	Texture::Texture(const std::string& filePath, bool linear, Texture::TYPE type) : type_(type)
 	{
 		// load and convert SDL surface to RGBA (32-bits)
 		//
@@ -73,7 +73,7 @@ namespace ogl
 		SDL_FreeSurface(formattedSurface); // throw away data on CPU side
 	}
 
-	Texture::Texture(const void* rgbaBuffer, int w, int h, bool linear)
+	Texture::Texture(const void* rgbaBuffer, int w, int h, bool linear, Texture::TYPE type) : type_(type)
 	{
 		// generate texture ID and bind it
 		//

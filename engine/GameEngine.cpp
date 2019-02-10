@@ -19,6 +19,7 @@
 #include "GameEngine.h"
 
 #include <chrono>
+#include <fstream>
 
 #include <GL/glew.h>
 #include <SDL/SDL.h>
@@ -165,6 +166,23 @@ namespace engine
         SDL_GetWindowSize(window, &windowWidth, &windowHeight);
         float scaleX = (float)windowWidth /  (float)width_;
         float scaleY = (float)windowHeight / (float)height_;
+    }
+
+    std::string GameEngine::ReadFileAsString(const std::string& path)
+    {
+        std::ifstream inFile;
+        inFile.open(path);
+        if(!inFile.is_open())
+        {
+            logger_.Logf(Logger::Severity::WARNING, "%s: Unable to read file `%s'", 
+                    __FUNCTION__, path.c_str());
+            return "";
+        }
+        std::string str, result;
+        while( std::getline(inFile, str) )
+            result += str + "\n";
+        inFile.close();
+        return result;
     }
 
 }

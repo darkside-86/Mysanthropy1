@@ -1,4 +1,4 @@
-// main.cpp
+// Mesh.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -16,33 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#include <iostream>
+#pragma once
 
-#include "engine/EventListeners.h"
-#include "engine/CircleShape.h"
-#include "engine/Game.h"
-#include "engine/GameEngine.h"
-#include "engine/RectangleShape.h"
+#include <vector>
 
-#include "LightingTutorial/LightingTutorial.h"
-#include "ModelTutorial/ModelTutorial.h"
-#include "TestGame.h"
+#include "ElementBuffer.h"
+#include "Program.h"
+#include "Texture.h"
+#include "Vertex.h"
+#include "VertexArray.h"
+#include "VertexBuffer.h"
 
-int main(int argc, char* argv[])
+namespace ogl
 {
-    engine::GameEngine& ge = engine::GameEngine::Get();
-    engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("LightingTutorial", 1024, 576);
+    class Mesh
     {
-        ModelTutorial game;
-        ok = ok && game.Initialize();
-        if(!ok)
-        {
-            logger.Logf(engine::Logger::Severity::FATAL, "main: Unable to initialize!");
-        }
-        engine::GameEngine::Get().StartGameLoop(game);
-        game.Cleanup();
-    }
-    engine::GameEngine::Get().Cleanup();
-    return 0;
+    public:
+        Mesh(const std::vector<Vertex>& vertices, 
+             const std::vector<unsigned int>& indices, 
+             const std::vector<Texture*>& textures);
+        virtual ~Mesh();
+        void Draw(Program& program);
+        void DestroyTextures();
+    private:
+        void SetupMesh();
+        std::vector<Vertex> vertices_;
+        std::vector<unsigned int> indices_;
+        std::vector<Texture*> textures_;
+        VertexArray vao_;
+        VertexBuffer vbo_;
+        ElementBuffer ebo_;
+    };
 }

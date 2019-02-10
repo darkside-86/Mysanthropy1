@@ -51,6 +51,7 @@ set (
     OGLBINDINGSRC
         ogl/ElementBuffer.cpp
         ogl/ErrorCheck.cpp
+        ogl/Mesh.cpp
         ogl/Program.cpp
         ogl/Shader.cpp
         ogl/Texture.cpp
@@ -67,6 +68,7 @@ set (
         engine/GameEngine.cpp
         engine/GraphicsContext.cpp
         engine/Logger.cpp
+        engine/Model.cpp
         engine/RectangleShape.cpp
         engine/TextRenderer.cpp
         engine/TextureManager.cpp
@@ -86,6 +88,7 @@ add_executable (
         LightingTutorial/LampObject.cpp
         LightingTutorial/LightingTutorial.cpp 
         LightingTutorial/SimpleCube.cpp
+        ModelTutorial/ModelTutorial.cpp
         TestGame.cpp 
         TestObject.cpp
         ${ENGINESRC}

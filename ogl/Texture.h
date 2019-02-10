@@ -26,8 +26,9 @@ namespace ogl
 	class Texture
 	{
 	public:
-		Texture(const std::string& filePath, bool linear = true);
-		Texture(const void* rgbaBuffer, int w, int h, bool linear=true);
+		enum TYPE { DIFFUSE, SPECULAR };
+		Texture(const std::string& filePath, bool linear = true, TYPE type=DIFFUSE);
+		Texture(const void* rgbaBuffer, int w, int h, bool linear=true, TYPE type=DIFFUSE);
 		virtual ~Texture();
 		// Binds the texture for usage. Slots can be specified with GL_TEXTURE0...
 		//  A uniform of type sampler2D should be set to the slot value to be used
@@ -39,6 +40,12 @@ namespace ogl
 		inline unsigned int GetWidth() const { return width_; }
 		// Returns the image height in pixels
 		inline unsigned int GetHeight() const { return height_; }
+		// get/set ID
+		inline unsigned int GetID() const { return id_; }
+		inline void SetID(unsigned int id) { id_ = id; }
+		// get/set type
+		inline TYPE GetType () { return type_; }
+		inline void SetType(TYPE type) {type_=type;}
 		// TODO: Method for accessing read-write pixel data.
 	private:
 		Texture(const Texture&) {}
@@ -46,6 +53,7 @@ namespace ogl
 		unsigned int id_ = 0;
 		unsigned int width_ = 0;
 		unsigned int height_ = 0;
+		TYPE type_;
 	};
 }
 
