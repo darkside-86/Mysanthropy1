@@ -57,7 +57,7 @@ namespace engine
         }
     }
         
-    ogl::Mesh* Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
+    Mesh* Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         std::vector<ogl::Vertex> vertices;
         std::vector<unsigned int> indices;
@@ -109,7 +109,7 @@ namespace engine
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         }
 
-        return new ogl::Mesh(vertices, indices, textures);
+        return new Mesh(vertices, indices, textures);
     }
 
     std::vector<ogl::Texture*> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, ogl::Texture::TYPE t)

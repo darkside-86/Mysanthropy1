@@ -18,13 +18,15 @@
 //-----------------------------------------------------------------------------
 
 #include "Mesh.h"
-#include "ErrorCheck.h"
+#include "ogl/ErrorCheck.h"
 
-namespace ogl
+namespace engine
 {
-    Mesh::Mesh(const std::vector<Vertex>& vertices, 
+    using namespace ogl;
+
+    Mesh::Mesh(const std::vector<ogl::Vertex>& vertices, 
                const std::vector<unsigned int>& indices, 
-               const std::vector<Texture*>& textures)
+               const std::vector<ogl::Texture*>& textures)
     {
         vertices_ = vertices;
         indices_ = indices;

@@ -20,31 +20,31 @@
 
 #include <vector>
 
-#include "ElementBuffer.h"
-#include "Program.h"
-#include "Texture.h"
-#include "Vertex.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
+#include "ogl/ElementBuffer.h"
+#include "ogl/Program.h"
+#include "ogl/Texture.h"
+#include "ogl/Vertex.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
 
-namespace ogl
+namespace engine
 {
     class Mesh
     {
     public:
-        Mesh(const std::vector<Vertex>& vertices, 
+        Mesh(const std::vector<ogl::Vertex>& vertices, 
              const std::vector<unsigned int>& indices, 
-             const std::vector<Texture*>& textures);
+             const std::vector<ogl::Texture*>& textures);
         virtual ~Mesh();
-        void Draw(Program& program);
+        void Draw(ogl::Program& program);
         void DestroyTextures();
     private:
         void SetupMesh();
-        std::vector<Vertex> vertices_;
+        std::vector<ogl::Vertex> vertices_;
         std::vector<unsigned int> indices_;
-        std::vector<Texture*> textures_;
-        VertexArray vao_;
-        VertexBuffer vbo_;
-        ElementBuffer ebo_;
+        std::vector<ogl::Texture*> textures_;
+        ogl::VertexArray vao_;
+        ogl::VertexBuffer vbo_;
+        ogl::ElementBuffer ebo_;
     };
 }

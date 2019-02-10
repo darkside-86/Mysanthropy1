@@ -7,7 +7,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "ogl/Mesh.h"
+#include "Mesh.h"
 #include "ogl/Program.h"
 #include "ogl/Texture.h"
 
@@ -23,10 +23,10 @@ namespace engine
     private:
         void LoadModel(const std::string& path);
         void ProcessNode(aiNode* node, const aiScene* scene);
-        ogl::Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
+        Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
         std::vector<ogl::Texture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, ogl::Texture::TYPE t);
         std::string directory_;
-        std::vector<ogl::Mesh*> meshes_;
+        std::vector<Mesh*> meshes_;
     };
 
 }

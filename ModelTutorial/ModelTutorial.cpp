@@ -100,14 +100,13 @@ void ModelTutorial::Render(engine::GraphicsContext& gc)
     modelProgram_->SetUniform<glm::mat4>("u_view", view);
     modelProgram_->SetUniform<glm::mat4>("u_projection", projection);
     model_->Draw(*modelProgram_);
+    // attempt to render smaller version with lighting shader
     model = glm::translate(model, glm::vec3(0.0f,1.f,0.f));
     model = glm::scale(model, glm::vec3(0.1f,0.1f,0.1f));
-
     lightProgram_->Use(); 
     lightProgram_->SetUniform<glm::mat4>("u_model", model);
     lightProgram_->SetUniform<glm::mat4>("u_view", view);
     lightProgram_->SetUniform<glm::mat4>("u_projection", projection);
-
     lightProgram_->SetUniform<glm::vec3>("u_dirLight.direction", glm::vec3(0.f, -1.f, 0.f));
     lightProgram_->SetUniform<glm::vec3>("u_dirLight.ambient", glm::vec3(1.f,1.f,1.f));
     lightProgram_->SetUniform<glm::vec3>("u_dirLight.diffuse", glm::vec3(1.f,1.f,1.f));

@@ -51,7 +51,6 @@ set (
     OGLBINDINGSRC
         ogl/ElementBuffer.cpp
         ogl/ErrorCheck.cpp
-        ogl/Mesh.cpp
         ogl/Program.cpp
         ogl/Shader.cpp
         ogl/Texture.cpp
@@ -68,6 +67,7 @@ set (
         engine/GameEngine.cpp
         engine/GraphicsContext.cpp
         engine/Logger.cpp
+        engine/Mesh.cpp
         engine/Model.cpp
         engine/RectangleShape.cpp
         engine/TextRenderer.cpp
