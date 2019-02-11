@@ -10,11 +10,20 @@
 
 AdvancedTutorial::AdvancedTutorial()
 {
-    std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.vs");
-    std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.frag");
-    ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
-    ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
-    program_.CompileShaders(vertexShader, fragmentShader);
+    {
+        std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.vs");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.frag");
+        ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
+        ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
+        program_.CompileShaders(vertexShader, fragmentShader);
+    }
+    {
+        std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/stencils.vs");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/stencils.frag");
+        ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
+        ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
+        colorProgram_.CompileShaders(vertexShader, fragmentShader);
+    }
     simpleCube_ = new SimpleCube();
     engine::GameEngine::Get().GetTextureManager().LoadTexture("cube", "res/textures/container.png");
     cubeTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("cube");
@@ -85,11 +94,19 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     glClearColor(0.0f,0.1f,0.1f,1.f);
 
     program_.Use();
-    program_.SetUniform<glm::mat4>("u_model", model);
     program_.SetUniform<glm::mat4>("u_view", view);
     program_.SetUniform<glm::mat4>("u_projection", projection);
     program_.SetUniform<int>("u_texture1", 0);
-    model = glm::translate(model, glm::vec3(0.f,0.5f,0.f));
+
+    glStencilMask(0x00);
+    program_.Use();
+    model = glm::mat4(1.f);
+    program_.SetUniform<glm::mat4>("u_model", model);
+    simplePlane_->Render();
+
+    glStencilFunc(GL_ALWAYS, 1, 0xff);
+    glStencilMask(0xff);
+    model = glm::translate(glm::mat4(1.f), glm::vec3(0.f,0.501f,0.f));
     program_.SetUniform<glm::mat4>("u_model", model);
     cubeTexture_->Bind();
     simpleCube_->Render(gc);
@@ -97,7 +114,20 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     program_.SetUniform<glm::mat4>("u_model", model);
     simpleCube_->Render(gc);
 
-    model = glm::mat4(1.f);
-    program_.SetUniform<glm::mat4>("u_model", model);
-    simplePlane_->Render();
+    glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+    colorProgram_.Use();
+    colorProgram_.SetUniform<glm::mat4>("u_view", view);
+    colorProgram_.SetUniform<glm::mat4>("u_projection", projection);
+    model = glm::translate(glm::mat4(1.f), glm::vec3(0.f,0.501f,0.f));
+    model = glm::scale(model, glm::vec3(1.05f,1.05f,1.05f));
+    colorProgram_.SetUniform<glm::mat4>("u_model", model);
+    cubeTexture_->Bind();
+    simpleCube_->Render(gc);
+    model = glm::translate(model, glm::vec3(0.5f,0.f,-1.f));
+    colorProgram_.SetUniform<glm::mat4>("u_model", model);
+    simpleCube_->Render(gc);
+    glStencilMask(0xff);
+    glEnable(GL_DEPTH_TEST);
 }

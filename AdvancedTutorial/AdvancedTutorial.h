@@ -18,6 +18,7 @@ public:
 private:
     SimpleCube* simpleCube_;
     ogl::Program program_;
+    ogl::Program colorProgram_;
     engine::Camera camera_;
     ogl::Texture* cubeTexture_;
     SimplePlane* simplePlane_;

@@ -12,7 +12,7 @@ SimpleCube::SimpleCube()
     vao_ = new ogl::VertexArray();
     vbo_ = new ogl::VertexBuffer();
 
-    ogl::Vertex vertices[30] = {
+    ogl::Vertex vertices[36] = {
         // {{-0.5f, 0.5f, -0.5f}, {255,255,255,255}, {0.f, 0.f}, {0.f, 0.f, -1.0f}} // TOP LEFT BACK
         // {{-0.5f,-0.5f, -0.5f}, {255,255,255,255}, {0.f, 1.f}, {0.f, 0.f, -1.0f}} // BTM LEFT BACK
         // {{ 0.5f,-0.5f, -0.5f}, {255,255,255,255}, {1.f, 1.f}, {0.f, 0.f, -1.0f}} // BTM RGHT BACK
@@ -58,9 +58,15 @@ SimpleCube::SimpleCube()
         {{-0.5f, 0.5f,-0.5f}, {255,255,255,255}, {1.f, 0.f}, {-1.f, 0.f, 0.0f}}, // TOP LEFT BACK
         {{-0.5f,-0.5f,-0.5f}, {255,255,255,255}, {1.f, 1.f}, {-1.f, 0.f, 0.0f}}, // BTM LEFT BACK
 
+        {{-0.5f,-0.5f,-0.5f}, {255,255,255,255}, {0.f, 0.f}, {0.f,-1.f, 0.0f}}, // BTM LEFT BACK
+        {{-0.5f,-0.5f, 0.5f}, {255,255,255,255}, {0.f, 1.f}, {0.f,-1.f, 0.0f}}, // BTM LEFT FRNT
+        {{ 0.5f,-0.5f,-0.5f}, {255,255,255,255}, {1.f, 0.f}, {0.f,-1.f, 0.0f}}, // BTM RGHT BACK
+        {{-0.5f,-0.5f, 0.5f}, {255,255,255,255}, {0.f, 1.f}, {0.f,-1.f, 0.0f}}, // BTM LEFT FRNT
+        {{ 0.5f,-0.5f,-0.5f}, {255,255,255,255}, {1.f, 0.f}, {0.f,-1.f, 0.0f}}, // BTM RGHT BACK
+        {{ 0.5f,-0.5f, 0.5f}, {255,255,255,255}, {1.f, 1.f}, {0.f,-1.f, 0.0f}}, // BTM RGHT FRNT
     };
 
-    vbo_->SetData(sizeof(ogl::Vertex)*30, vertices, GL_STATIC_DRAW);
+    vbo_->SetData(sizeof(ogl::Vertex)*36, vertices, GL_STATIC_DRAW);
     ogl::VertexBufferLayout vbl;
     ogl::Vertex::PushLayout(vbl);
     vao_->AddBuffer(*vbo_, vbl);   
@@ -82,5 +88,5 @@ void SimpleCube::Render(engine::GraphicsContext& gc)
     vbo_->Bind();
     vao_->Bind();
     //program_->Use();
-    glDrawArrays(GL_TRIANGLES, 0, 30);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }

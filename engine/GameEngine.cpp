@@ -45,6 +45,7 @@ namespace engine
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
         // create window
         window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -65,8 +66,13 @@ namespace engine
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f); // dark
 		glClearDepth(1.0);
 		glEnable(GL_DEPTH_TEST); // disable for 2D rendering
+        glDepthFunc(GL_LESS);
+        glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
+        glEnable(GL_STENCIL_TEST);
+        // glStencilMask(0xff);
+        glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);        
         glViewport(0, 0, width, height);
 
         // seed random number gen
@@ -127,7 +133,7 @@ namespace engine
             if(dTime > 1.0f) // clamp maximum time elapsed to 1 second
                 dTime = 1.0f;
             game.Update(dTime);
-            glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
             game.Render(gc);
             SDL_GL_SwapWindow(window);
         }
