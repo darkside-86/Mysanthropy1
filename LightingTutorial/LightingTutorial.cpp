@@ -155,7 +155,7 @@ void LightingTutorial::Render(engine::GraphicsContext& gc)
         float angle = 20.f * (float)i;
         model = glm::rotate(model, glm::radians(angle), glm::vec3(1.f,0.3f,0.5f));
         cubeShader->SetUniform<glm::mat4>("u_model", model);
-        simpleCube_->Render(gc);
+        simpleCube_->Render(*cubeShader);
     }
 
     lampShader.Use();
@@ -166,7 +166,7 @@ void LightingTutorial::Render(engine::GraphicsContext& gc)
         glm::mat4 model = glm::translate(glm::mat4(1.f), pointLightPositions[i]);
         model = glm::scale(model, glm::vec3(0.4f,0.4f,0.4f));
         lampShader.SetUniform<glm::mat4>("u_model", model);
-        lampObject_->Render(gc);
+        lampObject_->Render(lampShader);
     }
 }
 

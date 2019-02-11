@@ -83,7 +83,7 @@ void SimpleCube::Update(float dtime)
 
 }
 
-void SimpleCube::Render(engine::GraphicsContext& gc)
+void SimpleCube::Render(ogl::Program& program)
 {
     vbo_->Bind();
     vao_->Bind();

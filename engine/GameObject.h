@@ -20,12 +20,14 @@
 
 #include "GraphicsContext.h"
 
+#include "ogl/Program.h"
+
 namespace engine 
 {
     class GameObject
     {
     public:
         virtual void Update(float dtime) = 0;
-        virtual void Render(GraphicsContext& ctx) = 0;
+        virtual void Render(ogl::Program& program) = 0;
     };
 }

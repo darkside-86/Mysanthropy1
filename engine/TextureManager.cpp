@@ -31,51 +31,52 @@ namespace engine
         }
     }
 
-    void TextureManager::LoadTexture(const std::string& alias, const std::string& fileName)
+    void TextureManager::LoadTexture(const std::string& fileName)
     {
-        /*auto found = textures_.find(alias);
-        if(found != textures_.end())
-        {
-            // delete found->second;
-            textures_.erase(found);
-        }
-        ogl::Texture* texture = new ogl::Texture(fileName);
-        textures_[alias] = texture;*/ // glDeleteTexture is NOT working right???
-        auto found = textures_.find(alias);
+        auto found = textures_.find(fileName);
         if(found != textures_.end())
         {
             GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
-                "%s: Texture `%s' already loaded; ignoring file `%s'", 
-                __FUNCTION__, alias.c_str(), fileName.c_str());
+                "Texture `%s' already loaded; ignoring.", fileName.c_str());
         }
         else
         {
             ogl::Texture* texture = new ogl::Texture(fileName);
-            textures_[alias] = texture;
+            textures_[fileName] = texture;
         }
     }
 
-    void TextureManager::UnloadTexture(const std::string& alias)
+    void TextureManager::UnloadTexture(const std::string& fileName)
     {
-        auto found = textures_.find(alias);
+        auto found = textures_.find(fileName);
         if(found != textures_.end())
         {
-            // delete found->second; // just leak GL memory whatever
+            delete found->second;
             textures_.erase(found);
+        }
+        else
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
+                    "Texture `%s' not loaded. Nothing to unload.", fileName.c_str());
         }
     }
     
-    ogl::Texture* TextureManager::GetTexture(const std::string& alias)
+    ogl::Texture* TextureManager::GetTexture(const std::string& fileName)
     {
-        auto found = textures_.find(alias);
+        auto found = textures_.find(fileName);
         if(found != textures_.end())
         {
             return found->second;
         }
         else
         {
+            // load the file first then return it
             GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
-                    "%s: No such texture `%s'", __FUNCTION__, alias.c_str());
+                    "Texture `%s' not preloaded... Attempting to load.", fileName.c_str());
+            LoadTexture(fileName);
+            found = textures_.find(fileName);
+            if(found != textures_.end())
+                return found->second;
             return nullptr;
         }
     }

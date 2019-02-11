@@ -42,7 +42,7 @@ void LampObject::Update(float dtime)
 
 }
 
-void LampObject::Render(engine::GraphicsContext& gc)
+void LampObject::Render(ogl::Program& program)
 {
     vertexBuffer_->Bind();
     vertexArray_->Bind();

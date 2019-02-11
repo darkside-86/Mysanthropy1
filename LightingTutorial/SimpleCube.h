@@ -11,7 +11,7 @@ public:
     virtual ~SimpleCube();
 
     void Update(float dtime) override;
-    void Render(engine::GraphicsContext& gc) override;
+    void Render(ogl::Program& program) override;
     ogl::Program* GetProgram() { return program_; }
 private:
     ogl::VertexArray*   vao_;

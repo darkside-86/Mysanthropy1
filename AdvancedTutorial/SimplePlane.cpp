@@ -19,15 +19,14 @@ SimplePlane::SimplePlane()
     ogl::Vertex::PushLayout(vbl);
     vao_->AddBuffer(*vbo_, vbl);
 
-    engine::GameEngine::Get().GetTextureManager().LoadTexture("ground", "res/textures/ground.jpg");
-    groundTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("ground");
+    groundTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("res/textures/ground.jpg");
 }
 
 SimplePlane::~SimplePlane()
 {
     delete vao_;
     delete vbo_;
-    engine::GameEngine::Get().GetTextureManager().UnloadTexture("ground");
+    engine::GameEngine::Get().GetTextureManager().UnloadTexture("res/textures/ground.jpg");
 }
 
 void SimplePlane::Render()

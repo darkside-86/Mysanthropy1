@@ -44,7 +44,7 @@ void TestObject::Update(float dtime)
 
 }
     
-void TestObject::Render(engine::GraphicsContext& gc)
+void TestObject::Render(ogl::Program& program)
 {
     vertexArray_->Bind();
     vertexBuffer_->Bind();

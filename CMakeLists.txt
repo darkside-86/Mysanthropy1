@@ -86,6 +86,7 @@ add_executable (
     Mysanthropy1
 	    main.cpp
         AdvancedTutorial/AdvancedTutorial.cpp
+        AdvancedTutorial/GrassObject.cpp
         AdvancedTutorial/SimplePlane.cpp
         LightingTutorial/LampObject.cpp
         LightingTutorial/LightingTutorial.cpp 

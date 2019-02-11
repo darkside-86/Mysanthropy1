@@ -1,7 +1,10 @@
 #pragma once
 
+#include <lua/lua.hpp>
+
 #include "engine/Camera.h"
 #include "engine/Game.h"
+#include "engine/ui/LuaBindings.h"
 #include "LightingTutorial/SimpleCube.h"
 #include "ogl/Program.h"
 #include "SimplePlane.h"
@@ -22,4 +25,6 @@ private:
     engine::Camera camera_;
     ogl::Texture* cubeTexture_;
     SimplePlane* simplePlane_;
+    lua_State*  scripting_;
+    engine::ui::LuaBindings* luaBindings_;
 };

@@ -94,7 +94,7 @@ void ModelTutorial::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_model", model);
     program.SetUniform<glm::mat4>("u_view", view);
     program.SetUniform<glm::mat4>("u_projection", projection);
-    lampObject_->Render(gc);
+    lampObject_->Render(program);
     // render model
     modelProgram_->Use();
     modelProgram_->SetUniform<glm::mat4>("u_model", model);

@@ -19,23 +19,23 @@
 
 -- Implements a Window class built from UI system --
 
-if Window ~= nil then
-    print("Window already loaded")
-    return
-end
+TEXTURE_UIBLANK = 'res/textures/uiblank.png'
+TEXTURE_UIWINDOW = 'res/textures/uiwindow.png'
 
-LoadTexture('uiblank', 'res/textures/uiblank.png')
-LoadTexture('uiwindow', 'res/textures/uiwindow.png')
+LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 14)
+
+LoadTexture('res/textures/uiblank.png')
+LoadTexture('res/textures/uiwindow.png')
 
 Window = {
     New = function(parent, width, height, title, font)
         font = font or 'sans'
-        local window = UIFrame.New(nil, width, height, 0, 0, 'uiblank')
+        local window = UIFrame.New(nil, width, height, 0, 0, TEXTURE_UIBLANK)
         window:SetColor(0,0,0.5,0.6)
         window:SetBorderSize(2)
         window:SetBorderColor(0,0,0.9,1)
         window.title = UILabel.New(window, title, font, 1,1,1,1)
-        window.closeBtn = UIButton.New(window, 'uiblank', 'X', font, 3)
+        window.closeBtn = UIButton.New(window, TEXTURE_UIBLANK, 'X', font, 3)
         window.closeBtn:SetColor(0.5,0,0,1)
         window.closeBtn:SetTextColor(1,1,1,1)
         window.closeBtn:SetBorderSize(1)

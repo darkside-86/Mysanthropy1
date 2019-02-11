@@ -34,8 +34,8 @@ static constexpr engine::ui::Color BUTTON_ON_COLOR = {0.6f, 0.2f, 0.2f, 1.f};
 TestGame::TestGame() : groundTexture("res/textures/ground.jpg", true),
                         frameTexture("res/textures/frame.png", false)
 {
-    engine::GameEngine::Get().GetTextureManager().LoadTexture("uiblank", "res/textures/uiblank.png");
-    ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture("uiblank");
+    ogl::Texture* uiblank = engine::GameEngine::Get().GetTextureManager().GetTexture(
+            "res/textures/uiblank.png");
     engine::TextRenderer& tr = engine::GameEngine::Get().GetTextRenderer();
     tr.LoadFont("res/fonts/UbuntuMono-Regular.ttf", "mono", 18);
     tr.SetFGColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -205,7 +205,7 @@ void TestGame::Render(engine::GraphicsContext& gc)
     gc.RotateModel(angle, 0.f, 1.f, 0.f);
     gc.SetPerspectiveProjection(45.f, width/height, 0.01f, 45.f);
     gc.SetMVP();
-    testObject_->Render(gc);
+    testObject_->Render(gc.GetProgram());
     OGL_ERROR_CHECK();
 
     glDisable(GL_DEPTH_TEST);

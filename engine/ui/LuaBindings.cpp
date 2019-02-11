@@ -1074,9 +1074,8 @@ namespace engine { namespace ui {
     // lua : LoadTexture(alias, path)
     static int lua_LoadTexture(lua_State* L)
     {
-        const char* alias = luaL_checkstring(L, 1);
-        const char* path = luaL_checkstring(L, 2);
-        GameEngine::Get().GetTextureManager().LoadTexture(alias, path);
+        const char* path = luaL_checkstring(L, 1);
+        GameEngine::Get().GetTextureManager().LoadTexture(path);
         return 0;
     }
 

@@ -9,7 +9,7 @@ public:
     virtual ~LampObject();
 
     void Update(float dtime) override;
-    void Render(engine::GraphicsContext& gc) override;
+    void Render(ogl::Program& program) override;
 
     static constexpr size_t NUM_VERTICES = 8;
 private:

@@ -65,7 +65,7 @@ namespace engine { namespace ui {
         std::vector<KeypressedEventCallback> onKeypressed_;
         std::vector<DraggedEventCallback>   onDragged_;
         Object*                             parent_;
-        bool                                visible_;
+        bool                                visible_ = true;
         int                                 width_=1, height_=1;
         int                                 xPos_=0, yPos_=0;
     };

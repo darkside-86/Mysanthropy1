@@ -12,7 +12,7 @@ public:
     virtual ~TestObject();
 
     void Update(float dtime) override;
-    void Render(engine::GraphicsContext& gc) override;
+    void Render(ogl::Program& program) override;
 
     ogl::Vertex* GetVertices() { return vertices_; }
     void SetVerticesData() 

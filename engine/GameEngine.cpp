@@ -70,7 +70,7 @@ namespace engine
         glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_STENCIL_TEST);
-        // glStencilMask(0xff);
+        glStencilMask(0xff);
         glStencilFunc(GL_NOTEQUAL, 1, 0xff);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);        
         glViewport(0, 0, width, height);

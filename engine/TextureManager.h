@@ -31,10 +31,11 @@ namespace engine
     public:
         TextureManager() {}
         virtual ~TextureManager();
-        void LoadTexture(const std::string& alias, const std::string& fileName);
-        void UnloadTexture(const std::string& alias);
-        ogl::Texture* GetTexture(const std::string& alias);
+        void LoadTexture(const std::string& fileName);
+        void UnloadTexture(const std::string& fileName);
+        ogl::Texture* GetTexture(const std::string& fileName);
     private:
+        // map of image-path, texture
         std::unordered_map<std::string, ogl::Texture*> textures_;
     };
 

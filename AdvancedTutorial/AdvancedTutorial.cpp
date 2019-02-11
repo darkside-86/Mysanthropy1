@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/GameEngine.h"
+#include "engine/ui/Root.h"
 #include "ogl/Texture.h"
 
 AdvancedTutorial::AdvancedTutorial()
@@ -25,22 +26,28 @@ AdvancedTutorial::AdvancedTutorial()
         colorProgram_.CompileShaders(vertexShader, fragmentShader);
     }
     simpleCube_ = new SimpleCube();
-    engine::GameEngine::Get().GetTextureManager().LoadTexture("cube", "res/textures/container.png");
-    cubeTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("cube");
+    cubeTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("res/textures/container.png");
     simplePlane_ = new SimplePlane();
+    scripting_ = luaL_newstate();
+    luaL_openlibs(scripting_);
+    luaBindings_ = new engine::ui::LuaBindings(scripting_);
 }
 
 AdvancedTutorial::~AdvancedTutorial()
 {
-    engine::GameEngine::Get().GetTextureManager().UnloadTexture("cube");
+    engine::GameEngine::Get().GetTextureManager().UnloadTexture("res/textures/container.png");
     delete simpleCube_;
     delete simplePlane_;
+    delete luaBindings_;
+    lua_close(scripting_);
 }
 
 bool AdvancedTutorial::Initialize()
 {
     camera_.SetPosition(glm::vec3(0.f,0.f,5.5f));
     camera_.SetDirection(glm::vec3(0.f,0.f,-1.f));
+
+    engine::ui::Root::Get()->Initialize();
 
     engine::GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e){
         camera_.RotateDirection(glm::radians((float)-e.xrel*6.f));
@@ -70,6 +77,25 @@ bool AdvancedTutorial::Initialize()
         }
     });
 
+    std::vector<const char*> CORE_UI_LIB = {
+        "ui/fonts.lua", "ui/keycodes.lua", "ui/window.lua", "ui/advancedtutorial.lua"
+    };
+    try 
+    {
+        int errCode = 0;
+        for(auto luaFile : CORE_UI_LIB)
+        {
+            errCode = luaL_dofile(scripting_, luaFile);
+            if(errCode != 0) throw errCode;
+        }
+    }
+    catch(int err)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "Lua error %d: %s", err, lua_tostring(scripting_, -1));
+        lua_pop(scripting_, 1);
+    }
+
     return true;
 }
 
@@ -85,6 +111,7 @@ void AdvancedTutorial::Update(float dtime)
 
 void AdvancedTutorial::Render(engine::GraphicsContext& gc)
 {
+
     glm::mat4 model(1.f), view(1.f), projection(1.f);
     float width = (float)engine::GameEngine::Get().GetWidth();
     float height = (float)engine::GameEngine::Get().GetHeight();
@@ -109,10 +136,10 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     model = glm::translate(glm::mat4(1.f), glm::vec3(0.f,0.501f,0.f));
     program_.SetUniform<glm::mat4>("u_model", model);
     cubeTexture_->Bind();
-    simpleCube_->Render(gc);
+    simpleCube_->Render(program_);
     model = glm::translate(model, glm::vec3(0.5f,0.f,-1.f));
     program_.SetUniform<glm::mat4>("u_model", model);
-    simpleCube_->Render(gc);
+    simpleCube_->Render(program_);
 
     glStencilFunc(GL_NOTEQUAL, 1, 0xff);
     glStencilMask(0x00);
@@ -124,10 +151,12 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     model = glm::scale(model, glm::vec3(1.05f,1.05f,1.05f));
     colorProgram_.SetUniform<glm::mat4>("u_model", model);
     cubeTexture_->Bind();
-    simpleCube_->Render(gc);
+    simpleCube_->Render(program_);
     model = glm::translate(model, glm::vec3(0.5f,0.f,-1.f));
     colorProgram_.SetUniform<glm::mat4>("u_model", model);
-    simpleCube_->Render(gc);
+    simpleCube_->Render(program_);
     glStencilMask(0xff);
     glEnable(GL_DEPTH_TEST);
+
+    engine::ui::Root::Get()->Render(gc);
 }
