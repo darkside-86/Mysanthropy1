@@ -84,7 +84,9 @@ void main()
     // phase 3: spot light
     // result += CalcSpotLight(u_spotLight, norm, v3fragPos, viewDir);
 
-    color = texture(texture_diffuse1, v2texCoords) + vec4(result, 1.0);
+    color = (texture(texture_diffuse1, v2texCoords)) * (texture(texture_specular1, v2texCoords)) 
+            + (texture(texture_diffuse2, v2texCoords)) * (texture(texture_specular2, v2texCoords)) + vec4(result, 1.0);
+    // color = texture(texture_diffuse1, v2texCoords);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)

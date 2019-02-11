@@ -41,6 +41,15 @@ namespace engine
         material.ambient = {color.r, color.g, color.b};
         mat->Get(AI_MATKEY_SHININESS, shininess);
         material.shininess = shininess;
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                "Diffuse=%f %f %f\n" 
+                "Specular=%f %f %f\n"
+                "Ambient=%f %f %f\n"
+                "Shininess=%f", 
+                material.diffuse.r, material.diffuse.g, material.diffuse.b,
+                material.specular.r, material.specular.g, material.specular.b,
+                material.ambient.r, material.ambient.g, material.ambient.b,
+                material.shininess);
         return material;
     }
 
@@ -118,6 +127,8 @@ namespace engine
         // process textures
         if(mesh->mMaterialIndex >= 0)
         {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                    "materialIndex=%d", mesh->mMaterialIndex);
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
             std::vector<ogl::Texture*> diffuseMaps = LoadMaterialTextures(material, 
                     aiTextureType_DIFFUSE, ogl::Texture::TYPE::DIFFUSE);
@@ -140,8 +151,8 @@ namespace engine
             aiString str;
             mat->GetTexture(type, i, &str);
             ogl::Texture* texture = new ogl::Texture(directory_ + "/" + std::string(str.C_Str()), true, t);
-            // GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "Loading texture %s of type %d", 
-            //        str.C_Str(), (int)t);
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "Loading texture %s of type %d", 
+                    str.C_Str(), (int)t);
             textures.push_back(texture);
         }
         return textures;

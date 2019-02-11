@@ -28,9 +28,10 @@ ModelTutorial::ModelTutorial()
         ogl::Shader fs(GL_FRAGMENT_SHADER, fsSrc.c_str());
         lightProgram_->CompileShaders(vs, fs);
     }
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, "Loading model...");
     // model_ = new Model("res/models/nanosuit/nanosuit.obj");
     model_ = new Model("res/models/elefante/elefante.obj");
-
+    // model_ = new Model("res/models/Z3_OBJ.obj");
 }
     
 ModelTutorial::~ModelTutorial()
@@ -84,7 +85,7 @@ void ModelTutorial::Render(engine::GraphicsContext& gc)
 {
     float width = (float)engine::GameEngine::Get().GetWidth();
     float height = (float)engine::GameEngine::Get().GetHeight();
-    glClearColor(0.4f, 0.4f, 0.1f, 1.f);
+    glClearColor(0.2f, 0.1f, 0.2f, 1.f);
     glm::mat4 model(1.f), view(1.f), projection(1.f);
     ogl::Program& program = gc.GetProgram();
     view = camera_->CalculateView();
@@ -104,21 +105,23 @@ void ModelTutorial::Render(engine::GraphicsContext& gc)
     model = glm::translate(model, glm::vec3(0.0f,1.f,0.f));
     model = glm::scale(model, glm::vec3(0.1f,0.1f,0.1f));
     lightProgram_->Use(); 
-    OGL_ERROR_CHECK();
     lightProgram_->SetUniform<glm::mat4>("u_model", model);
-    OGL_ERROR_CHECK();
     lightProgram_->SetUniform<glm::mat4>("u_view", view);
-    OGL_ERROR_CHECK();
     lightProgram_->SetUniform<glm::mat4>("u_projection", projection);
-    OGL_ERROR_CHECK();
     lightProgram_->SetUniform<glm::vec3>("u_dirLight.direction", glm::vec3(-1.f, -1.f, 0.f));
-    OGL_ERROR_CHECK();
-    lightProgram_->SetUniform<glm::vec3>("u_dirLight.ambient", glm::vec3(0.2f,0.2f,0.3f));
-    OGL_ERROR_CHECK();
-    lightProgram_->SetUniform<glm::vec3>("u_dirLight.diffuse", glm::vec3(0.1f,0.7f,0.1f));
-    OGL_ERROR_CHECK();
-    lightProgram_->SetUniform<glm::vec3>("u_dirLight.specular", glm::vec3(1.f,0.f,0.f));
-    OGL_ERROR_CHECK();
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.ambient", glm::vec3(0.1f,0.1f,0.1f));
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.diffuse", glm::vec3(0.3f,0.3f,0.3f));
+    lightProgram_->SetUniform<glm::vec3>("u_dirLight.specular", glm::vec3(0.5f,0.4f,0.4f));
+    lightProgram_->SetUniform<glm::vec3>("u_spotLight.position", camera_->GetPosition());
+    lightProgram_->SetUniform<glm::vec3>("u_spotLight.direction", camera_->GetDirection());
+    lightProgram_->SetUniform<float>("u_spotLight.cutOff", 12.f);
+    lightProgram_->SetUniform<float>("u_spotLight.outerCutOff", 15.f);
+    lightProgram_->SetUniform<float>("u_spotLight.constant", 1.f);
+    lightProgram_->SetUniform<float>("u_spotLight.linear", 0.09f);
+    lightProgram_->SetUniform<float>("u_spotLight.quadratic", 0.032f);
+    lightProgram_->SetUniform<glm::vec3>("u_spotLight.ambient", glm::vec3(0.1f,0.1f,0.1f));
+    lightProgram_->SetUniform<glm::vec3>("u_spotLight.diffuse", glm::vec3(0.2f,0.2f,0.2f));
+    lightProgram_->SetUniform<glm::vec3>("u_spotLight.specular", glm::vec3(0.2f,0.2f,0.5f));
     model_->Draw(*lightProgram_);
 
 }

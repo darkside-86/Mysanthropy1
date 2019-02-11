@@ -24,6 +24,7 @@
 #include "engine/GameEngine.h"
 #include "engine/RectangleShape.h"
 
+#include "AdvancedTutorial/AdvancedTutorial.h"
 #include "LightingTutorial/LightingTutorial.h"
 #include "ModelTutorial/ModelTutorial.h"
 #include "TestGame.h"
@@ -34,7 +35,7 @@ int main(int argc, char* argv[])
     engine::Logger& logger = ge.GetLogger();
     bool ok = ge.Initialize("LightingTutorial", 1024, 576);
     {
-        ModelTutorial game;
+        AdvancedTutorial game;
         ok = ok && game.Initialize();
         if(!ok)
         {
