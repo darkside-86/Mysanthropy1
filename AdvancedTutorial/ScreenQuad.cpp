@@ -1,4 +1,4 @@
-// SimplePlane.cpp 
+// ScreenQuad.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -17,40 +17,46 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "SimplePlane.h"
+#include "ScreenQuad.h"
 
-#include "engine/GameEngine.h"
-#include "ogl/Vertex.h"
+#include "ogl/ErrorCheck.h"
 
-SimplePlane::SimplePlane()
+ScreenQuad::ScreenQuad()
 {
-    vao_ = new ogl::VertexArray();
-    vbo_ = new ogl::VertexBuffer();
+    ogl::Vertex vertices[6] = {
+        {{-1.f, 1.f, 0.f},{255,255,255,255},{0.f,1.f},{0.f,0.f,1.f}},
+        {{-1.f,-1.f, 0.f},{255,255,255,255},{0.f,0.f},{0.f,0.f,1.f}},
+        {{ 1.f,-1.f, 0.f},{255,255,255,255},{1.f,0.f},{0.f,0.f,1.f}},
 
-    ogl::Vertex vertices[4] = {
-        {{-10.f,0.f,-10.f},{255,255,255,255},{0.f,0.f},{0.f,1.f,0.f}},
-        {{-10.f,0.f, 10.f},{255,255,255,255},{0.f,1.f},{0.f,1.f,0.f}},
-        {{ 10.f,0.f,-10.f},{255,255,255,255},{1.f,0.f},{0.f,1.f,0.f}},
-        {{ 10.f,0.f, 10.f},{255,255,255,255},{1.f,1.f},{0.f,1.f,0.f}},
+        {{-1.f, 1.f, 0.f},{255,255,255,255},{0.f,1.f},{0.f,0.f,1.f}},
+        {{ 1.f,-1.f, 0.f},{255,255,255,255},{1.f,0.f},{0.f,0.f,1.f}},
+        {{ 1.f, 1.f, 0.f},{255,255,255,255},{1.f,1.f},{0.f,0.f,1.f}},
     };
-    vbo_->SetData(sizeof(ogl::Vertex)*4, vertices, GL_STATIC_DRAW);
+
+    vbo_.SetData(sizeof(ogl::Vertex)*6, vertices, GL_STATIC_DRAW);
     ogl::VertexBufferLayout vbl;
     ogl::Vertex::PushLayout(vbl);
-    vao_->AddBuffer(*vbo_, vbl);
-
-    groundTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("res/textures/ground.jpg");
+    vao_.AddBuffer(vbo_, vbl);
 }
 
-SimplePlane::~SimplePlane()
+ScreenQuad::~ScreenQuad()
 {
-    delete vao_;
-    delete vbo_;
-    engine::GameEngine::Get().GetTextureManager().UnloadTexture("res/textures/ground.jpg");
+
 }
 
-void SimplePlane::Render()
+void ScreenQuad::Update(float dtime)
 {
-    vao_->Bind();
-    groundTexture_->Bind();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 }
+
+void ScreenQuad::Render(ogl::Program& program)
+{
+    OGL_ERROR_CHECK();
+    program.Use();
+    OGL_ERROR_CHECK();
+    vao_.Bind();
+    OGL_ERROR_CHECK();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    OGL_ERROR_CHECK();
+}
+

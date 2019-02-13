@@ -35,6 +35,7 @@ Window = {
         window:SetBorderSize(2)
         window:SetBorderColor(0,0,0.9,1)
         window.title = UILabel.New(window, title, font, 1,1,1,1)
+        window.title:SetXPos(2)
         window.closeBtn = UIButton.New(window, TEXTURE_UIBLANK, 'X', font, 3)
         window.closeBtn:SetColor(0.5,0,0,1)
         window.closeBtn:SetTextColor(1,1,1,1)

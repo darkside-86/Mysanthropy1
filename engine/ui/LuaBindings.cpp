@@ -397,7 +397,7 @@ namespace engine { namespace ui {
     static int lua_UIFrame_mtGC(lua_State* L)
     {
         Frame* frame = CheckFrame(L, 1);
-        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "__gc on UIFrame %llx", frame);
+        // GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "__gc on UIFrame %llx", frame);
         frame->~Frame();
         return 0;
     }

@@ -1,3 +1,22 @@
+// AdvancedTutorial.cpp 
+//-----------------------------------------------------------------------------
+// Author: darkside-86
+// (c) 2018
+//-----------------------------------------------------------------------------
+// This program is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.If not, see < https://www.gnu.org/licenses/>.
+//-----------------------------------------------------------------------------
+
 #include "AdvancedTutorial.h"
 
 #include <string>
@@ -7,6 +26,7 @@
 
 #include "engine/GameEngine.h"
 #include "engine/ui/Root.h"
+#include "ogl/ErrorCheck.h"
 #include "ogl/Texture.h"
 
 AdvancedTutorial::AdvancedTutorial()
@@ -25,12 +45,58 @@ AdvancedTutorial::AdvancedTutorial()
         ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
         colorProgram_.CompileShaders(vertexShader, fragmentShader);
     }
+    {
+        std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/screen.vs");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/screen.frag");
+        ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
+        ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
+        screenProgram_.CompileShaders(vertexShader, fragmentShader);
+    }
     simpleCube_ = new SimpleCube();
     cubeTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("res/textures/container.png");
     simplePlane_ = new SimplePlane();
     scripting_ = luaL_newstate();
     luaL_openlibs(scripting_);
     luaBindings_ = new engine::ui::LuaBindings(scripting_);
+    for(int i=0; i < NUM_GRASSES; ++i)
+    {
+        grasses_[i] = new GrassObject(glm::vec3((float)(2*i-4), 0.f, 0.f));
+    }
+    screenQuad_ = new ScreenQuad();
+    glGenFramebuffers(1, &fbo_);
+    OGL_ERROR_CHECK();
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+    OGL_ERROR_CHECK();
+    // create color attachment texture
+    glGenTextures(1, &tcb_);
+    OGL_ERROR_CHECK();
+    glBindTexture(GL_TEXTURE_2D, tcb_);
+    OGL_ERROR_CHECK();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, engine::GameEngine::Get().GetWidth(), 
+                 engine::GameEngine::Get().GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    OGL_ERROR_CHECK();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    OGL_ERROR_CHECK();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    OGL_ERROR_CHECK();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tcb_, 0);
+    OGL_ERROR_CHECK();
+    // create render buffer object
+    glGenRenderbuffers(1, &rbo_);
+    OGL_ERROR_CHECK();
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
+    OGL_ERROR_CHECK();
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, engine::GameEngine::Get().GetWidth(), 
+                          engine::GameEngine::Get().GetHeight());
+    OGL_ERROR_CHECK();
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_);
+    OGL_ERROR_CHECK();
+    // check for completion
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "Framebuffer incomplete!");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    OGL_ERROR_CHECK();
 }
 
 AdvancedTutorial::~AdvancedTutorial()
@@ -40,6 +106,10 @@ AdvancedTutorial::~AdvancedTutorial()
     delete simplePlane_;
     delete luaBindings_;
     lua_close(scripting_);
+    for(int i=0; i < NUM_GRASSES; ++i)
+        delete grasses_[i];
+    delete screenQuad_;
+    glDeleteFramebuffers(1, &fbo_);
 }
 
 bool AdvancedTutorial::Initialize()
@@ -96,6 +166,8 @@ bool AdvancedTutorial::Initialize()
         lua_pop(scripting_, 1);
     }
 
+
+
     return true;
 }
 
@@ -118,7 +190,11 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
 
     view = camera_.CalculateView();
     projection = glm::perspective(45.f, width/height, 0.01f, 100.f);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+    glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f,0.1f,0.1f,1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     program_.Use();
     program_.SetUniform<glm::mat4>("u_view", view);
@@ -141,6 +217,11 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     program_.SetUniform<glm::mat4>("u_model", model);
     simpleCube_->Render(program_);
 
+    for(int i=0; i < NUM_GRASSES; ++i)
+    {
+        grasses_[i]->Render(program_);
+    }
+
     glStencilFunc(GL_NOTEQUAL, 1, 0xff);
     glStencilMask(0x00);
     glDisable(GL_DEPTH_TEST);
@@ -151,6 +232,7 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     model = glm::scale(model, glm::vec3(1.05f,1.05f,1.05f));
     colorProgram_.SetUniform<glm::mat4>("u_model", model);
     cubeTexture_->Bind();
+    OGL_ERROR_CHECK();
     simpleCube_->Render(program_);
     model = glm::translate(model, glm::vec3(0.5f,0.f,-1.f));
     colorProgram_.SetUniform<glm::mat4>("u_model", model);
@@ -159,4 +241,20 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     glEnable(GL_DEPTH_TEST);
 
     engine::ui::Root::Get()->Render(gc);
+
+    screenProgram_.Use();
+    screenProgram_.Use();
+    screenProgram_.SetUniform<int>("u_screenTexture", 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    OGL_ERROR_CHECK();
+    glDisable(GL_DEPTH_TEST);
+    OGL_ERROR_CHECK();
+    glClearColor(1.f,1.f,1.f,1.f);
+    OGL_ERROR_CHECK();
+    glClear(GL_COLOR_BUFFER_BIT);
+    OGL_ERROR_CHECK();
+    glBindTexture(GL_TEXTURE_2D, tcb_);
+    OGL_ERROR_CHECK();
+    screenQuad_->Render(screenProgram_);
+    OGL_ERROR_CHECK();
 }

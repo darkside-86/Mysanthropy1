@@ -87,6 +87,7 @@ add_executable (
 	    main.cpp
         AdvancedTutorial/AdvancedTutorial.cpp
         AdvancedTutorial/GrassObject.cpp
+        AdvancedTutorial/ScreenQuad.cpp
         AdvancedTutorial/SimplePlane.cpp
         LightingTutorial/LampObject.cpp
         LightingTutorial/LightingTutorial.cpp 

@@ -72,7 +72,10 @@ namespace engine
         glEnable(GL_STENCIL_TEST);
         glStencilMask(0xff);
         glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);        
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
+        // glEnable(GL_CULL_FACE);
+        // glCullFace(GL_BACK);  
+        // glFrontFace(GL_CCW);    
         glViewport(0, 0, width, height);
 
         // seed random number gen

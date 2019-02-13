@@ -30,7 +30,7 @@
 namespace ogl
 {
 
-	Texture::Texture(const std::string& filePath, bool linear, Texture::TYPE type) : type_(type)
+	Texture::Texture(const std::string& filePath, bool linear, bool repeat, Texture::TYPE type) : type_(type)
 	{
 		// load and convert SDL surface to RGBA (32-bits)
 		//
@@ -60,8 +60,8 @@ namespace ogl
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 		// TODO: clamp vs repeat
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, formattedSurface->w, formattedSurface->h,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, formattedSurface->pixels);
 		glActiveTexture(GL_TEXTURE0); // place in slot 0
@@ -73,20 +73,21 @@ namespace ogl
 		SDL_FreeSurface(formattedSurface); // throw away data on CPU side
 	}
 
-	Texture::Texture(const void* rgbaBuffer, int w, int h, bool linear, Texture::TYPE type) : type_(type)
+	Texture::Texture(const void* rgbaBuffer, int w, int h, bool linear, bool repeat, Texture::TYPE type) 
+		: type_(type)
 	{
 		// generate texture ID and bind it
 		//
+		glActiveTexture(GL_TEXTURE0); // place in slot 0
 		glGenTextures(1, &id_);
 		glBindTexture(GL_TEXTURE_2D, id_);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 		// TODO: clamp vs repeat
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, rgbaBuffer);
-		glActiveTexture(GL_TEXTURE0); // place in slot 0
 		width_ = w;
 		height_ = h;
 	}
@@ -105,6 +106,13 @@ namespace ogl
 	void Texture::Unbind() const
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void Texture::SetRepeat(bool repeat)
+	{
+		glBindTexture(GL_TEXTURE_2D, id_);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
 	}
 
 }

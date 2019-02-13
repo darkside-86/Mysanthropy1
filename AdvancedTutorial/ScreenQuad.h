@@ -1,4 +1,4 @@
-// SimpleCube.h
+// ScreenQuad.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -19,20 +19,17 @@
 #pragma once
 
 #include "engine/GameObject.h"
-#include "ogl/Vertex.h"
-#include "ogl/Program.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
 
-class SimpleCube : public engine::GameObject
+class ScreenQuad : public engine::GameObject
 {
 public:
-    SimpleCube();
-    virtual ~SimpleCube();
-
+    ScreenQuad();
+    virtual ~ScreenQuad();
     void Update(float dtime) override;
     void Render(ogl::Program& program) override;
-    ogl::Program* GetProgram() { return program_; }
 private:
-    ogl::VertexArray*   vao_;
-    ogl::VertexBuffer*  vbo_;
-    ogl::Program*       program_;
+    ogl::VertexArray vao_;
+    ogl::VertexBuffer vbo_;
 };

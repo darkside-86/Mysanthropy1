@@ -99,9 +99,10 @@ namespace engine { namespace ui {
 
     void Root::Render(GraphicsContext& gc)
     {
+        // TODO: preserve and restore original states
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
-        glEnable(GL_BLEND);
+        // glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         gc.GetProgram().Use();
         gc.GetProgram().SetUniform<int>("u_useTexture", true);
@@ -115,7 +116,7 @@ namespace engine { namespace ui {
         {
             child->Render(gc);
         }
-        glDisable(GL_BLEND);
+        // glDisable(GL_BLEND);
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_DEPTH_TEST);
     }

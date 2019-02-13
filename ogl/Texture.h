@@ -27,8 +27,8 @@ namespace ogl
 	{
 	public:
 		enum TYPE { DIFFUSE, SPECULAR };
-		Texture(const std::string& filePath, bool linear = true, TYPE type=DIFFUSE);
-		Texture(const void* rgbaBuffer, int w, int h, bool linear=true, TYPE type=DIFFUSE);
+		Texture(const std::string& filePath, bool linear = true, bool repeat=true, TYPE type=DIFFUSE);
+		Texture(const void* rgbaBuffer, int w, int h, bool linear=true, bool repeat=true, TYPE type=DIFFUSE);
 		virtual ~Texture();
 		// Binds the texture for usage. Slots can be specified with GL_TEXTURE0...
 		//  A uniform of type sampler2D should be set to the slot value to be used
@@ -42,7 +42,8 @@ namespace ogl
 		inline unsigned int GetHeight() const { return height_; }
 		// get type
 		inline TYPE GetType () { return type_; }
-		// TODO: Method for accessing read-write pixel data.
+		// set clamp vs repeat
+		void SetRepeat(bool repeat);
 	private:
 		Texture(const Texture&) {}
 		void operator=(const Texture&) {}
