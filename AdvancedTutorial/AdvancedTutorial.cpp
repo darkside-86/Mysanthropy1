@@ -35,28 +35,28 @@ AdvancedTutorial::AdvancedTutorial()
 {
     {
         std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.vs");
-        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.frag");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/atshader.fs");
         ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
         ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
         program_.CompileShaders(vertexShader, fragmentShader);
     }
     {
         std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/stencils.vs");
-        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/stencils.frag");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/stencils.fs");
         ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
         ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
         colorProgram_.CompileShaders(vertexShader, fragmentShader);
     }
     {
         std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/screen.vs");
-        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/screen.frag");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/screen.fs");
         ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
         ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
         screenProgram_.CompileShaders(vertexShader, fragmentShader);
     }
     {
         std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/skybox.vs");
-        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/skybox.frag");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/skybox.fs");
         ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
         ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
         skyboxProgram_.CompileShaders(vertexShader, fragmentShader);

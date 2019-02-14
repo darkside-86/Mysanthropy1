@@ -31,71 +31,8 @@
 
 namespace engine
 {
-    /*static const char* FRAGMENT_SHADER_SRC = R"(
-        #version 330 core
-
-        in vec4 v_color;
-        in vec2 v_texCoord;
-
-        uniform sampler2D u_texture;
-        uniform bool u_useTexture;
-        uniform bool u_useColorBlending;
-
-        out vec4 color;
-
-        void main() 
-        {
-            if(u_useTexture)
-            {
-                if(u_useColorBlending)
-                    color = texture(u_texture, v_texCoord) * v_color;
-                else
-                    color = texture(u_texture, v_texCoord);
-            }
-            else
-            {
-                color = v_color;
-                // color = vec4(1.0,1.0,1.0,1.0);
-            }
-
-        }
-    )";
-
-    static const char* VERTEX_SHADER_SRC = R"(
-        #version 330 core
-
-        // vertex position
-        layout (location=0) in vec3 position;
-
-        // 4 component RGBA normalized color
-        layout (location=1) in vec4 color;
-
-        // tex coords
-        layout (location=2) in vec2 texCoords;
-
-        // send texture coordinates and color to fragment shader
-        out vec4 v_color;
-        out vec2 v_texCoord;
-
-        // model view projection matrix
-        uniform mat4 u_MVP;
-
-        void main() 
-        {
-            // apply the matrix to the positon
-            gl_Position = u_MVP * vec4(position, 1.0);
-            // gl_Position = vec4(position,1.0);
-            // set the texture coordinates to their value for fragment shader
-            v_texCoord = texCoords;
-            // set the color
-            v_color = color;
-        }
-    )";*/
-
     GraphicsContext::GraphicsContext()
     {
-        // ogl::Shader fragment(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_SRC);
-        // ogl::Shader vertex(GL_VERTEX_SHADER, VERTEX_SHADER_SRC);
         std::string vertexSrc, fragmentSrc, str;
         std::ifstream inFile;
         
@@ -111,7 +48,7 @@ namespace engine
         }
         inFile.close();
         
-        inFile.open("res/shaders/basic.frag");
+        inFile.open("res/shaders/basic.fs");
         if(!inFile.is_open())
         {
             GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,
