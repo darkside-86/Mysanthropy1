@@ -23,6 +23,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 
 #include "engine/GameEngine.h"
 #include "engine/ui/Root.h"
@@ -52,6 +54,13 @@ AdvancedTutorial::AdvancedTutorial()
         ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
         screenProgram_.CompileShaders(vertexShader, fragmentShader);
     }
+    {
+        std::string vsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/skybox.vs");
+        std::string fsSrc = engine::GameEngine::Get().ReadFileAsString("res/shaders/skybox.frag");
+        ogl::Shader vertexShader(GL_VERTEX_SHADER, vsSrc.c_str());
+        ogl::Shader fragmentShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
+        skyboxProgram_.CompileShaders(vertexShader, fragmentShader);
+    }
     simpleCube_ = new SimpleCube();
     cubeTexture_ = engine::GameEngine::Get().GetTextureManager().GetTexture("res/textures/container.png");
     simplePlane_ = new SimplePlane();
@@ -63,40 +72,32 @@ AdvancedTutorial::AdvancedTutorial()
         grasses_[i] = new GrassObject(glm::vec3((float)(2*i-4), 0.f, 0.f));
     }
     screenQuad_ = new ScreenQuad();
-    glGenFramebuffers(1, &fbo_);
-    OGL_ERROR_CHECK();
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
-    OGL_ERROR_CHECK();
-    // create color attachment texture
-    glGenTextures(1, &tcb_);
-    OGL_ERROR_CHECK();
-    glBindTexture(GL_TEXTURE_2D, tcb_);
-    OGL_ERROR_CHECK();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, engine::GameEngine::Get().GetWidth(), 
-                 engine::GameEngine::Get().GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    OGL_ERROR_CHECK();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    OGL_ERROR_CHECK();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    OGL_ERROR_CHECK();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tcb_, 0);
-    OGL_ERROR_CHECK();
-    // create render buffer object
-    glGenRenderbuffers(1, &rbo_);
-    OGL_ERROR_CHECK();
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
-    OGL_ERROR_CHECK();
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, engine::GameEngine::Get().GetWidth(), 
-                          engine::GameEngine::Get().GetHeight());
-    OGL_ERROR_CHECK();
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_);
-    OGL_ERROR_CHECK();
-    // check for completion
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                "Framebuffer incomplete!");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    OGL_ERROR_CHECK();
+    fbo_ = new ogl::FrameBuffer();
+    fbo_->AttachNewTexture(engine::GameEngine::Get().GetWidth(), engine::GameEngine::Get().GetHeight());
+    fbo_->AttachNewRenderBuffer(engine::GameEngine::Get().GetWidth(), engine::GameEngine::Get().GetHeight());
+    if(!fbo_->IsComplete())
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+                "Incomplete framebuffer!");
+    fbo_->Unbind();
+
+    /*skybox_ = LoadCubemap({
+        "res/textures/skybox/right.jpg",
+        "res/textures/skybox/left.jpg",
+        "res/textures/skybox/top.jpg",
+        "res/textures/skybox/bottom.jpg",
+        "res/textures/skybox/front.jpg",
+        "res/textures/skybox/back.jpg"
+    });*/
+
+    skybox_ = new Skybox({
+        "res/textures/skybox/right.jpg",
+        "res/textures/skybox/left.jpg",
+        "res/textures/skybox/top.jpg",
+        "res/textures/skybox/bottom.jpg",
+        "res/textures/skybox/front.jpg",
+        "res/textures/skybox/back.jpg"
+    });
+
 }
 
 AdvancedTutorial::~AdvancedTutorial()
@@ -109,7 +110,8 @@ AdvancedTutorial::~AdvancedTutorial()
     for(int i=0; i < NUM_GRASSES; ++i)
         delete grasses_[i];
     delete screenQuad_;
-    glDeleteFramebuffers(1, &fbo_);
+    delete fbo_;
+    delete skybox_;
 }
 
 bool AdvancedTutorial::Initialize()
@@ -191,10 +193,10 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     view = camera_.CalculateView();
     projection = glm::perspective(45.f, width/height, 0.01f, 100.f);
     
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+    /*fbo_->Bind();
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f,0.1f,0.1f,1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);*/
 
     program_.Use();
     program_.SetUniform<glm::mat4>("u_view", view);
@@ -240,21 +242,20 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     glStencilMask(0xff);
     glEnable(GL_DEPTH_TEST);
 
+    skyboxProgram_.Use();
+    skyboxProgram_.SetUniform<glm::mat4>("u_view", glm::mat4(glm::mat3(camera_.CalculateView())));
+    skyboxProgram_.SetUniform<glm::mat4>("u_projection", projection);
+    skybox_->Render(skyboxProgram_);
+
     engine::ui::Root::Get()->Render(gc);
 
-    screenProgram_.Use();
+    /*screenProgram_.Use();
     screenProgram_.Use();
     screenProgram_.SetUniform<int>("u_screenTexture", 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    OGL_ERROR_CHECK();
+    fbo_->Unbind();
     glDisable(GL_DEPTH_TEST);
-    OGL_ERROR_CHECK();
     glClearColor(1.f,1.f,1.f,1.f);
-    OGL_ERROR_CHECK();
     glClear(GL_COLOR_BUFFER_BIT);
-    OGL_ERROR_CHECK();
-    glBindTexture(GL_TEXTURE_2D, tcb_);
-    OGL_ERROR_CHECK();
-    screenQuad_->Render(screenProgram_);
-    OGL_ERROR_CHECK();
+    fbo_->BindTexture();
+    screenQuad_->Render(screenProgram_);*/
 }

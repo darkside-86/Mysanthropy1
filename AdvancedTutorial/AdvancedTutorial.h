@@ -25,9 +25,11 @@
 #include "engine/ui/LuaBindings.h"
 #include "GrassObject.h"
 #include "LightingTutorial/SimpleCube.h"
+#include "ogl/FrameBuffer.h"
 #include "ogl/Program.h"
 #include "ScreenQuad.h"
 #include "SimplePlane.h"
+#include "Skybox.h"
 
 class AdvancedTutorial : public engine::Game 
 {
@@ -43,6 +45,7 @@ private:
     ogl::Program program_;
     ogl::Program colorProgram_;
     ogl::Program screenProgram_;
+    ogl::Program skyboxProgram_;
     engine::Camera camera_;
     ogl::Texture* cubeTexture_;
     SimplePlane* simplePlane_;
@@ -50,8 +53,7 @@ private:
     engine::ui::LuaBindings* luaBindings_;
     static constexpr int NUM_GRASSES = 5;
     GrassObject* grasses_[NUM_GRASSES];
-    unsigned int fbo_;
-    unsigned int tcb_; // texture color buffer object
-    unsigned int rbo_; // render buffer object
+    ogl::FrameBuffer* fbo_;
     ScreenQuad* screenQuad_;
+    Skybox* skybox_;
 };

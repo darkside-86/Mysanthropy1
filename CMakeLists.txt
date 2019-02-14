@@ -51,6 +51,7 @@ set (
     OGLBINDINGSRC
         ogl/ElementBuffer.cpp
         ogl/ErrorCheck.cpp
+        ogl/FrameBuffer.cpp
         ogl/Program.cpp
         ogl/Shader.cpp
         ogl/Texture.cpp
@@ -89,6 +90,7 @@ add_executable (
         AdvancedTutorial/GrassObject.cpp
         AdvancedTutorial/ScreenQuad.cpp
         AdvancedTutorial/SimplePlane.cpp
+        AdvancedTutorial/Skybox.cpp
         LightingTutorial/LampObject.cpp
         LightingTutorial/LightingTutorial.cpp 
         LightingTutorial/SimpleCube.cpp
