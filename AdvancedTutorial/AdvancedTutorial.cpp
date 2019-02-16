@@ -32,6 +32,8 @@
 #include "ogl/ErrorCheck.h"
 #include "ogl/Texture.h"
 
+static void lua_PushMat4(lua_State* L, const glm::mat4 matrix);
+
 AdvancedTutorial::AdvancedTutorial()
 {
     {
@@ -254,6 +256,13 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     skyboxProgram_.SetUniform<glm::mat4>("u_view", glm::mat4(glm::mat3(camera_.CalculateView())));
     skyboxProgram_.SetUniform<glm::mat4>("u_projection", projection);
     skybox_->Render(skyboxProgram_);
+
+    // update lua data
+    lua_PushMat4(scripting_, view);
+    lua_setglobal(scripting_, "g_viewMatrix");
+    lua_PushMat4(scripting_, projection);
+    lua_setglobal(scripting_, "g_projectionMatrix");
+    luaL_dostring(scripting_, "UpdateMatrixFrames()");
 
     engine::ui::Root::Get()->Render(gc);
 
