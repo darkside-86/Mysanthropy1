@@ -26,7 +26,7 @@ namespace engine { namespace ui {
     {
     public:
         enum class Type {
-            CLICKED, HOVER, KEYPRESSED, DRAGGED
+            CLICKED, HOVER, KEYPRESSED, DRAGGED, TIMER
         };
         Event(Type t) : type(t) {}
         Type type;
@@ -66,8 +66,22 @@ namespace engine { namespace ui {
         int x, y, xrel, yrel;
     };
 
+    class TimerEvent : Event 
+    {
+    public:
+        TimerEvent() : Event(Type::TIMER) {}
+    };
+
     typedef std::function<void(const ClickedEvent&)> ClickedEventCallback;
     typedef std::function<void(const HoverEvent&)> HoverEventCallback;
     typedef std::function<void(const KeypressedEvent&)> KeypressedEventCallback;
     typedef std::function<void(const DraggedEvent&)> DraggedEventCallback;
+    typedef std::function<void(const TimerEvent&)> TimerEventCallback;
+
+    struct TimerEventCallbackData
+    {
+        TimerEventCallback callback;
+        unsigned int ms;
+        unsigned int elapsed = 0;
+    };
 }}

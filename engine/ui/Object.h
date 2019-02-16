@@ -42,6 +42,7 @@ namespace engine { namespace ui {
         virtual void OnKeypressed(const KeypressedEvent& e);
         virtual void AddOnDragged(const DraggedEventCallback& cb);
         virtual void OnDragged(const DraggedEvent& e);
+        virtual void AddOnTimer(const TimerEventCallback& cb, int ms);
         bool ContainsPoint(int x, int y);
         // get the innermost child object that contains the point if any
         Object* CheckPoint(int x, int y);
@@ -49,6 +50,7 @@ namespace engine { namespace ui {
         inline bool IsVisible() {return visible_;}
         inline void SetVisible(bool visible) { visible_ = visible; }
         virtual void Render(GraphicsContext& gc) = 0;
+        virtual void Update(float dtime);
         virtual int GetWidth() { return width_; }
         virtual int GetHeight() { return height_; }
         virtual void SetWidth(int w) { width_ = w; }
@@ -64,6 +66,8 @@ namespace engine { namespace ui {
         std::vector<HoverEventCallback>     onHover_;
         std::vector<KeypressedEventCallback> onKeypressed_;
         std::vector<DraggedEventCallback>   onDragged_;
+        std::vector<TimerEventCallbackData> onTimer_;
+        std::vector<TimerEventCallbackData> newTimers_;
         Object*                             parent_;
         bool                                visible_ = true;
         int                                 width_=1, height_=1;

@@ -19,6 +19,7 @@
 
 #include "AdvancedTutorial.h"
 
+#include <iostream>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -120,6 +121,10 @@ bool AdvancedTutorial::Initialize()
     camera_.SetDirection(glm::vec3(0.f,0.f,-1.f));
 
     engine::ui::Root::Get()->Initialize();
+    engine::ui::Root::Get()->AddOnTimer([](const engine::ui::TimerEvent& e){
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                "uiroot after 3 seconds!");
+    },  3000);
 
     engine::GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e){
         camera_.RotateDirection(glm::radians((float)-e.xrel*6.f));
@@ -167,8 +172,11 @@ bool AdvancedTutorial::Initialize()
                 "Lua error %d: %s", err, lua_tostring(scripting_, -1));
         lua_pop(scripting_, 1);
     }
-
-
+    lua_pushstring(scripting_, "AdvancedTutorial");
+    lua_pushlightuserdata(scripting_, this);
+    lua_settable(scripting_, LUA_REGISTRYINDEX);
+    lua_pushcfunction(scripting_, AdvancedTutorial::GetViewMatrix);
+    lua_setglobal(scripting_, "GetViewMatrix");
 
     return true;
 }
@@ -180,7 +188,7 @@ void AdvancedTutorial::Cleanup()
 
 void AdvancedTutorial::Update(float dtime)
 {
-
+    engine::ui::Root::Get()->Update(dtime);
 }
 
 void AdvancedTutorial::Render(engine::GraphicsContext& gc)
@@ -258,4 +266,32 @@ void AdvancedTutorial::Render(engine::GraphicsContext& gc)
     glClear(GL_COLOR_BUFFER_BIT);
     fbo_->BindTexture();
     screenQuad_->Render(screenProgram_);*/
+}
+
+static void lua_PushMat4(lua_State* L, const glm::mat4 matrix)
+{
+    lua_newtable(L); 
+    for(int i=1; i <= 4; ++i)
+    {
+        lua_pushinteger(L, i);
+        lua_newtable(L);
+        for(int j=1; j <=4; ++j)
+        {
+            lua_pushinteger(L, j);
+            lua_pushnumber(L, matrix[i-1][j-1]);
+            lua_settable(L, -3);
+        }
+        lua_settable(L, -3);
+    }
+}
+
+int AdvancedTutorial::GetViewMatrix(lua_State* L)
+{
+    lua_pushstring(L, "AdvancedTutorial");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    AdvancedTutorial* at = (AdvancedTutorial*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    glm::mat4 view = at->camera_.CalculateView();
+    lua_PushMat4(L, view);
+    return 1;
 }

@@ -217,6 +217,35 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    // lua : UIObject.AddOnTimer(self, someFunction, intMs)
+    static int lua_UIObject_AddOnTimer(lua_State* L)
+    {
+        static lua_Integer counter = 0;
+        Object* self = CheckObject(L, 1);
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+        unsigned int ms = (unsigned int)luaL_checkinteger(L, 3);
+        lua_pushstring(L, "TimerEventCallbacks");
+        lua_gettable(L, LUA_REGISTRYINDEX);
+        counter++;
+        lua_Integer current = counter;
+        lua_pushinteger(L, counter);
+        lua_pushvalue(L, 2);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        TimerEventCallback cb = [L, current](const TimerEvent& e) {
+            lua_pushcfunction(L, lua_ErrorHandler);
+            lua_pushstring(L, "TimerEventCallbacks");
+            lua_gettable(L, LUA_REGISTRYINDEX);
+            lua_pushinteger(L, current);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
+            lua_pcall(L, 0, 0, -2);
+            lua_pop(L, 1);
+        };
+        self->AddOnTimer(cb,ms);
+        return 0;
+    }
+
     static int lua_UIObject_ContainsPoint(lua_State* L)
     {
         Object* self = CheckObject(L, 1);
@@ -1121,6 +1150,9 @@ namespace engine { namespace ui {
         lua_pushstring(L, "DraggedEventCallbacks");
         lua_newtable(L);
         lua_settable(L, LUA_REGISTRYINDEX);
+        lua_pushstring(L, "TimerEventCallbacks");
+        lua_newtable(L);
+        lua_settable(L, LUA_REGISTRYINDEX);
         // set global functions
         lua_pushcfunction(L, lua_LoadTexture);
         lua_setglobal(L, "LoadTexture");
@@ -1138,6 +1170,7 @@ namespace engine { namespace ui {
         BIND_METHOD(UIObject, AddOnHover);
         BIND_METHOD(UIObject, AddOnKeypressed);
         BIND_METHOD(UIObject, AddOnDragged);
+        BIND_METHOD(UIObject, AddOnTimer);
         BIND_METHOD(UIObject, ContainsPoint);
         BIND_METHOD(UIObject, IsVisible);
         BIND_METHOD(UIObject, SetVisible);
@@ -1327,6 +1360,9 @@ namespace engine { namespace ui {
         lua_pushnil(luastate_);
         lua_settable(luastate_, LUA_REGISTRYINDEX);
         lua_pushstring(luastate_, "DraggedEventCallbacks");
+        lua_pushnil(luastate_);
+        lua_settable(luastate_, LUA_REGISTRYINDEX);
+        lua_pushstring(luastate_, "TimerEventCallbacks");
         lua_pushnil(luastate_);
         lua_settable(luastate_, LUA_REGISTRYINDEX);
     }

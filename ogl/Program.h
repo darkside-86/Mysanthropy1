@@ -37,8 +37,9 @@ namespace ogl
         // Binds this GLSL program
         void Use();
         void Unuse();
-        // Compiles shaders. TODO: Optional geometry shader?
+        // Compiles shaders.
         bool CompileShaders(const Shader& vertex, const Shader& fragment);
+        bool CompileShaders(const Shader& vertex, const Shader& fragment, const Shader& geometry);
         // Sets a uniform value associated with the GLSL program. Use()
         //  should be called before SetUniform() if program is not bound.
         template <typename T>

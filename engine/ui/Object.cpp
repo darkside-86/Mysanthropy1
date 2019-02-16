@@ -19,6 +19,8 @@
 
 #include "Object.h"
 
+#include <algorithm>
+
 namespace engine { namespace ui {
 
     Object::Object(Object* parent) : parent_(parent), visible_(true)
@@ -45,6 +47,36 @@ namespace engine { namespace ui {
                     break;
                 }
             }
+        }
+    }
+
+    void Object::Update(float dtime)
+    {
+        // check timer callbacks
+
+        //   update elapsed time for each callback and run callback if time has elapsed
+        unsigned int ms = (unsigned int)(1000.0f * dtime);
+        for(auto it = onTimer_.begin(); it != onTimer_.end(); ++it)
+        {
+            it->elapsed += ms;
+            if(it->elapsed >= it->ms)
+            {
+                it->callback(TimerEvent());
+            }
+        }
+        //   erase all the ones whose time has run out
+        onTimer_.erase(std::remove_if(onTimer_.begin(), onTimer_.end(), [](TimerEventCallbackData data){
+            return data.elapsed >= data.ms;
+        }), onTimer_.end());
+
+        // finally copy brand new timers into timer list
+        onTimer_.insert(onTimer_.end(), newTimers_.begin(), newTimers_.end());
+        newTimers_.clear();
+
+        // update children
+        for(auto it = children_.begin(); it != children_.end(); ++it)
+        {
+            (*it)->Update(dtime);
         }
     }
 
@@ -133,6 +165,15 @@ namespace engine { namespace ui {
             for(auto& handler : onDragged_)
                 handler(e);
         }
+    }
+
+    void Object::AddOnTimer(const TimerEventCallback& cb, int ms)
+    {
+        TimerEventCallbackData data;
+        data.callback = cb;
+        data.ms = ms;
+        // onTimer_.push_back(data);
+        newTimers_.push_back(data);
     }
 
     bool Object::ContainsPoint(int x, int y)

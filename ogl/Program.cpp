@@ -86,6 +86,50 @@ namespace ogl
         return true;
     }
 
+    bool Program::CompileShaders(const Shader& vertex, const Shader& fragment, const Shader& geometry)
+    {
+        // compile
+        bool ok = vertex.Compile() &&
+                  fragment.Compile() &&
+                  geometry.Compile();
+        if(!ok) return false;
+        glAttachShader(id_, vertex.id_);
+        glAttachShader(id_, fragment.id_);
+        glAttachShader(id_, geometry.id_);
+        glLinkProgram(id_);
+        // link
+        int result;
+        glGetProgramiv(id_, GL_LINK_STATUS, &result);
+        if (result == GL_FALSE)
+        {
+            int length;
+            std::string errMsg;
+            glGetProgramiv(id_, GL_INFO_LOG_LENGTH, &length);
+            char* message = new char[length];
+            glGetProgramInfoLog(id_, length, &length, message);
+            errMsg = message;
+            ErrorCheck::PrintErrorf("%s: %s", __FUNCTION__, message);
+            delete[] message;
+            return false;
+        }
+        // validate
+        glValidateProgram(id_);
+        glGetProgramiv(id_, GL_VALIDATE_STATUS, &result);
+        if (result == GL_FALSE)
+        {
+            int length;
+            std::string errMsg;
+            glGetProgramiv(id_, GL_INFO_LOG_LENGTH, &length);
+            char* message = new char[length];
+            glGetProgramInfoLog(id_, length, &length, message);
+            errMsg = message;
+            ErrorCheck::PrintErrorf("%s: %s", __FUNCTION__, message);
+            delete[] message;
+            return false;
+        }
+        return true;
+    }
+
     int Program::FindUniform(const std::string &name)
     {
         int location = -1; // -1 is not found

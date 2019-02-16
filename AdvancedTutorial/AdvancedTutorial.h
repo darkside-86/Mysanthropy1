@@ -41,6 +41,7 @@ public:
     void Update(float dtime) override;
     void Render(engine::GraphicsContext& gc) override;
 private:
+    static int GetViewMatrix(lua_State* L);
     SimpleCube* simpleCube_;
     ogl::Program program_;
     ogl::Program colorProgram_;
