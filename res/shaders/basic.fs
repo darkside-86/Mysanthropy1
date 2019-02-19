@@ -13,6 +13,9 @@ void main()
 {
     if(u_useTexture)
     {
+        /*vec4 c = texture(u_texture, v_texCoord);
+        if(c.a < 0.3)
+            discard;*/
         if(u_useColorBlending)
             color = texture(u_texture, v_texCoord) * v_color;
         else

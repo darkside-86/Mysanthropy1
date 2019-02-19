@@ -30,6 +30,7 @@ namespace ogl
         void Unbind() const;
         // Sets the initial raw data
         void SetData(long long size, void* data, unsigned int usage);
+        void SubData(long long offset, long long size, void* data);
     private:
         VertexBuffer(const VertexBuffer&) {}
         void operator=(const VertexBuffer&) {}

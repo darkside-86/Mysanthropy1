@@ -1132,6 +1132,14 @@ namespace engine { namespace ui {
         return 0;
     }
 
+    // get frames per second from the game engine
+    static int lua_GetFramesPerSecond(lua_State* L)
+    {
+        double fps = engine::GameEngine::Get().GetFPS();
+        lua_pushnumber(L, fps);
+        return 1;
+    }
+
 #define BIND_METHOD(c,m) lua_pushstring(L, #m); lua_pushcfunction(L, lua_ ## c ## _ ## m); lua_settable(L, -3);
 
     LuaBindings::LuaBindings(lua_State* L)
@@ -1164,6 +1172,8 @@ namespace engine { namespace ui {
         lua_setglobal(L, "GetScreenHeight");
         lua_pushcfunction(L, lua_RunFile);
         lua_setglobal(L, "RunFile");
+        lua_pushcfunction(L, lua_GetFramesPerSecond);
+        lua_setglobal(L, "GetFramesPerSecond");
         // UIObject
         lua_newtable(L);
         BIND_METHOD(UIObject, AddOnClicked);

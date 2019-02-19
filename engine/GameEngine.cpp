@@ -23,6 +23,7 @@
 
 #include <GL/glew.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_mixer.h>
 #include <SDL/SDL_ttf.h>
 
 static SDL_Window* window = nullptr;
@@ -41,11 +42,18 @@ namespace engine
         if(TTF_Init() != 0)
             return false;
         
+        // initialize mixer (todo: proper error checking and logging)
+        Mix_Init(MIX_INIT_FLAC|MIX_INIT_MID|MIX_INIT_MOD|MIX_INIT_MP3|MIX_INIT_OGG|MIX_INIT_OPUS);
+        Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 1024);
+        Mix_AllocateChannels(4);
+        
         // opengl 3.3 core mode
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        // SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+        // SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 4);
 
         // create window
         window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -73,6 +81,7 @@ namespace engine
         glStencilMask(0xff);
         glStencilFunc(GL_NOTEQUAL, 1, 0xff);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
+        // glEnable(GL_MULTISAMPLE);
         // glEnable(GL_CULL_FACE);
         // glCullFace(GL_BACK);  
         // glFrontFace(GL_CCW);    
@@ -87,6 +96,9 @@ namespace engine
 
     void GameEngine::Cleanup()
     {
+        Mix_CloseAudio();
+        Mix_Quit();
+        // TTF_Quit();
         SDL_Quit();
     }
 
@@ -133,6 +145,10 @@ namespace engine
             prevTick = currentTick;
 			currentTick = SDL_GetTicks();
 			dTime = (float)(currentTick - prevTick) / 1000.f;
+            // calc fps
+            numFrames += 1;
+            numSeconds += (double)dTime;
+            framesPerSecond_ = numFrames / numSeconds;
             if(dTime > 1.0f) // clamp maximum time elapsed to 1 second
                 dTime = 1.0f;
             game.Update(dTime);

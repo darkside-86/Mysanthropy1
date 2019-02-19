@@ -24,6 +24,7 @@
 #include "EventListeners.h"
 #include "Game.h"
 #include "Logger.h"
+#include "SoundManager.h"
 #include "TextRenderer.h"
 #include "TextureManager.h"
 
@@ -72,8 +73,12 @@ namespace engine
         void SetLogicalXY(int& x, int& y);
         // Set the actual to logical pixel scale
         void SetActualScale(float& x, float& y);
+        // Get FPS
+        double GetFPS() { return framesPerSecond_; }
         // Returns the Logger instance
         inline Logger& GetLogger() { return logger_; }
+        // Get sound manager
+        inline SoundManager& GetSoundManager() { return soundManager_; }
         // Return the text renderer
         inline TextRenderer& GetTextRenderer() { return textRenderer_; }
         // Get texture manager
@@ -90,7 +95,9 @@ namespace engine
         std::vector<MouseButtonListener> mouseButtonListeners_;
         std::vector<MouseMotionListener> mouseMotionListeners_;
         int width_, height_; // logical pixels. scalable with window resize
+        double framesPerSecond_;
         Logger logger_;
+        SoundManager soundManager_;
         TextRenderer textRenderer_;
         TextureManager textureManager_;
         std::default_random_engine rng_;

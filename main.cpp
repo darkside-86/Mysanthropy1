@@ -24,18 +24,15 @@
 #include "engine/GameEngine.h"
 #include "engine/RectangleShape.h"
 
-#include "AdvancedTutorial/AdvancedTutorial.h"
-#include "LightingTutorial/LightingTutorial.h"
-#include "ModelTutorial/ModelTutorial.h"
-#include "TestGame.h"
+#include "demos/SoundTest/SoundTest.h"
 
 int main(int argc, char* argv[])
 {
     engine::GameEngine& ge = engine::GameEngine::Get();
     engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("LightingTutorial", 1024, 576);
+    bool ok = ge.Initialize("SoundTest", 1024, 576);
     {
-        AdvancedTutorial game;
+        SoundTest game;
         ok = ok && game.Initialize();
         if(!ok)
         {

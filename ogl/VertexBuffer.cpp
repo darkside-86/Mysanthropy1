@@ -47,4 +47,10 @@ namespace ogl
         glBindBuffer(GL_ARRAY_BUFFER, id_);
         glBufferData(GL_ARRAY_BUFFER, size, data, usage);
     }
+
+    void VertexBuffer::SubData(long long offset, long long size, void* data)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, id_);
+        glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+    }
 }

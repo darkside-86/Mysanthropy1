@@ -20,6 +20,8 @@
 
 #include "GraphicsContext.h"
 
+#include <glm/glm.hpp>
+
 #include "ogl/Program.h"
 
 namespace engine 
@@ -29,5 +31,15 @@ namespace engine
     public:
         virtual void Update(float dtime) = 0;
         virtual void Render(ogl::Program& program) = 0;
+        glm::vec3 GetPosition() { return position_; }
+        void SetPosition(const glm::vec3& pos) { position_ = pos; }
+        glm::vec3 GetVelocity() { return velocity_; }
+        void SetVelocity(const glm::vec3& vel) { velocity_ = vel; }
+        glm::vec3 GetAcceleration() { return acceleration_; }
+        void SetAcceleration(const glm::vec3& acc) { acceleration_ = acc; }
+    private:
+        glm::vec3 position_;
+        glm::vec3 velocity_;
+        glm::vec3 acceleration_;
     };
 }
