@@ -1,4 +1,4 @@
--- window.lua
+-- Window.lua
 -------------------------------------------------------------------------------
 -- Author: darkside-86
 -- (c) 2019
@@ -22,14 +22,12 @@
 TEXTURE_UIBLANK = 'res/textures/uiblank.png'
 TEXTURE_UIWINDOW = 'res/textures/uiwindow.png'
 
-LoadFont('sans', 'res/fonts/OpenSans-Regular.ttf', 14)
-
 LoadTexture('res/textures/uiblank.png')
 LoadTexture('res/textures/uiwindow.png')
 
 Window = {
     New = function(parent, width, height, title, font)
-        font = font or 'sans'
+        font = font or 'sans14'
         local window = UIFrame.New(nil, width, height, 0, 0, TEXTURE_UIBLANK)
         window:SetColor(0,0,0.5,0.6)
         window:SetBorderSize(2)

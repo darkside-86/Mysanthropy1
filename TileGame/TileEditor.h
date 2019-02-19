@@ -1,4 +1,4 @@
-// main.cpp
+// TileGame.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -16,31 +16,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#include <iostream>
+#pragma once
 
-#include "engine/EventListeners.h"
-#include "engine/CircleShape.h"
+#include <lua/lua.hpp>
+
 #include "engine/Game.h"
-#include "engine/GameEngine.h"
-#include "engine/RectangleShape.h"
+#include "engine/ui/LuaBindings.h"
+#include "Image2D.h"
 
-#include "TileGame/TileEditor.h"
-
-int main(int argc, char* argv[])
+class TileEditor : public engine::Game 
 {
-    engine::GameEngine& ge = engine::GameEngine::Get();
-    engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("SoundTest", 1024, 576);
-    {
-        TileEditor game;
-        ok = ok && game.Initialize();
-        if(!ok)
-        {
-            logger.Logf(engine::Logger::Severity::FATAL, "main: Unable to initialize!");
-        }
-        engine::GameEngine::Get().StartGameLoop(game);
-        game.Cleanup();
-    }
-    engine::GameEngine::Get().Cleanup();
-    return 0;
-}
+public:
+    TileEditor();
+    virtual ~TileEditor();
+    bool Initialize() override;
+    void Cleanup() override;
+    void Update(float dtime) override;
+    void Render(engine::GraphicsContext& gc) override;
+private:
+    lua_State* uiScript_;
+    engine::ui::LuaBindings* luaBindings_;
+};

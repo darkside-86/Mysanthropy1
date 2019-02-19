@@ -28,7 +28,7 @@ namespace ogl
 	public:
 		enum TYPE { DIFFUSE, SPECULAR };
 		Texture(const std::string& filePath, bool linear = true, bool repeat=true, TYPE type=DIFFUSE);
-		Texture(const void* rgbaBuffer, int w, int h, bool linear=true, bool repeat=true, TYPE type=DIFFUSE);
+		Texture(int w, int h,const void* rgbaBuffer, bool linear=true, bool repeat=true, TYPE type=DIFFUSE);
 		virtual ~Texture();
 		// Binds the texture for usage. Slots can be specified with GL_TEXTURE0...
 		//  A uniform of type sampler2D should be set to the slot value to be used
@@ -44,6 +44,8 @@ namespace ogl
 		inline TYPE GetType () { return type_; }
 		// set clamp vs repeat
 		void SetRepeat(bool repeat);
+		// SubImage - accepts RGBA data with an unsigned byte per component.
+		void SubImage(int xoffset, int yoffset, int subWidth, int subHeight, void* data);
 	private:
 		Texture(const Texture&) {}
 		void operator=(const Texture&) {}

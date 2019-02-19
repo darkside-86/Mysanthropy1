@@ -89,7 +89,8 @@ set (
 add_executable ( 
     Mysanthropy1
 	    main.cpp
-        demos/SoundTest/SoundTest.cpp
+        TileGame/Image2D.cpp
+        TileGame/TileEditor.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )

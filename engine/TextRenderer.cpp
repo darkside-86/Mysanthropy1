@@ -95,8 +95,8 @@ namespace engine
 		{
 			pixels[i].a &= alpha;
         }
-		ogl::Texture* texture = new ogl::Texture(pixels, formattedSurface->w, 
-                formattedSurface->h, !solid);
+		ogl::Texture* texture = new ogl::Texture(formattedSurface->w, 
+                formattedSurface->h, pixels, !solid);
 		SDL_FreeSurface(formattedSurface);
 
 		return texture;
@@ -125,8 +125,8 @@ namespace engine
                     "%s: %s", __FUNCTION__, SDL_GetError());
 			return nullptr;
         }
-		ogl::Texture* texture = new ogl::Texture(formattedSurface->pixels, formattedSurface->w, 
-                formattedSurface->h, false);
+		ogl::Texture* texture = new ogl::Texture(formattedSurface->w, 
+                formattedSurface->h, formattedSurface->pixels, false);
 		SDL_FreeSurface(formattedSurface);
 
         return texture;

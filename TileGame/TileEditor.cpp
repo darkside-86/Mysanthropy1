@@ -1,4 +1,4 @@
-// SoundTest.cpp
+// TileGame.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -17,34 +17,27 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "SoundTest.h"
+#include "TileEditor.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 #include <vector>
 
 #include "engine/GameEngine.h"
 #include "engine/ui/Root.h"
+#include "ogl/ErrorCheck.h"
 
-SoundTest::SoundTest()
+TileEditor::TileEditor()
 {
-
 }
 
-SoundTest::~SoundTest()
+TileEditor::~TileEditor()
 {
-
 }
 
-void SoundTest::Update(float dtime)
-{
-
-}
-
-void SoundTest::Render(engine::GraphicsContext& gc)
-{
-
-}
-
-bool SoundTest::Initialize()
+bool TileEditor::Initialize()
 {
     engine::ui::Root::Get()->Initialize();
     uiScript_ = luaL_newstate();
@@ -52,7 +45,7 @@ bool SoundTest::Initialize()
     luaBindings_ = new engine::ui::LuaBindings(uiScript_);
 
     std::vector<const char*> CORE_UI_LIB = {
-        "ui/fonts.lua", "ui/keycodes.lua", "ui/window.lua"
+        "ui/lib/fonts.lua", "ui/lib/keycodes.lua", "ui/lib/Window.lua", "ui/TileEditor.lua"
     };
     try 
     {
@@ -69,17 +62,37 @@ bool SoundTest::Initialize()
                 "Lua error %d: %s", err, lua_tostring(uiScript_, -1));
         lua_pop(uiScript_, 1);
     }
-    lua_pushstring(uiScript_, "SoundTest");
+    lua_pushstring(uiScript_, "TileEditor");
     lua_pushlightuserdata(uiScript_, this);
     lua_settable(uiScript_, LUA_REGISTRYINDEX);
-
-    // engine::GameEngine::Get().GetSoundManager().PlayMusic("res/music/test.ogg");
 
     return true;
 }
 
-void SoundTest::Cleanup()
+void TileEditor::Cleanup()
 {
     delete luaBindings_;
     lua_close(uiScript_);
+}
+
+void TileEditor::Update(float dtime)
+{
+    engine::ui::Root::Get()->Update(dtime);
+}
+
+void TileEditor::Render(engine::GraphicsContext& gc)
+{
+    ogl::Program& program = gc.GetProgram();
+    glm::mat4 projection(1.f);
+    glm::mat4 view(1.f);
+
+    program.Use();
+    gc.SetUseTexture(true);
+    gc.SetUseColorBlending(false);
+    projection = glm::ortho(0.f, (float)engine::GameEngine::Get().GetWidth(),
+            (float)engine::GameEngine::Get().GetHeight(), 0.f);
+    program.SetUniform<glm::mat4>("u_projection", projection);
+    program.SetUniform<glm::mat4>("u_view", view);
+
+    engine::ui::Root::Get()->Render(gc);
 }

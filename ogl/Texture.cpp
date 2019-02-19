@@ -53,6 +53,7 @@ namespace ogl
 		// generate texture ID and bind it
 		//
 		glGenTextures(1, &id_);
+		glActiveTexture(GL_TEXTURE0); // place in slot 0
 		glBindTexture(GL_TEXTURE_2D, id_);
 
 		// set linear vs. nearest
@@ -64,7 +65,6 @@ namespace ogl
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, formattedSurface->w, formattedSurface->h,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, formattedSurface->pixels);
-		glActiveTexture(GL_TEXTURE0); // place in slot 0
 		OGL_ERROR_CHECK();
 
 		width_ = formattedSurface->w;
@@ -73,21 +73,19 @@ namespace ogl
 		SDL_FreeSurface(formattedSurface); // throw away data on CPU side
 	}
 
-	Texture::Texture(const void* rgbaBuffer, int w, int h, bool linear, bool repeat, Texture::TYPE type) 
+	Texture::Texture(int w, int h, const void* rgbaBuffer, bool linear, bool repeat, Texture::TYPE type) 
 		: type_(type)
 	{
 		// generate texture ID and bind it
 		//
-		glActiveTexture(GL_TEXTURE0); // place in slot 0
 		glGenTextures(1, &id_);
+		glActiveTexture(GL_TEXTURE0); // place in slot 0
 		glBindTexture(GL_TEXTURE_2D, id_);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-		// TODO: clamp vs repeat
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h,
-			0, GL_RGBA, GL_UNSIGNED_BYTE, rgbaBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbaBuffer);
 		width_ = w;
 		height_ = h;
 	}
@@ -113,6 +111,12 @@ namespace ogl
 		glBindTexture(GL_TEXTURE_2D, id_);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat? GL_REPEAT : GL_CLAMP_TO_EDGE);
+	}
+
+	void Texture::SubImage(int xoffset, int yoffset, int subWidth, int subHeight, void* data)
+	{
+		glBindTexture(GL_TEXTURE_2D, id_);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, subWidth, subHeight, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	}
 
 }
