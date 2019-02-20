@@ -66,6 +66,59 @@ bool TileEditor::Initialize()
     lua_pushlightuserdata(uiScript_, this);
     lua_settable(uiScript_, LUA_REGISTRYINDEX);
 
+    tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
+
+    tileMap_ = new TileMap(tileSet_, 32, 32);
+
+    engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
+        // what is the selected x,y index value based on what is clicked at top with tiles rendered
+        // at 1/4 of original size?
+        //
+        int clickedX = e.x, clickedY = e.y;
+        engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
+        int drawnTileWidth = tileSet_->GetTileWidth() / 2;
+        int drawnTileHeight = tileSet_->GetTileHeight() / 2;
+        int screenWidth = engine::GameEngine::Get().GetWidth();
+        int screenHeight = engine::GameEngine::Get().GetHeight();
+        int ntx, nty;
+        tileSet_->GetNumTiles(ntx, nty);
+        // e.g. J=3,1 in algorithm
+        int sx = clickedX / drawnTileWidth;
+        int sy = clickedY / drawnTileHeight;
+        // e.g. J=9 in algorithm
+        int scrnx = screenWidth / drawnTileWidth;
+        int scrny = screenHeight / drawnTileHeight;
+        int ndindex = sy * scrnx + sx;
+        // e.g. J=1,2 in algorithm
+        if(ndindex >= ntx * nty)
+        {
+            // change the selected Tile to the selected tileset node because a new
+            // one wasn't selected.
+            //
+            SetTileToSelected(clickedX, clickedY);
+        }
+        else
+        {
+            selectedIX_ = ndindex % ntx;
+            selectedIY_ = ndindex / ntx;
+        }
+    });
+
+    engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
+        if(e.type == SDL_KEYDOWN)
+        {
+            int w = tileSet_->GetTileWidth();
+            int h = tileSet_->GetTileHeight();
+            switch(e.keysym.sym)
+            {
+            case SDLK_UP: cameraY_ += h; break;
+            case SDLK_DOWN: cameraY_ -= h; break;
+            case SDLK_LEFT: cameraX_ += w; break;
+            case SDLK_RIGHT: cameraX_ -= w; break;
+            }
+        }
+    });
+
     return true;
 }
 
@@ -73,6 +126,8 @@ void TileEditor::Cleanup()
 {
     delete luaBindings_;
     lua_close(uiScript_);
+    delete tileSet_;
+    delete tileMap_;
 }
 
 void TileEditor::Update(float dtime)
@@ -82,6 +137,9 @@ void TileEditor::Update(float dtime)
 
 void TileEditor::Render(engine::GraphicsContext& gc)
 {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_STENCIL_TEST);
+
     ogl::Program& program = gc.GetProgram();
     glm::mat4 projection(1.f);
     glm::mat4 view(1.f);
@@ -94,5 +152,44 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_projection", projection);
     program.SetUniform<glm::mat4>("u_view", view);
 
+    // draw tilemap first
+    tileMap_->Draw(cameraX_, cameraY_, program);
+
+    // draw all tiles from the set across the top
+    int screenWidth = engine::GameEngine::Get().GetWidth();
+    int screenHeight = engine::GameEngine::Get().GetHeight();
+    int x = 0, y = 0, ix = 0, iy = 0;
+    int numTilesX, numTilesY;
+    tileSet_->GetNumTiles(numTilesX, numTilesY);
+    while( ix * numTilesY + iy < numTilesX * numTilesY)
+    {
+        tileSet_->DrawTile(x, y, 0.5f, 0.5f, program, ix, iy);
+        ++ix;
+        if(ix >= numTilesX)
+        {
+            ix = 0;
+            ++iy;
+        }
+
+        x += tileSet_->GetTileWidth() / 2;
+        if( x >= screenWidth )
+        {
+            x = 0;
+            y += tileSet_->GetTileHeight() / 2;
+        }
+    }
+    // draw selected tile 2x size at bottom left of screen
+    tileSet_->DrawTile(0, screenHeight - tileSet_->GetTileHeight() * 2, 2.f, 2.f, program, 
+            selectedIX_, selectedIY_);
+
     engine::ui::Root::Get()->Render(gc);
+}
+
+void TileEditor::SetTileToSelected(int mouseX, int mouseY)
+{
+    int tileWidth = tileSet_->GetTileWidth();
+    int tileHeight = tileSet_->GetTileHeight();
+    int ix = (mouseX - cameraX_) / tileWidth;
+    int iy = (mouseY - cameraY_) / tileHeight;
+    tileMap_->SetTile(ix, iy, {(unsigned short)selectedIX_, (unsigned short)selectedIY_});
 }

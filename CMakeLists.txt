@@ -91,6 +91,8 @@ add_executable (
 	    main.cpp
         TileGame/Image2D.cpp
         TileGame/TileEditor.cpp
+        TileGame/TileMap.cpp
+        TileGame/TileSet.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )

@@ -1,4 +1,4 @@
-// main.cpp
+// TileMap.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -16,31 +16,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#include <iostream>
+#pragma once
 
-#include "engine/EventListeners.h"
-#include "engine/CircleShape.h"
-#include "engine/Game.h"
-#include "engine/GameEngine.h"
-#include "engine/RectangleShape.h"
+#include <string>
+#include <vector>
 
-#include "TileGame/TileEditor.h"
+#include "ogl/Program.h"
+#include "TileSet.h"
 
-int main(int argc, char* argv[])
+struct Tile
 {
-    engine::GameEngine& ge = engine::GameEngine::Get();
-    engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("Tile Editor", 1024, 576);
-    {
-        TileEditor game;
-        ok = ok && game.Initialize();
-        if(!ok)
-        {
-            logger.Logf(engine::Logger::Severity::FATAL, "main: Unable to initialize!");
-        }
-        engine::GameEngine::Get().StartGameLoop(game);
-        game.Cleanup();
-    }
-    engine::GameEngine::Get().Cleanup();
-    return 0;
-}
+    unsigned short ix=0;
+    unsigned short iy=0;
+};
+
+class TileMap
+{
+public:
+    TileMap(TileSet* tileSet, int width, int height);
+    virtual ~TileMap();
+    void Draw(int x, int y, ogl::Program& program);
+    // todo: faster Render method
+    void SaveToFile(const std::string& path);
+    TileSet* GetTileSet() { return tileSet_; }
+    Tile GetTile(int ix, int iy);
+    void SetTile(int ix, int iy, const Tile& tile);
+private:
+    TileSet* tileSet_;
+    int width_;
+    int height_;
+    Tile* tiles_;
+};

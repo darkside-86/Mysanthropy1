@@ -1,4 +1,4 @@
-// main.cpp
+// TileSet.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -16,31 +16,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#include <iostream>
+#pragma once
 
-#include "engine/EventListeners.h"
-#include "engine/CircleShape.h"
-#include "engine/Game.h"
-#include "engine/GameEngine.h"
-#include "engine/RectangleShape.h"
+#include <string>
 
-#include "TileGame/TileEditor.h"
+#include "ogl/Program.h"
+#include "ogl/Texture.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
 
-int main(int argc, char* argv[])
+class TileSet
 {
-    engine::GameEngine& ge = engine::GameEngine::Get();
-    engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("Tile Editor", 1024, 576);
-    {
-        TileEditor game;
-        ok = ok && game.Initialize();
-        if(!ok)
-        {
-            logger.Logf(engine::Logger::Severity::FATAL, "main: Unable to initialize!");
-        }
-        engine::GameEngine::Get().StartGameLoop(game);
-        game.Cleanup();
-    }
-    engine::GameEngine::Get().Cleanup();
-    return 0;
-}
+public:
+    TileSet(const std::string& fpath, int tileWidth, int tileHeight);
+    ~TileSet();
+    void GetNumTiles(int& numx, int& numy);
+    void DrawTile(int x, int y, float scaleX, float scaleY, ogl::Program& program, int ix, int iy);
+    std::string GetPathToTexture() { return pathToTexture_; }
+    ogl::Texture* GetTexture() { return texture_; }
+    int GetTileWidth() { return tileWidth_; }
+    int GetTileHeight() { return tileHeight_; }
+private:
+    std::string pathToTexture_;
+    ogl::Texture* texture_;
+    int tileWidth_;
+    int tileHeight_;
+    int numTilesX_ = 0;
+    int numTilesY_ = 0;
+    ogl::VertexArray vao_;
+    ogl::VertexBuffer vbo_;
+};

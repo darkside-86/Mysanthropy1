@@ -23,6 +23,8 @@
 #include "engine/Game.h"
 #include "engine/ui/LuaBindings.h"
 #include "Image2D.h"
+#include "TileMap.h"
+#include "TileSet.h"
 
 class TileEditor : public engine::Game 
 {
@@ -34,6 +36,12 @@ public:
     void Update(float dtime) override;
     void Render(engine::GraphicsContext& gc) override;
 private:
-    lua_State* uiScript_;
+    void SetTileToSelected(int mouseX, int mouseY);
+    lua_State*  uiScript_;
     engine::ui::LuaBindings* luaBindings_;
+    TileSet*    tileSet_;
+    TileMap*    tileMap_;
+    int selectedIX_ = 0;
+    int selectedIY_ = 0;
+    int cameraX_=0, cameraY_=0;
 };
