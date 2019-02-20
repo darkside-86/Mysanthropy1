@@ -33,17 +33,20 @@ struct Tile
 class TileMap
 {
 public:
+    // The tilemap takes ownership of tileSet pointer if constructed this way.
     TileMap(TileSet* tileSet, int width, int height);
+    TileMap(const std::string& path);
     virtual ~TileMap();
     void Draw(int x, int y, ogl::Program& program);
     // todo: faster Render method
     void SaveToFile(const std::string& path);
+    void LoadFromFile(const std::string& path);
     TileSet* GetTileSet() { return tileSet_; }
     Tile GetTile(int ix, int iy);
     void SetTile(int ix, int iy, const Tile& tile);
 private:
-    TileSet* tileSet_;
-    int width_;
-    int height_;
-    Tile* tiles_;
+    TileSet* tileSet_ = nullptr;
+    int width_ = 0;
+    int height_ = 0;
+    Tile* tiles_ = nullptr;
 };

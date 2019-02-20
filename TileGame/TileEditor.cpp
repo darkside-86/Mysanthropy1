@@ -66,9 +66,11 @@ bool TileEditor::Initialize()
     lua_pushlightuserdata(uiScript_, this);
     lua_settable(uiScript_, LUA_REGISTRYINDEX);
 
-    tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
+    // tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
 
-    tileMap_ = new TileMap(tileSet_, 32, 32);
+    // tileMap_ = new TileMap(tileSet_, 32, 32);
+    tileMap_ = new TileMap("res/tilemaps/output.bin");
+    tileSet_ = tileMap_->GetTileSet();
 
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
         // what is the selected x,y index value based on what is clicked at top with tiles rendered
@@ -124,9 +126,10 @@ bool TileEditor::Initialize()
 
 void TileEditor::Cleanup()
 {
+    tileMap_->SaveToFile("res/tilemaps/output.bin");
+
     delete luaBindings_;
     lua_close(uiScript_);
-    delete tileSet_;
     delete tileMap_;
 }
 
