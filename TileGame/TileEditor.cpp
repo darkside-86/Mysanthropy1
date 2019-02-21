@@ -73,6 +73,8 @@ bool TileEditor::Initialize()
     lua_setglobal(uiScript_, "TileEditor_NewMap");
     lua_pushcfunction(uiScript_, TileEditor::lua_FillWithSelection);
     lua_setglobal(uiScript_, "TileEditor_FillWithSelection");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SetSelectedLayer);
+    lua_setglobal(uiScript_, "TileEditor_SetSelectedLayer");
 
     // tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
 
@@ -203,7 +205,7 @@ void TileEditor::SetTileToSelected(int mouseX, int mouseY)
     int tileHeight = tileSet_->GetTileHeight();
     int ix = (mouseX - cameraX_) / tileWidth;
     int iy = (mouseY - cameraY_) / tileHeight;
-    tileMap_->SetTile(ix, iy, {(unsigned short)selectedIX_, (unsigned short)selectedIY_});
+    tileMap_->SetTile(ix, iy, {(unsigned short)selectedIX_, (unsigned short)selectedIY_}, selectedLayer_);
 }
 
 int TileEditor::lua_SaveMap(lua_State* L)
@@ -269,9 +271,24 @@ int TileEditor::lua_FillWithSelection(lua_State* L)
     {
         for(int ix=0; ix < te->tileMap_->GetWidth(); ++ix)
         {
-            te->tileMap_->SetTile(ix, iy, {(unsigned short)te->selectedIX_, (unsigned short)te->selectedIY_});
+            te->tileMap_->SetTile(ix, iy, {(unsigned short)te->selectedIX_, (unsigned short)te->selectedIY_},
+                    te->selectedLayer_);
         }
     }
+
+    return 0;
+}
+
+int TileEditor::lua_SetSelectedLayer(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int layer = (int)lua_tonumber(L, 1) == 0 ? 0 : 1;
+    te->selectedLayer_ = layer;
 
     return 0;
 }

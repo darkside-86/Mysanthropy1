@@ -22,6 +22,16 @@ function OnFillBtnClicked()
     TileEditor_FillWithSelection()
 end
 
+function OnLayerCBClicked()
+    if mainWindow.layerCB:GetText() == "[_]" then 
+        mainWindow.layerCB:SetText("[X]")
+        TileEditor_SetSelectedLayer(1)
+    else 
+        mainWindow.layerCB:SetText("[_]")
+        TileEditor_SetSelectedLayer(0)
+    end
+end
+
 -- main ui
 mainWindow = Window.New(nil, 250, 450, "Options", "sans14")
 mainWindow:SetXPos(GetScreenWidth() - mainWindow:GetWidth())
@@ -87,6 +97,13 @@ mainWindow.fillBtn = UIButton.New(mainWindow, TEXTURE_UIBLANK, "Fill with select
 mainWindow.fillBtn:SetYPos(mainWindow.newBtn:GetYPos() + mainWindow.newBtn:GetHeight())
 mainWindow.fillBtn:SetColor(1,0,0,1)
 mainWindow.fillBtn:SetTextColor(1,1,1,1)
-mainWindow.fillBtn:SetWidth(mainWindow:GetWidth())
+mainWindow.fillBtn:SetXPos(mainWindow:GetWidth() - mainWindow.fillBtn:GetWidth())
 mainWindow.fillBtn:AddOnClicked(OnFillBtnClicked)
 
+mainWindow.layerCB = UILabel.New(mainWindow, "[_]", "sans14", 1,1,1,1)
+mainWindow.layerCB:SetYPos(mainWindow.fillBtn:GetYPos() + mainWindow.fillBtn:GetHeight())
+mainWindow.layerCB:AddOnClicked(OnLayerCBClicked)
+
+mainWindow.label4 = UILabel.New(mainWindow, "Toggle layer 1", "sans14", 1,1,1,1)
+mainWindow.label4:SetYPos(mainWindow.layerCB:GetYPos())
+mainWindow.label4:SetXPos(mainWindow.layerCB:GetXPos() + mainWindow.layerCB:GetWidth() + 1)

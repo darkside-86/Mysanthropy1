@@ -30,6 +30,7 @@ TileMap::TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, 
 {
     tileSet_ = new TileSet(tilesetPath, tileWidth, tileHeight);
     layer0_ = new Tile [width_ * height_];
+    layer1_ = new Tile [width_ * height_];
     SetupRender();
 }
 
@@ -41,41 +42,29 @@ TileMap::TileMap(const std::string& path)
 TileMap::~TileMap()
 {
     delete [] layer0_;
+    delete [] layer1_;
     delete tileSet_;
     delete vao_;
+    delete vao1_;
 }
 
-/*void TileMap::Draw(int x, int y, ogl::Program& program)
-{
-    int drawx = x;
-    int drawy = y;
-    for(int iy = 0; iy < height_; ++iy)
-    {
-        for(int ix = 0; ix < width_; ++ix)
-        {
-            Tile& tile = tiles_[iy*width_ + ix];
-            tileSet_->DrawTile(drawx, drawy, 1.f, 1.f, program, tile.ix, tile.iy);
-            drawx += tileSet_->GetTileWidth();
-        }
-        drawx = x;
-        drawy += tileSet_->GetTileHeight();
-    }
-}*/
-
-Tile TileMap::GetTile(int ix, int iy)
+Tile TileMap::GetTile(int ix, int iy, bool layer1)
 {
     int index = iy*width_ + ix;
     if(index >= width_*height_ || index < 0)
         return {0,0};
-    return layer0_[index];
+    return !layer1? layer0_[index] : layer1_[index];
 }
 
-void TileMap::SetTile(int ix, int iy, const Tile& tile)
+void TileMap::SetTile(int ix, int iy, const Tile& tile, bool layer1)
 {
     int index = iy * width_ + ix;
     if(index >= width_*height_ || index < 0)
         return;
-    layer0_[index] = tile;
+    if(!layer1)
+        layer0_[index] = tile;
+    else
+        layer1_[index] = tile;
     SetupRender();
 }
 
@@ -91,7 +80,7 @@ void TileMap::SaveToFile(const std::string& path)
     }
 
     const unsigned char MAJOR_VERSION = 0;
-    const unsigned char MINOR_VERSION = 1;
+    const unsigned char MINOR_VERSION = 2;
     const std::string TILESET_PATH = tileSet_->GetPathToTexture();
     out.write((char*)&MAJOR_VERSION, sizeof(unsigned char));
     out.write((char*)&MINOR_VERSION, sizeof(unsigned char));
@@ -107,6 +96,10 @@ void TileMap::SaveToFile(const std::string& path)
     {
         out.write((char*)&layer0_[i], sizeof(Tile));
     }
+    for(int i=0; i < width_ * height_; ++i)
+    {
+        out.write((char*)&layer1_[i], sizeof(Tile));
+    }
 
     out.close();
 }
@@ -118,6 +111,7 @@ void TileMap::LoadFromFile(const std::string& path)
     delete [] layer0_;
     tileSet_ = nullptr;
     layer0_ = nullptr;
+    layer1_ = nullptr;
     width_ = 0;
     height_ = 0;
     
@@ -149,22 +143,36 @@ void TileMap::LoadFromFile(const std::string& path)
     in.read((char*)&width_, sizeof(width_));
     in.read((char*)&height_, sizeof(height_));
     layer0_ = new Tile[width_*height_];
+    layer1_ = new Tile[width_*height_];
     for(int i=0; i < width_*height_; ++i)
     {
         Tile tile;
         in.read((char*)&tile, sizeof(tile));
         layer0_[i] = tile;
     }
+    if(minorV >= 2)
+    {
+        for(int i=0; i < width_*height_; ++i)
+        {
+            Tile tile;
+            in.read((char*)&tile, sizeof(tile));
+            layer1_[i] = tile;
+        } 
+    }
     in.close();
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+            "%s: Finished loading", __FUNCTION__);
     SetupRender();
 }
 
 void TileMap::SetupRender()
 {
     ogl::Vertex* vertices;
+    ogl::Vertex* l1Verts;
     // 6 vertices per tile
     int numVertices = 6 * width_ * height_;
     vertices = new ogl::Vertex[numVertices];
+    l1Verts = new ogl::Vertex[numVertices];
     int vi = 0;
     int ti = 0;
     float w = (float)tileSet_->GetTileWidth();
@@ -175,18 +183,32 @@ void TileMap::SetupRender()
     float th = 1.f / (float)nty;
     float x = 0.0f;
     float y = 0.0f;
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+            "%s: Working on vertices...", __FUNCTION__);
     while(vi < numVertices)
     {
         float s0 = (float)layer0_[ti].ix / (float)ntx;
         float s1 = s0 + tw;
         float t0 = (float)layer0_[ti].iy / (float)nty;
         float t1 = t0 + th;
+        // layer 0
         vertices[0+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
         vertices[1+vi] = {{x,y+h,0.f}, {255,255,255,255}, {s0, t1}, {0.f, 0.f, 1.f}}; 
         vertices[2+vi] = {{x+w,y+h,0.f}, {255,255,255,255}, {s1, t1}, {0.f, 0.f, 1.f}}; 
         vertices[3+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
         vertices[4+vi] = {{x+w,y+h,0.f}, {255,255,255,255}, {s1, t1}, {0.f, 0.f, 1.f}}; 
         vertices[5+vi] = {{x+w,y,0.f}, {255,255,255,255}, {s1, t0}, {0.f, 0.f, 1.f}}; 
+        // layer 1
+        s0 = (float)layer1_[ti].ix / (float)ntx;
+        s1 = s0 + tw;
+        t0 = (float)layer1_[ti].iy / (float)nty;
+        t1 = t0 + th;
+        l1Verts[0+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
+        l1Verts[1+vi] = {{x,y+h,0.f}, {255,255,255,255}, {s0, t1}, {0.f, 0.f, 1.f}}; 
+        l1Verts[2+vi] = {{x+w,y+h,0.f}, {255,255,255,255}, {s1, t1}, {0.f, 0.f, 1.f}}; 
+        l1Verts[3+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
+        l1Verts[4+vi] = {{x+w,y+h,0.f}, {255,255,255,255}, {s1, t1}, {0.f, 0.f, 1.f}}; 
+        l1Verts[5+vi] = {{x+w,y,0.f}, {255,255,255,255}, {s1, t0}, {0.f, 0.f, 1.f}}; 
         vi += 6;
         ti += 1;
         x += w;
@@ -196,13 +218,20 @@ void TileMap::SetupRender()
             x = 0.f;
         }
     }
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+            "%s: ...Done", __FUNCTION__);
     vbo_.SetData(sizeof(ogl::Vertex)*numVertices, vertices, GL_STATIC_DRAW);
+    vbo1_.SetData(sizeof(ogl::Vertex)*numVertices, l1Verts, GL_STATIC_DRAW);
     ogl::VertexBufferLayout vbl;
     ogl::Vertex::PushLayout(vbl);
     delete vao_;
+    delete vao1_;
     vao_ = new ogl::VertexArray();
-    vao_->AddBuffer(vbo_, vbl);   
+    vao_->AddBuffer(vbo_, vbl);
+    vao1_ = new ogl::VertexArray();
+    vao1_->AddBuffer(vbo1_, vbl);
     delete [] vertices;
+    delete [] l1Verts;
 }
 
 void TileMap::Render(int x, int y, ogl::Program& program)
@@ -214,5 +243,7 @@ void TileMap::Render(int x, int y, ogl::Program& program)
     tileSet_->GetTexture()->Bind();
     glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3((float)x, (float)y, 0.f));
     program.SetUniform<glm::mat4>("u_model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
+    vao1_->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
 }

@@ -45,14 +45,19 @@ public:
     TileSet* GetTileSet() { return tileSet_; }
     int GetWidth() { return width_; }
     int GetHeight() { return height_; }
-    Tile GetTile(int ix, int iy);
-    void SetTile(int ix, int iy, const Tile& tile);
+    Tile GetTile(int ix, int iy, bool layer1 = false);
+    void SetTile(int ix, int iy, const Tile& tile, bool layer1=false);
 private:
     void SetupRender(); 
     TileSet* tileSet_ = nullptr;
     int width_ = 0;
     int height_ = 0;
     Tile* layer0_ = nullptr;
+    Tile* layer1_ = nullptr;
+    // layer 0
     ogl::VertexArray* vao_ = nullptr;
     ogl::VertexBuffer vbo_;
+    // layer 1
+    ogl::VertexArray* vao1_ = nullptr;
+    ogl::VertexBuffer vbo1_;
 };
