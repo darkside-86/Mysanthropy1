@@ -160,7 +160,8 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_view", view);
 
     // draw tilemap first
-    tileMap_->Draw(cameraX_, cameraY_, program);
+    // tileMap_->Draw(cameraX_, cameraY_, program);
+    tileMap_->Render(cameraX_, cameraY_, program);
 
     // draw all tiles from the set across the top
     int screenWidth = engine::GameEngine::Get().GetWidth();

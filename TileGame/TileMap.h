@@ -22,6 +22,8 @@
 #include <vector>
 
 #include "ogl/Program.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
 #include "TileSet.h"
 
 struct Tile
@@ -38,15 +40,18 @@ public:
     TileMap(const std::string& path);
     virtual ~TileMap();
     void Draw(int x, int y, ogl::Program& program);
-    // todo: faster Render method
+    void Render(int x, int y, ogl::Program &program);
     void SaveToFile(const std::string& path);
     void LoadFromFile(const std::string& path);
     TileSet* GetTileSet() { return tileSet_; }
     Tile GetTile(int ix, int iy);
     void SetTile(int ix, int iy, const Tile& tile);
 private:
+    void SetupRender(); 
     TileSet* tileSet_ = nullptr;
     int width_ = 0;
     int height_ = 0;
     Tile* tiles_ = nullptr;
+    ogl::VertexArray* vao_ = nullptr;
+    ogl::VertexBuffer vbo_;
 };

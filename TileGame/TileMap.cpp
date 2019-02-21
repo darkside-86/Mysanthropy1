@@ -19,14 +19,17 @@
 
 #include "TileMap.h"
 
-#include "engine/GameEngine.h"
-
 #include <fstream>
+
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "engine/GameEngine.h"
 
 TileMap::TileMap(TileSet* tileSet, int width, int height) 
     : tileSet_(tileSet), width_(width), height_(height)
 {
     tiles_ = new Tile [width_ * height_];
+    SetupRender();
 }
 
 TileMap::TileMap(const std::string& path)
@@ -71,6 +74,7 @@ void TileMap::SetTile(int ix, int iy, const Tile& tile)
     if(index >= width_*height_ || index < 0)
         return;
     tiles_[index] = tile;
+    SetupRender();
 }
 
 void TileMap::SaveToFile(const std::string& path)
@@ -150,4 +154,63 @@ void TileMap::LoadFromFile(const std::string& path)
         tiles_[i] = tile;
     }
     in.close();
+    SetupRender();
+}
+
+void TileMap::SetupRender()
+{
+    ogl::Vertex* vertices;
+    // 6 vertices per tile
+    int numVertices = 6 * width_ * height_;
+    vertices = new ogl::Vertex[numVertices];
+    int vi = 0;
+    int ti = 0;
+    float w = (float)tileSet_->GetTileWidth();
+    float h = (float)tileSet_->GetTileHeight();
+    int ntx, nty;
+    tileSet_->GetNumTiles(ntx, nty);
+    float tw = 1.f / (float)ntx;
+    float th = 1.f / (float)nty;
+    float x = 0.0f;
+    float y = 0.0f;
+    while(vi < numVertices)
+    {
+        float s0 = (float)tiles_[ti].ix / (float)ntx;
+        float s1 = s0 + tw;
+        float t0 = (float)tiles_[ti].iy / (float)nty;
+        float t1 = t0 + th;
+        vertices[0+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
+        vertices[1+vi] = {{x,y+h,0.f}, {255,255,255,255}, {s0, t1}, {0.f, 0.f, 1.f}}; 
+        vertices[2+vi] = {{x+w,y+h,0.f}, {255,255,255,255}, {s1, t1}, {0.f, 0.f, 1.f}}; 
+        vertices[3+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
+        vertices[4+vi] = {{x+w,y+h,0.f}, {255,255,255,255}, {s1, t1}, {0.f, 0.f, 1.f}}; 
+        vertices[5+vi] = {{x+w,y,0.f}, {255,255,255,255}, {s1, t0}, {0.f, 0.f, 1.f}}; 
+        vi += 6;
+        ti += 1;
+        x += w;
+        if(ti > 0 && ti % width_ == 0)
+        {
+            y += h;
+            x = 0.f;
+        }
+    }
+    vbo_.SetData(sizeof(ogl::Vertex)*numVertices, vertices, GL_STATIC_DRAW);
+    ogl::VertexBufferLayout vbl;
+    ogl::Vertex::PushLayout(vbl);
+    delete vao_;
+    vao_ = new ogl::VertexArray();
+    vao_->AddBuffer(vbo_, vbl);   
+    delete [] vertices;
+}
+
+void TileMap::Render(int x, int y, ogl::Program& program)
+{
+    if(vao_ == nullptr)
+        return;
+    program.Use();
+    vao_->Bind();
+    tileSet_->GetTexture()->Bind();
+    glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3((float)x, (float)y, 0.f));
+    program.SetUniform<glm::mat4>("u_model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
 }
