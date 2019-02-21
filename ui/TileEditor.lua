@@ -9,6 +9,19 @@ function OnLoadBtnClicked()
     TileEditor_LoadMap(text)
 end
 
+function OnNewBtnClicked()
+    local tilesetPath = "res/textures/tilesets/" .. mainWindow.tilesetTf:GetText() .. ".png"
+    local tileWidth = tonumber(mainWindow.tileWidthTf:GetText())
+    local tileHeight = tonumber(mainWindow.tileHeightTf:GetText())
+    local mapWidth = tonumber(mainWindow.mapWidthTf:GetText())
+    local mapHeight = tonumber(mainWindow.mapHeightTf:GetText())
+    TileEditor_NewMap(tileWidth, tileHeight, tilesetPath, mapWidth, mapHeight)
+end
+
+function OnFillBtnClicked()
+    TileEditor_FillWithSelection()
+end
+
 -- main ui
 mainWindow = Window.New(nil, 250, 450, "Options", "sans14")
 mainWindow:SetXPos(GetScreenWidth() - mainWindow:GetWidth())
@@ -35,4 +48,45 @@ mainWindow.loadBtn:SetBorderSize(1)
 mainWindow.loadBtn:SetBorderColor(1,1,1,1)
 mainWindow.loadBtn:SetColor(0,0,1,0)
 mainWindow.loadBtn:AddOnClicked(OnLoadBtnClicked)
+
+mainWindow.label1 = UILabel.New(mainWindow, "Tileset", "sans14", 1,1,1,1)
+mainWindow.label1:SetYPos(mainWindow.loadBtn:GetYPos() + mainWindow.loadBtn:GetHeight())
+
+mainWindow.tilesetTf = UITextField.New(mainWindow, mainWindow:GetWidth(), 20, "sans14", TEXTURE_UIBLANK)
+mainWindow.tilesetTf:SetYPos(mainWindow.label1:GetYPos() + mainWindow.label1:GetHeight())
+
+mainWindow.label2 = UILabel.New(mainWindow, "Tile width and height", "sans14", 1,1,1,1)
+mainWindow.label2:SetYPos(mainWindow.tilesetTf:GetYPos() + mainWindow.tilesetTf:GetHeight())
+
+mainWindow.tileWidthTf = UITextField.New(mainWindow, mainWindow:GetWidth() / 2 - 5, 20, "sans14", TEXTURE_UIBLANK)
+mainWindow.tileWidthTf:SetYPos(mainWindow.label2:GetYPos() + mainWindow.label2:GetHeight())
+
+mainWindow.tileHeightTf = UITextField.New(mainWindow, mainWindow:GetWidth() / 2 - 5, 20, "sans14", TEXTURE_UIBLANK)
+mainWindow.tileHeightTf:SetYPos(mainWindow.tileWidthTf:GetYPos())
+mainWindow.tileHeightTf:SetXPos(mainWindow:GetWidth() / 2)
+
+mainWindow.label3 = UILabel.New(mainWindow, "Map width and height", "sans14", 1,1,1,1)
+mainWindow.label3:SetYPos(mainWindow.tileHeightTf:GetYPos() + mainWindow.tileHeightTf:GetHeight())
+
+mainWindow.mapWidthTf = UITextField.New(mainWindow, mainWindow:GetWidth() / 2 - 6, 20, "sans14", TEXTURE_UIBLANK)
+mainWindow.mapWidthTf:SetYPos(mainWindow.label3:GetYPos() + mainWindow.label3:GetHeight())
+
+mainWindow.mapHeightTf = UITextField.New(mainWindow, mainWindow:GetWidth() / 2 - 6, 20, "sans14", TEXTURE_UIBLANK)
+mainWindow.mapHeightTf:SetYPos(mainWindow.mapWidthTf:GetYPos())
+mainWindow.mapHeightTf:SetXPos(mainWindow:GetWidth() / 2)
+
+mainWindow.newBtn = UIButton.New(mainWindow, TEXTURE_UIBLANK, "New", "sans14", 5)
+mainWindow.newBtn:SetYPos(mainWindow.mapHeightTf:GetYPos() + mainWindow.mapHeightTf:GetHeight())
+mainWindow.newBtn:SetWidth(mainWindow:GetWidth())
+mainWindow.newBtn:SetColor(0,0,1,0)
+mainWindow.newBtn:SetBorderSize(1)
+mainWindow.newBtn:SetBorderColor(1,1,1,1)
+mainWindow.newBtn:AddOnClicked(OnNewBtnClicked)
+
+mainWindow.fillBtn = UIButton.New(mainWindow, TEXTURE_UIBLANK, "Fill with selection", "sans14", 5)
+mainWindow.fillBtn:SetYPos(mainWindow.newBtn:GetYPos() + mainWindow.newBtn:GetHeight())
+mainWindow.fillBtn:SetColor(1,0,0,1)
+mainWindow.fillBtn:SetTextColor(1,1,1,1)
+mainWindow.fillBtn:SetWidth(mainWindow:GetWidth())
+mainWindow.fillBtn:AddOnClicked(OnFillBtnClicked)
 

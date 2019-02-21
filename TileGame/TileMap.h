@@ -35,15 +35,16 @@ struct Tile
 class TileMap
 {
 public:
-    // The tilemap takes ownership of tileSet pointer if constructed this way.
-    TileMap(TileSet* tileSet, int width, int height);
+    TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, int width, int height);
     TileMap(const std::string& path);
     virtual ~TileMap();
-    void Draw(int x, int y, ogl::Program& program);
+    // void Draw(int x, int y, ogl::Program& program); // deprecated. for debugging only
     void Render(int x, int y, ogl::Program &program);
     void SaveToFile(const std::string& path);
     void LoadFromFile(const std::string& path);
     TileSet* GetTileSet() { return tileSet_; }
+    int GetWidth() { return width_; }
+    int GetHeight() { return height_; }
     Tile GetTile(int ix, int iy);
     void SetTile(int ix, int iy, const Tile& tile);
 private:
@@ -51,7 +52,7 @@ private:
     TileSet* tileSet_ = nullptr;
     int width_ = 0;
     int height_ = 0;
-    Tile* tiles_ = nullptr;
+    Tile* layer0_ = nullptr;
     ogl::VertexArray* vao_ = nullptr;
     ogl::VertexBuffer vbo_;
 };

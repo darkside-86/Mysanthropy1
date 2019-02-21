@@ -25,10 +25,11 @@
 
 #include "engine/GameEngine.h"
 
-TileMap::TileMap(TileSet* tileSet, int width, int height) 
-    : tileSet_(tileSet), width_(width), height_(height)
+TileMap::TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, int width, int height)
+    : width_(width), height_(height)
 {
-    tiles_ = new Tile [width_ * height_];
+    tileSet_ = new TileSet(tilesetPath, tileWidth, tileHeight);
+    layer0_ = new Tile [width_ * height_];
     SetupRender();
 }
 
@@ -39,11 +40,12 @@ TileMap::TileMap(const std::string& path)
 
 TileMap::~TileMap()
 {
-    delete [] tiles_;
+    delete [] layer0_;
     delete tileSet_;
+    delete vao_;
 }
 
-void TileMap::Draw(int x, int y, ogl::Program& program)
+/*void TileMap::Draw(int x, int y, ogl::Program& program)
 {
     int drawx = x;
     int drawy = y;
@@ -58,14 +60,14 @@ void TileMap::Draw(int x, int y, ogl::Program& program)
         drawx = x;
         drawy += tileSet_->GetTileHeight();
     }
-}
+}*/
 
 Tile TileMap::GetTile(int ix, int iy)
 {
     int index = iy*width_ + ix;
     if(index >= width_*height_ || index < 0)
         return {0,0};
-    return tiles_[index];
+    return layer0_[index];
 }
 
 void TileMap::SetTile(int ix, int iy, const Tile& tile)
@@ -73,7 +75,7 @@ void TileMap::SetTile(int ix, int iy, const Tile& tile)
     int index = iy * width_ + ix;
     if(index >= width_*height_ || index < 0)
         return;
-    tiles_[index] = tile;
+    layer0_[index] = tile;
     SetupRender();
 }
 
@@ -103,7 +105,7 @@ void TileMap::SaveToFile(const std::string& path)
     out.write((char*)&height_, sizeof(height_));
     for(int i=0; i < width_*height_; ++i)
     {
-        out.write((char*)&tiles_[i], sizeof(Tile));
+        out.write((char*)&layer0_[i], sizeof(Tile));
     }
 
     out.close();
@@ -113,9 +115,9 @@ void TileMap::LoadFromFile(const std::string& path)
 {
     // cleanup old data
     delete tileSet_;
-    delete [] tiles_;
+    delete [] layer0_;
     tileSet_ = nullptr;
-    tiles_ = nullptr;
+    layer0_ = nullptr;
     width_ = 0;
     height_ = 0;
     
@@ -146,12 +148,12 @@ void TileMap::LoadFromFile(const std::string& path)
     // read width and height of map
     in.read((char*)&width_, sizeof(width_));
     in.read((char*)&height_, sizeof(height_));
-    tiles_ = new Tile[width_*height_];
+    layer0_ = new Tile[width_*height_];
     for(int i=0; i < width_*height_; ++i)
     {
         Tile tile;
         in.read((char*)&tile, sizeof(tile));
-        tiles_[i] = tile;
+        layer0_[i] = tile;
     }
     in.close();
     SetupRender();
@@ -175,9 +177,9 @@ void TileMap::SetupRender()
     float y = 0.0f;
     while(vi < numVertices)
     {
-        float s0 = (float)tiles_[ti].ix / (float)ntx;
+        float s0 = (float)layer0_[ti].ix / (float)ntx;
         float s1 = s0 + tw;
-        float t0 = (float)tiles_[ti].iy / (float)nty;
+        float t0 = (float)layer0_[ti].iy / (float)nty;
         float t1 = t0 + th;
         vertices[0+vi] = {{x,y,0.f}, {255,255,255,255}, {s0, t0}, {0.f, 0.f, 1.f}}; 
         vertices[1+vi] = {{x,y+h,0.f}, {255,255,255,255}, {s0, t1}, {0.f, 0.f, 1.f}}; 

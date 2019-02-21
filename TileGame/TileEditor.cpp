@@ -69,6 +69,10 @@ bool TileEditor::Initialize()
     lua_setglobal(uiScript_, "TileEditor_SaveMap");
     lua_pushcfunction(uiScript_, TileEditor::lua_LoadMap);
     lua_setglobal(uiScript_, "TileEditor_LoadMap");
+    lua_pushcfunction(uiScript_, TileEditor::lua_NewMap);
+    lua_setglobal(uiScript_, "TileEditor_NewMap");
+    lua_pushcfunction(uiScript_, TileEditor::lua_FillWithSelection);
+    lua_setglobal(uiScript_, "TileEditor_FillWithSelection");
 
     // tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
 
@@ -227,6 +231,47 @@ int TileEditor::lua_LoadMap(lua_State* L)
     const char* path = luaL_checkstring(L, 1);
     te->tileMap_->LoadFromFile(path);
     te->tileSet_ = te->tileMap_->GetTileSet();
+
+    return 0;
+}
+
+// tileWidth, tileHeight, tilesetPath, mapWidth, mapHeight
+int TileEditor::lua_NewMap(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int tileWidth = (int)lua_tonumber(L, 1);
+    int tileHeight = (int)lua_tonumber(L, 2);
+    const char* tilesetPath = lua_tostring(L, 3);
+    int mapWidth = (int)lua_tonumber(L, 4);
+    int mapHeight = (int)lua_tonumber(L, 5);
+
+    delete te->tileMap_;
+    te->tileMap_ = new TileMap(tileWidth, tileHeight, tilesetPath, mapWidth, mapHeight);
+    te->tileSet_ = te->tileMap_->GetTileSet();
+
+    return 0;
+}
+
+int TileEditor::lua_FillWithSelection(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    for(int iy=0; iy < te->tileMap_->GetHeight(); ++iy)
+    {
+        for(int ix=0; ix < te->tileMap_->GetWidth(); ++ix)
+        {
+            te->tileMap_->SetTile(ix, iy, {(unsigned short)te->selectedIX_, (unsigned short)te->selectedIY_});
+        }
+    }
 
     return 0;
 }
