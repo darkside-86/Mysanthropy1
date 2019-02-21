@@ -65,6 +65,10 @@ bool TileEditor::Initialize()
     lua_pushstring(uiScript_, "TileEditor");
     lua_pushlightuserdata(uiScript_, this);
     lua_settable(uiScript_, LUA_REGISTRYINDEX);
+    lua_pushcfunction(uiScript_, TileEditor::lua_SaveMap);
+    lua_setglobal(uiScript_, "TileEditor_SaveMap");
+    lua_pushcfunction(uiScript_, TileEditor::lua_LoadMap);
+    lua_setglobal(uiScript_, "TileEditor_LoadMap");
 
     // tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
 
@@ -195,4 +199,33 @@ void TileEditor::SetTileToSelected(int mouseX, int mouseY)
     int ix = (mouseX - cameraX_) / tileWidth;
     int iy = (mouseY - cameraY_) / tileHeight;
     tileMap_->SetTile(ix, iy, {(unsigned short)selectedIX_, (unsigned short)selectedIY_});
+}
+
+int TileEditor::lua_SaveMap(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* path = luaL_checkstring(L, 1);
+    te->tileMap_->SaveToFile(path);
+
+    return 0;
+}
+
+int TileEditor::lua_LoadMap(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* path = luaL_checkstring(L, 1);
+    te->tileMap_->LoadFromFile(path);
+    te->tileSet_ = te->tileMap_->GetTileSet();
+
+    return 0;
 }

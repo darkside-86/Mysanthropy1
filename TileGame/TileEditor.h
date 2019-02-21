@@ -37,6 +37,10 @@ public:
     void Render(engine::GraphicsContext& gc) override;
 private:
     void SetTileToSelected(int mouseX, int mouseY);
+    static int lua_SaveMap(lua_State* L);
+    static int lua_LoadMap(lua_State* L);
+    static int lua_NewMap(lua_State* L);
+    static int lua_FillWithSelection(lua_State* L);
     lua_State*  uiScript_;
     engine::ui::LuaBindings* luaBindings_;
     TileSet*    tileSet_;
