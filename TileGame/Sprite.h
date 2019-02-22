@@ -1,4 +1,4 @@
-// TileEditor.h
+// Sprite.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,36 +18,22 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <lua/lua.hpp>
+#include "engine/GameObject.h"
+#include "ogl/Texture.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
 
-#include "engine/Game.h"
-#include "engine/ui/LuaBindings.h"
-#include "Image2D.h"
-#include "TileMap.h"
-#include "TileSet.h"
-
-class TileEditor : public engine::Game 
+class Sprite : public engine::GameObject
 {
 public:
-    TileEditor();
-    virtual ~TileEditor();
-    bool Initialize() override;
-    void Cleanup() override;
-    void Update(float dtime) override;
-    void Render(engine::GraphicsContext& gc) override;
+    Sprite(ogl::Texture* img);
+    virtual ~Sprite();
+    virtual void Update(float dtime) override;
+    virtual void Render(ogl::Program& program) override;
 private:
-    void SetTileToSelected(int mouseX, int mouseY);
-    static int lua_SaveMap(lua_State* L);
-    static int lua_LoadMap(lua_State* L);
-    static int lua_NewMap(lua_State* L);
-    static int lua_FillWithSelection(lua_State* L);
-    static int lua_SetSelectedLayer(lua_State* L);
-    lua_State*  uiScript_;
-    engine::ui::LuaBindings* luaBindings_;
-    TileSet*    tileSet_;
-    TileMap*    tileMap_;
-    int selectedIX_ = 0;
-    int selectedIY_ = 0;
-    int selectedLayer_ = 0;
-    int cameraX_=0, cameraY_=0;
+    int width_ = 0, height_ = 0;
+    ogl::Texture* anim0_;
+    ogl::VertexArray vao_;
+    ogl::VertexBuffer vbo_;
+
 };

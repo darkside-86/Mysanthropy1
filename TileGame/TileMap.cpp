@@ -183,8 +183,8 @@ void TileMap::SetupRender()
     float th = 1.f / (float)nty;
     float x = 0.0f;
     float y = 0.0f;
-    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-            "%s: Working on vertices...", __FUNCTION__);
+    // engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+    //        "%s: Working on vertices...", __FUNCTION__);
     while(vi < numVertices)
     {
         float s0 = (float)layer0_[ti].ix / (float)ntx;
@@ -218,8 +218,8 @@ void TileMap::SetupRender()
             x = 0.f;
         }
     }
-    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-            "%s: ...Done", __FUNCTION__);
+    // engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+    //        "%s: ...Done", __FUNCTION__);
     vbo_.SetData(sizeof(ogl::Vertex)*numVertices, vertices, GL_STATIC_DRAW);
     vbo1_.SetData(sizeof(ogl::Vertex)*numVertices, l1Verts, GL_STATIC_DRAW);
     ogl::VertexBufferLayout vbl;
@@ -246,4 +246,16 @@ void TileMap::Render(int x, int y, ogl::Program& program)
     glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
     vao1_->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
+}
+
+void TileMap::FillWithTile(const Tile& tile, bool layer1)
+{
+    for(int i=0; i < width_*height_; ++i)
+    {
+        if(!layer1)
+            layer0_[i] = tile;
+        else
+            layer1_[i] = tile;
+    }
+    SetupRender();
 }

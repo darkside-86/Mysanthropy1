@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 {
     engine::GameEngine& ge = engine::GameEngine::Get();
     engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("Tile Editor", 1024, 576);
+    bool ok = ge.Initialize("Tile Map Editor", 1024, 576);
     {
         TileEditor game;
         ok = ok && game.Initialize();

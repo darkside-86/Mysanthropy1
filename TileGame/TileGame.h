@@ -1,4 +1,4 @@
-// TileEditor.h
+// TileGame.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,36 +18,22 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <lua/lua.hpp>
-
 #include "engine/Game.h"
-#include "engine/ui/LuaBindings.h"
-#include "Image2D.h"
+#include "ogl/Texture.h"
 #include "TileMap.h"
-#include "TileSet.h"
+#include "Sprite.h"
 
-class TileEditor : public engine::Game 
+class TileGame : public engine::Game 
 {
 public:
-    TileEditor();
-    virtual ~TileEditor();
-    bool Initialize() override;
-    void Cleanup() override;
-    void Update(float dtime) override;
-    void Render(engine::GraphicsContext& gc) override;
+    TileGame();
+    ~TileGame();
+    bool Initialize();
+    void Cleanup();
+    void Update(float dtime);
+    void Render(engine::GraphicsContext& gc);
 private:
-    void SetTileToSelected(int mouseX, int mouseY);
-    static int lua_SaveMap(lua_State* L);
-    static int lua_LoadMap(lua_State* L);
-    static int lua_NewMap(lua_State* L);
-    static int lua_FillWithSelection(lua_State* L);
-    static int lua_SetSelectedLayer(lua_State* L);
-    lua_State*  uiScript_;
-    engine::ui::LuaBindings* luaBindings_;
-    TileSet*    tileSet_;
-    TileMap*    tileMap_;
-    int selectedIX_ = 0;
-    int selectedIY_ = 0;
-    int selectedLayer_ = 0;
-    int cameraX_=0, cameraY_=0;
+    TileMap* tileMap_;
+    ogl::Texture* spriteImage_;
+    Sprite* testSprite_;
 };

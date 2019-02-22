@@ -1,4 +1,4 @@
-// GameObject.h
+// main.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -16,30 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#pragma once
+#include <iostream>
 
-#include "GraphicsContext.h"
+#include "engine/GameEngine.h"
+#include "TileGame/TileGame.h"
 
-#include <glm/glm.hpp>
-
-#include "ogl/Program.h"
-
-namespace engine 
+int main(int argc, char* argv[])
 {
-    class GameObject
+    engine::GameEngine& ge = engine::GameEngine::Get();
+    engine::Logger& logger = ge.GetLogger();
+    bool ok = ge.Initialize("Tile Game", 1024, 576);
     {
-    public:
-        virtual void Update(float dtime) = 0;
-        virtual void Render(ogl::Program& program) = 0;
-        virtual glm::vec3 GetPosition() { return position_; }
-        virtual void SetPosition(const glm::vec3& pos) { position_ = pos; }
-        virtual glm::vec3 GetVelocity() { return velocity_; }
-        virtual void SetVelocity(const glm::vec3& vel) { velocity_ = vel; }
-        virtual glm::vec3 GetAcceleration() { return acceleration_; }
-        virtual void SetAcceleration(const glm::vec3& acc) { acceleration_ = acc; }
-    protected:
-        glm::vec3 position_ = {0.f,0.f,0.f};
-        glm::vec3 velocity_ = {0.f,0.f,0.f};
-        glm::vec3 acceleration_ = {0.f,0.f,0.f};
-    };
+        TileGame game;
+        ok = ok && game.Initialize();
+        if(!ok)
+        {
+            logger.Logf(engine::Logger::Severity::FATAL, "main: Unable to initialize!");
+        }
+        engine::GameEngine::Get().StartGameLoop(game);
+        game.Cleanup();
+    }
+    engine::GameEngine::Get().Cleanup();
+    return 0;
 }

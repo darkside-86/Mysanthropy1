@@ -1,4 +1,4 @@
-// TileGame.cpp
+// TileEditor.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -136,7 +136,7 @@ bool TileEditor::Initialize()
 
 void TileEditor::Cleanup()
 {
-    tileMap_->SaveToFile("res/tilemaps/output.bin");
+    // tileMap_->SaveToFile("res/tilemaps/output.bin");
 
     delete luaBindings_;
     lua_close(uiScript_);
@@ -267,14 +267,16 @@ int TileEditor::lua_FillWithSelection(lua_State* L)
     TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    for(int iy=0; iy < te->tileMap_->GetHeight(); ++iy)
+    /*for(int iy=0; iy < te->tileMap_->GetHeight(); ++iy)
     {
         for(int ix=0; ix < te->tileMap_->GetWidth(); ++ix)
         {
             te->tileMap_->SetTile(ix, iy, {(unsigned short)te->selectedIX_, (unsigned short)te->selectedIY_},
                     te->selectedLayer_);
         }
-    }
+    }*/
+    te->tileMap_->FillWithTile({(unsigned short)te->selectedIX_,(unsigned short)te->selectedIY_}, 
+            te->selectedLayer_);
 
     return 0;
 }

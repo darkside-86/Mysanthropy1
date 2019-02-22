@@ -47,6 +47,7 @@ public:
     int GetHeight() { return height_; }
     Tile GetTile(int ix, int iy, bool layer1 = false);
     void SetTile(int ix, int iy, const Tile& tile, bool layer1=false);
+    void FillWithTile(const Tile& tile, bool layer1=false);
 private:
     void SetupRender(); 
     TileSet* tileSet_ = nullptr;

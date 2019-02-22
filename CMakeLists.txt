@@ -87,7 +87,7 @@ set (
 )
 
 add_executable ( 
-    Mysanthropy1
+    TileMapEditor
 	    main.cpp
         TileGame/Image2D.cpp
         TileGame/TileEditor.cpp
@@ -97,13 +97,35 @@ add_executable (
         ${OGLBINDINGSRC}
 )
 
+add_executable ( 
+    RPG
+	    gamemain.cpp
+        TileGame/Image2D.cpp
+        TileGame/Sprite.cpp
+        TileGame/TileGame.cpp
+        TileGame/TileMap.cpp
+        TileGame/TileSet.cpp
+        ${ENGINESRC}
+        ${OGLBINDINGSRC}
+)
+
 target_link_libraries ( 
-    Mysanthropy1 
+    TileMapEditor 
+		${LIBRARIES}
+)
+
+target_link_libraries ( 
+    RPG 
 		${LIBRARIES}
 )
 
 set_target_properties(
-    Mysanthropy1
+    TileMapEditor
+        PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+set_target_properties(
+    RPG
         PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
 )
 
