@@ -27,8 +27,8 @@ namespace ogl
 	{
 	public:
 		enum TYPE { DIFFUSE, SPECULAR };
-		Texture(const std::string& filePath, bool linear = true, bool repeat=true, TYPE type=DIFFUSE);
-		Texture(int w, int h,const void* rgbaBuffer, bool linear=true, bool repeat=true, TYPE type=DIFFUSE);
+		Texture(const std::string& filePath, bool linear = true, bool repeat=false, TYPE type=DIFFUSE);
+		Texture(int w, int h,const void* rgbaBuffer, bool linear=true, bool repeat=false, TYPE type=DIFFUSE);
 		virtual ~Texture();
 		// Binds the texture for usage. Slots can be specified with GL_TEXTURE0...
 		//  A uniform of type sampler2D should be set to the slot value to be used

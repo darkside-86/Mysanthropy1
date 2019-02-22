@@ -30,7 +30,7 @@ namespace engine
     {
     public:
         virtual void Update(float dtime) = 0;
-        virtual void Render(ogl::Program& program) = 0;
+        virtual void Render(const glm::vec3& camPos, ogl::Program& program) = 0;
         virtual glm::vec3 GetPosition() { return position_; }
         virtual void SetPosition(const glm::vec3& pos) { position_ = pos; }
         virtual glm::vec3 GetVelocity() { return velocity_; }

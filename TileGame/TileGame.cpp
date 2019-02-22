@@ -25,8 +25,9 @@
 
 TileGame::TileGame()
 {
-    tileMap_ = new TileMap("res/tilemaps/island.bin");
-    spriteImage_ = new ogl::Texture("res/textures/sprites/hr_front_stand.png", true, false);
+    tileMap_ = new TileMap("res/tilemaps/testland.bin");
+    spriteImage_ = new ogl::Texture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif", 
+            true, false);
     testSprite_ = new Sprite(spriteImage_);
 }
 
@@ -41,14 +42,21 @@ bool TileGame::Initialize()
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     testSprite_->SetPosition({0.f,0.f,0.f});
-    tm.GetTexture("res/textures/sprites/hr_left_walk_0.png")->SetRepeat(false);
-    tm.GetTexture("res/textures/sprites/hr_left_walk_1.png")->SetRepeat(false);
-    tm.GetTexture("res/textures/sprites/hr_left_walk_2.png")->SetRepeat(false);
-    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_0.png"));
-    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_1.png"));
-    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_2.png"));
-    // testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_1.png"));
-    testSprite_->SetCurrentAnim("left_walk", 0.2f);
+    
+    testSprite_->AddAnimFrame("front_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif"));
+    testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif"));
+    testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr2.gif"));
+    testSprite_->AddAnimFrame("left_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_lf2.gif"));
+    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_lf1.gif"));
+    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_lf2.gif"));
+    testSprite_->AddAnimFrame("back_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_bk1.gif"));
+    testSprite_->AddAnimFrame("back_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_bk1.gif"));
+    testSprite_->AddAnimFrame("back_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_bk2.gif"));
+    testSprite_->AddAnimFrame("right_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt2.gif"));
+    testSprite_->AddAnimFrame("right_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt1.gif"));
+    testSprite_->AddAnimFrame("right_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt2.gif"));
+    
+    testSprite_->SetCurrentAnim("front_walk", 0.2f);
     testSprite_->StartAnimation();
     engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
         if(e.type == SDL_KEYDOWN)
@@ -56,16 +64,35 @@ bool TileGame::Initialize()
             glm::vec3 vel = testSprite_->GetVelocity();
             switch(e.keysym.sym)
             {
-                case SDLK_LEFT: vel.x = -50.f; break;
-                case SDLK_RIGHT: vel.x = 50.f; break;
-                case SDLK_UP: vel.y = -50.f; break;
-                case SDLK_DOWN: vel.y = 50.f; break;
+                case SDLK_LEFT: 
+                    vel.x = -50.f;
+                    if(testSprite_->GetCurrentAnim() != "left_walk")
+                        testSprite_->SetCurrentAnim("left_walk", 0.2f);
+                    break;
+                case SDLK_RIGHT:
+                    if(testSprite_->GetCurrentAnim() != "right_walk")
+                        testSprite_->SetCurrentAnim("right_walk", 0.2f); 
+                    vel.x = 50.f; 
+                    break;
+                case SDLK_UP:
+                    if(testSprite_->GetCurrentAnim() != "back_walk")
+                        testSprite_->SetCurrentAnim("back_walk", 0.2f); 
+                    vel.y = -50.f; 
+                    break;
+                case SDLK_DOWN:
+                    if(testSprite_->GetCurrentAnim() != "front_walk")
+                        testSprite_->SetCurrentAnim("front_walk", 0.2f); 
+                    vel.y = 50.f; 
+                    break;
             }
+            if(vel.length() != 0)
+                testSprite_->StartAnimation();
             testSprite_->SetVelocity(vel);
         }
         else 
         {
-
+            // todo: stop movement based on key up
+            testSprite_->PauseAnimation();
             testSprite_->SetVelocity({0.f,0.f,0.f});
         }
     });
@@ -80,6 +107,21 @@ void TileGame::Cleanup()
 void TileGame::Update(float dtime)
 {
     testSprite_->Update(dtime);
+    // calculate camera.
+    float scrW = (float)engine::GameEngine::Get().GetWidth();
+    float scrH = (float)engine::GameEngine::Get().GetHeight();
+    glm::vec3 playerPos = testSprite_->GetPosition();
+
+    camera_.x = playerPos.x - scrW / 2.f;
+    camera_.y = playerPos.y - scrH / 2.f;
+
+    /*if(camera_.x < 0.0f)
+        camera_.x = 0.0f;
+    if(camera_.y < 0.0f)
+        camera_.y = 0.0f;*/
+
+    //engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+    //        "%s: camera = {%f,%f,%f}", __FUNCTION__, camera_.x, camera_.y, camera_.z);
 }
 
 void TileGame::Render(engine::GraphicsContext& gc)
@@ -97,6 +139,6 @@ void TileGame::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_projection", projection);
     program.SetUniform<glm::mat4>("u_view", view);
     program.SetUniform<glm::mat4>("u_model", model);
-    tileMap_->Render(0,0, program);
-    testSprite_->Render(program);
+    tileMap_->Render((int)-camera_.x,(int)-camera_.y, program);
+    testSprite_->Render(-camera_, program);
 }

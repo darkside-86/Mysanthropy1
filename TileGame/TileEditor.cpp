@@ -185,7 +185,7 @@ void TileEditor::Render(engine::GraphicsContext& gc)
             ++iy;
         }
 
-        x += tileSet_->GetTileWidth() / 2;
+        x += tileSet_->GetTileWidth() / 2 ;
         if( x >= screenWidth )
         {
             x = 0;

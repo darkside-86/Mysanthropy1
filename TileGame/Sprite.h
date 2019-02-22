@@ -33,12 +33,13 @@ public:
     Sprite(ogl::Texture* img);
     virtual ~Sprite();
     void Update(float dtime) override;
-    void Render(ogl::Program& program) override;
+    void Render(const glm::vec3& camPos, ogl::Program& program) override;
     void SetCurrentAnim(const std::string& name, float maxTime);
+    std::string GetCurrentAnim() { return currentAnim_; }
     void AddAnimFrame(const std::string& animName, ogl::Texture* texture);
     void StartAnimation() { animating_ = true; }
     void PauseAnimation() { animating_ = false;}
-private:
+protected:
     int width_ = 0, height_ = 0;
     ogl::Texture* anim0_;
     ogl::VertexArray vao_;

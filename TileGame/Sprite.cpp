@@ -62,18 +62,21 @@ void Sprite::Update(float dtime)
         {
             currentFrame_++;
             currentTime_ -= maxFrameTime_;
-            if(currentFrame_ >= animFrames_[currentAnim_].size())
+            if(animFrames_.find(currentAnim_) != animFrames_.end())
             {
-                currentFrame_ = 0;
+                if(currentFrame_ >= animFrames_[currentAnim_].size())
+                {
+                    currentFrame_ = 0;
+                }
             }
         }
     }
 }
 
-void Sprite::Render(ogl::Program& program)
+void Sprite::Render(const glm::vec3& camPos, ogl::Program& program)
 {
     glm::mat4 model(1.f);
-    model = glm::translate(model, glm::vec3(position_));
+    model = glm::translate(model, position_ + camPos);
     program.Use();
     program.SetUniform("u_model", model);
     vao_.Bind();

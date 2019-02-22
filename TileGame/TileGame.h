@@ -38,4 +38,5 @@ private:
     TileMap* tileMap_;
     ogl::Texture* spriteImage_;    
     Sprite* testSprite_;
+    glm::vec3 camera_ = {0.f,0.f,0.f};
 };
