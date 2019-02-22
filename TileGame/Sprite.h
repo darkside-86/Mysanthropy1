@@ -18,6 +18,10 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "engine/GameObject.h"
 #include "ogl/Texture.h"
 #include "ogl/VertexArray.h"
@@ -28,12 +32,21 @@ class Sprite : public engine::GameObject
 public:
     Sprite(ogl::Texture* img);
     virtual ~Sprite();
-    virtual void Update(float dtime) override;
-    virtual void Render(ogl::Program& program) override;
+    void Update(float dtime) override;
+    void Render(ogl::Program& program) override;
+    void SetCurrentAnim(const std::string& name, float maxTime);
+    void AddAnimFrame(const std::string& animName, ogl::Texture* texture);
+    void StartAnimation() { animating_ = true; }
+    void PauseAnimation() { animating_ = false;}
 private:
     int width_ = 0, height_ = 0;
     ogl::Texture* anim0_;
     ogl::VertexArray vao_;
     ogl::VertexBuffer vbo_;
-
+    std::string currentAnim_ = "";
+    int currentFrame_ = 0;
+    float currentTime_ = 0.f;
+    float maxFrameTime_ = 1.f;
+    bool animating_ = true;
+    std::unordered_map<std::string, std::vector<ogl::Texture*> > animFrames_;
 };

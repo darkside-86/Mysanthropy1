@@ -38,8 +38,8 @@ public:
     TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, int width, int height);
     TileMap(const std::string& path);
     virtual ~TileMap();
-    // void Draw(int x, int y, ogl::Program& program); // deprecated. for debugging only
-    void Render(int x, int y, ogl::Program &program);
+    // Render map to screen
+    void Render(int x, int y, ogl::Program &program, float scaleX=1.f, float scaleY=1.f);
     void SaveToFile(const std::string& path);
     void LoadFromFile(const std::string& path);
     TileSet* GetTileSet() { return tileSet_; }

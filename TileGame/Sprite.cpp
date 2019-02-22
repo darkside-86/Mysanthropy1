@@ -55,6 +55,19 @@ void Sprite::Update(float dtime)
 {
     position_ += dtime * velocity_;
     velocity_ += dtime * acceleration_;
+    if(animating_)
+    {
+        currentTime_ += dtime;
+        if(currentTime_ >= maxFrameTime_)
+        {
+            currentFrame_++;
+            currentTime_ -= maxFrameTime_;
+            if(currentFrame_ >= animFrames_[currentAnim_].size())
+            {
+                currentFrame_ = 0;
+            }
+        }
+    }
 }
 
 void Sprite::Render(ogl::Program& program)
@@ -64,8 +77,34 @@ void Sprite::Render(ogl::Program& program)
     program.Use();
     program.SetUniform("u_model", model);
     vao_.Bind();
-    anim0_->Bind();
+    if(currentAnim_ == "")
+    {
+        anim0_->Bind();
+    }
+    else 
+    {
+        animFrames_[currentAnim_][currentFrame_]->Bind();
+    }
     OGL_ERROR_CHECK();
     glDrawArrays(GL_TRIANGLES, 0, 6);
     OGL_ERROR_CHECK();
+}
+
+
+void Sprite::SetCurrentAnim(const std::string& name, float timer)
+{
+    currentAnim_ = name;
+    maxFrameTime_ = timer;
+    currentTime_ = 0.f;
+    currentFrame_ = 0;
+}
+
+void Sprite::AddAnimFrame(const std::string& animName, ogl::Texture* texture)
+{
+    auto& findTable = animFrames_.find(animName);
+    if(findTable == animFrames_.end())
+    {
+        animFrames_[animName] = std::vector<ogl::Texture*>();
+    }
+    animFrames_[animName].push_back(texture);
 }

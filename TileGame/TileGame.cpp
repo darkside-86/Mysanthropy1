@@ -39,7 +39,17 @@ TileGame::~TileGame()
 
 bool TileGame::Initialize()
 {
+    auto& tm = engine::GameEngine::Get().GetTextureManager();
     testSprite_->SetPosition({0.f,0.f,0.f});
+    tm.GetTexture("res/textures/sprites/hr_left_walk_0.png")->SetRepeat(false);
+    tm.GetTexture("res/textures/sprites/hr_left_walk_1.png")->SetRepeat(false);
+    tm.GetTexture("res/textures/sprites/hr_left_walk_2.png")->SetRepeat(false);
+    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_0.png"));
+    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_1.png"));
+    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_2.png"));
+    // testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/hr_left_walk_1.png"));
+    testSprite_->SetCurrentAnim("left_walk", 0.2f);
+    testSprite_->StartAnimation();
     engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
         if(e.type == SDL_KEYDOWN)
         {

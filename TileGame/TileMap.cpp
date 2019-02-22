@@ -150,15 +150,12 @@ void TileMap::LoadFromFile(const std::string& path)
         in.read((char*)&tile, sizeof(tile));
         layer0_[i] = tile;
     }
-    if(minorV >= 2)
+    for(int i=0; i < width_*height_; ++i)
     {
-        for(int i=0; i < width_*height_; ++i)
-        {
             Tile tile;
             in.read((char*)&tile, sizeof(tile));
             layer1_[i] = tile;
-        } 
-    }
+    } 
     in.close();
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
             "%s: Finished loading", __FUNCTION__);
@@ -234,14 +231,16 @@ void TileMap::SetupRender()
     delete [] l1Verts;
 }
 
-void TileMap::Render(int x, int y, ogl::Program& program)
+void TileMap::Render(int x, int y, ogl::Program& program, float scaleX, float scaleY)
 {
     if(vao_ == nullptr)
         return;
     program.Use();
     vao_->Bind();
     tileSet_->GetTexture()->Bind();
-    glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3((float)x, (float)y, 0.f));
+    glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3((float)x, (float)y, 0.f));    
+    model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.f));
+    // model = glm::translate(model, glm::vec3(0.f, 0.f, 0.f));
     program.SetUniform<glm::mat4>("u_model", model);
     glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
     vao1_->Bind();

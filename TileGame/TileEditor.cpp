@@ -196,6 +196,25 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     tileSet_->DrawTile(0, screenHeight - tileSet_->GetTileHeight() * 2, 2.f, 2.f, program, 
             selectedIX_, selectedIY_);
 
+    // draw entire scaled map at bottom center
+    float scaleX = 1.f / (float)tileSet_->GetTileWidth();
+    float scaleY = 1.f / (float)tileSet_->GetTileHeight();
+    float scaledMapWidth = (float)tileMap_->GetWidth();
+    float scaledMapHeight = (float)tileMap_->GetHeight();
+    if(scaledMapWidth >= 128.f)
+    {
+        scaledMapWidth /= 2.f;
+        scaleX /= 2.f;
+    }
+    if(scaledMapHeight >= 128.f)
+    {
+        scaledMapHeight /= 2.f;
+        scaleY /= 2.f;
+    }
+    float screenX = ((float)screenWidth / 2.f - (scaledMapWidth / 2.f));
+    float screenY = ((float)screenHeight - scaledMapHeight);
+    tileMap_->Render((int)screenX, (int)screenY, program, scaleX, scaleY);
+
     engine::ui::Root::Get()->Render(gc);
 }
 

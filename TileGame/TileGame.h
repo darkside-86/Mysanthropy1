@@ -18,6 +18,8 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <vector>
+
 #include "engine/Game.h"
 #include "ogl/Texture.h"
 #include "TileMap.h"
@@ -34,6 +36,6 @@ public:
     void Render(engine::GraphicsContext& gc);
 private:
     TileMap* tileMap_;
-    ogl::Texture* spriteImage_;
+    ogl::Texture* spriteImage_;    
     Sprite* testSprite_;
 };
