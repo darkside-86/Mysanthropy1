@@ -31,6 +31,8 @@ TileMap::TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, 
     tileSet_ = new TileSet(tilesetPath, tileWidth, tileHeight);
     layer0_ = new Tile [width_ * height_];
     layer1_ = new Tile [width_ * height_];
+    collisionLayer_ = new unsigned char [width_ * height_];
+    memset(collisionLayer_, 0, width_ * height_);
     SetupRender();
 }
 
@@ -43,9 +45,12 @@ TileMap::~TileMap()
 {
     delete [] layer0_;
     delete [] layer1_;
+    delete [] collisionLayer_;
     delete tileSet_;
     delete vao_;
     delete vao1_;
+    delete collisionVao_;
+    delete redTexture_;
 }
 
 Tile TileMap::GetTile(int ix, int iy, bool layer1)
@@ -80,7 +85,7 @@ void TileMap::SaveToFile(const std::string& path)
     }
 
     const unsigned char MAJOR_VERSION = 0;
-    const unsigned char MINOR_VERSION = 2;
+    const unsigned char MINOR_VERSION = 3;
     const std::string TILESET_PATH = tileSet_->GetPathToTexture();
     out.write((char*)&MAJOR_VERSION, sizeof(unsigned char));
     out.write((char*)&MINOR_VERSION, sizeof(unsigned char));
@@ -100,6 +105,10 @@ void TileMap::SaveToFile(const std::string& path)
     {
         out.write((char*)&layer1_[i], sizeof(Tile));
     }
+    for(int i=0; i < width_ * height_; ++i)
+    {
+        out.write((char*)&collisionLayer_[i], sizeof(unsigned char));
+    }
 
     out.close();
 }
@@ -109,9 +118,12 @@ void TileMap::LoadFromFile(const std::string& path)
     // cleanup old data
     delete tileSet_;
     delete [] layer0_;
+    delete [] layer1_;
+    delete [] collisionLayer_;
     tileSet_ = nullptr;
     layer0_ = nullptr;
     layer1_ = nullptr;
+    collisionLayer_ = nullptr;
     width_ = 0;
     height_ = 0;
     
@@ -144,6 +156,7 @@ void TileMap::LoadFromFile(const std::string& path)
     in.read((char*)&height_, sizeof(height_));
     layer0_ = new Tile[width_*height_];
     layer1_ = new Tile[width_*height_];
+    collisionLayer_ = new unsigned char[width_ * height_];
     for(int i=0; i < width_*height_; ++i)
     {
         Tile tile;
@@ -155,7 +168,20 @@ void TileMap::LoadFromFile(const std::string& path)
             Tile tile;
             in.read((char*)&tile, sizeof(tile));
             layer1_[i] = tile;
-    } 
+    }
+    if(minorV >= 3)
+    {
+        for(int i=0; i < width_ * height_; ++i)
+        {
+            unsigned char c;
+            in.read((char*)&c, sizeof(c));
+            collisionLayer_[i] = c;
+        }
+    }
+    else 
+    {
+        memset(collisionLayer_, 0, width_ * height_);
+    }
     in.close();
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
             "%s: Finished loading", __FUNCTION__);
@@ -229,6 +255,23 @@ void TileMap::SetupRender()
     vao1_->AddBuffer(vbo1_, vbl);
     delete [] vertices;
     delete [] l1Verts;
+
+    // set up "X" indicator tile (only needs to be done one time)
+    if(collisionVao_ == nullptr)
+    {
+        redTexture_ = new ogl::Texture("res/textures/red.png");
+        ogl::Vertex xverts[] = { // line coords
+            {{0.f,0.f,0.f},{255,255,255,255},{0.f,0.f},{0.f,0.f,1.f}},
+            {{  w,  h,0.f},{255,255,255,255},{1.f,1.f},{0.f,0.f,1.f}},
+            {{0.f,  h,0.f},{255,255,255,255},{0.f,1.f},{0.f,0.f,1.f}},
+            {{w,  0.f,0.f},{255,255,255,255},{1.f,0.f},{0.f,0.f,1.f}},
+        };
+        collisionVbo_.SetData(sizeof(ogl::Vertex)*4, xverts, GL_STATIC_DRAW);
+        collisionVao_ = new ogl::VertexArray();
+        ogl::VertexBufferLayout vbl;
+        ogl::Vertex::PushLayout(vbl);
+        collisionVao_->AddBuffer(collisionVbo_, vbl);
+    }
 }
 
 void TileMap::Render(int x, int y, ogl::Program& program, float scaleX, float scaleY)
@@ -245,6 +288,35 @@ void TileMap::Render(int x, int y, ogl::Program& program, float scaleX, float sc
     glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
     vao1_->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
+    // RenderCollisionData(x,y,program,scaleX,scaleY);
+}
+
+void TileMap::RenderCollisionData(int x, int y, ogl::Program& program, float scaleX, float scaleY)
+{
+    int ix, iy;
+    float w = (float)tileSet_->GetTileWidth() * scaleX;
+    float h = (float)tileSet_->GetTileHeight() * scaleY;
+    glm::vec3 location = {(float)x, (float)y, 0.f};
+    collisionVao_->Bind();
+    redTexture_->Bind();
+    program.Use();
+    glm::mat4 model(1.f);
+    for(iy = 0; iy < height_; ++iy)
+    {
+        for(ix = 0; ix < width_; ++ix)
+        {
+            if(GetCollisionData(ix, iy) != 0)
+            {
+                model = glm::translate(glm::mat4(1.f), location);
+                model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.f));
+                program.SetUniform("u_model", model);
+                glDrawArrays(GL_LINES, 0, 4);
+            }
+            location.x += w;
+        }
+        location.x = (float)x;
+        location.y += h;
+    }
 }
 
 void TileMap::FillWithTile(const Tile& tile, bool layer1)
@@ -257,4 +329,20 @@ void TileMap::FillWithTile(const Tile& tile, bool layer1)
             layer1_[i] = tile;
     }
     SetupRender();
+}
+
+unsigned char TileMap::GetCollisionData(int ix, int iy)
+{
+    int index = iy * width_ + ix;
+    if(index < 0 || index >= width_ * height_)
+        return 0;
+    else
+        return collisionLayer_[index];
+}
+
+void TileMap::SetCollisionData(int ix, int iy, unsigned char value)
+{
+    int index = iy * width_ + ix;
+    if(index >= 0 && index < width_ * height_)
+        collisionLayer_[index] = value;
 }

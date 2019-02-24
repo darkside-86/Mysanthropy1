@@ -27,6 +27,12 @@
 #include "ogl/VertexArray.h"
 #include "ogl/VertexBuffer.h"
 
+struct BOX
+{
+    float   left=0.f, top=0.f, 
+            right=0.f, bottom=0.f;
+};
+
 class Sprite : public engine::GameObject
 {
 public:
@@ -34,11 +40,17 @@ public:
     virtual ~Sprite();
     void Update(float dtime) override;
     void Render(const glm::vec3& camPos, ogl::Program& program) override;
+    int GetWidth() { return width_; }
+    int GetHeight() { return height_; }
     void SetCurrentAnim(const std::string& name, float maxTime);
     std::string GetCurrentAnim() { return currentAnim_; }
     void AddAnimFrame(const std::string& animName, ogl::Texture* texture);
     void StartAnimation() { animating_ = true; }
     void PauseAnimation() { animating_ = false;}
+    // set relative (0,0,w,h e.g) values for collision box
+    void SetCollisionBox(float left, float top, float right, float bottom);
+    // return absolute position of collision box based on position_
+    void GetCollisionBox(float &left, float& top, float &right, float &bottom);
 protected:
     int width_ = 0, height_ = 0;
     ogl::Texture* anim0_;
@@ -50,4 +62,5 @@ protected:
     float maxFrameTime_ = 1.f;
     bool animating_ = true;
     std::unordered_map<std::string, std::vector<ogl::Texture*> > animFrames_;
+    BOX collisionBox_;
 };

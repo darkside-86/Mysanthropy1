@@ -75,6 +75,8 @@ bool TileEditor::Initialize()
     lua_setglobal(uiScript_, "TileEditor_FillWithSelection");
     lua_pushcfunction(uiScript_, TileEditor::lua_SetSelectedLayer);
     lua_setglobal(uiScript_, "TileEditor_SetSelectedLayer");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SetCollisionLayer);
+    lua_setglobal(uiScript_, "TileEditor_SetCollisionLayer");
 
     // tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
 
@@ -86,33 +88,36 @@ bool TileEditor::Initialize()
         // what is the selected x,y index value based on what is clicked at top with tiles rendered
         // at 1/4 of original size?
         //
-        int clickedX = e.x, clickedY = e.y;
-        engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
-        int drawnTileWidth = tileSet_->GetTileWidth() / 2;
-        int drawnTileHeight = tileSet_->GetTileHeight() / 2;
-        int screenWidth = engine::GameEngine::Get().GetWidth();
-        int screenHeight = engine::GameEngine::Get().GetHeight();
-        int ntx, nty;
-        tileSet_->GetNumTiles(ntx, nty);
-        // e.g. J=3,1 in algorithm
-        int sx = clickedX / drawnTileWidth;
-        int sy = clickedY / drawnTileHeight;
-        // e.g. J=9 in algorithm
-        int scrnx = screenWidth / drawnTileWidth;
-        int scrny = screenHeight / drawnTileHeight;
-        int ndindex = sy * scrnx + sx;
-        // e.g. J=1,2 in algorithm
-        if(ndindex >= ntx * nty)
+        if(e.type == SDL_MOUSEBUTTONDOWN)
         {
-            // change the selected Tile to the selected tileset node because a new
-            // one wasn't selected.
-            //
-            SetTileToSelected(clickedX, clickedY);
-        }
-        else
-        {
-            selectedIX_ = ndindex % ntx;
-            selectedIY_ = ndindex / ntx;
+            int clickedX = e.x, clickedY = e.y;
+            engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
+            int drawnTileWidth = tileSet_->GetTileWidth() / 2;
+            int drawnTileHeight = tileSet_->GetTileHeight() / 2;
+            int screenWidth = engine::GameEngine::Get().GetWidth();
+            int screenHeight = engine::GameEngine::Get().GetHeight();
+            int ntx, nty;
+            tileSet_->GetNumTiles(ntx, nty);
+            // e.g. J=3,1 in algorithm
+            int sx = clickedX / drawnTileWidth;
+            int sy = clickedY / drawnTileHeight;
+            // e.g. J=9 in algorithm
+            int scrnx = screenWidth / drawnTileWidth;
+            int scrny = screenHeight / drawnTileHeight;
+            int ndindex = sy * scrnx + sx;
+            // e.g. J=1,2 in algorithm
+            if(ndindex >= ntx * nty)
+            {
+                // change the selected Tile to the selected tileset node because a new
+                // one wasn't selected.
+                //
+                SetTileToSelected(clickedX, clickedY);
+            }
+            else
+            {
+                selectedIX_ = ndindex % ntx;
+                selectedIY_ = ndindex / ntx;
+            }
         }
     });
 
@@ -168,6 +173,7 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     // draw tilemap first
     // tileMap_->Draw(cameraX_, cameraY_, program);
     tileMap_->Render(cameraX_, cameraY_, program);
+    tileMap_->RenderCollisionData(cameraX_, cameraY_, program, 1.f, 1.f);
 
     // draw all tiles from the set across the top
     int screenWidth = engine::GameEngine::Get().GetWidth();
@@ -224,7 +230,14 @@ void TileEditor::SetTileToSelected(int mouseX, int mouseY)
     int tileHeight = tileSet_->GetTileHeight();
     int ix = (mouseX - cameraX_) / tileWidth;
     int iy = (mouseY - cameraY_) / tileHeight;
-    tileMap_->SetTile(ix, iy, {(unsigned short)selectedIX_, (unsigned short)selectedIY_}, selectedLayer_);
+    if(collisionLayerSelected_)
+    {
+        tileMap_->SetCollisionData(ix, iy, tileMap_->GetCollisionData(ix,iy) ? 0 : 1);
+    }
+    else 
+    {
+        tileMap_->SetTile(ix, iy, {(unsigned short)selectedIX_, (unsigned short)selectedIY_}, selectedLayer_);
+    }
 }
 
 int TileEditor::lua_SaveMap(lua_State* L)
@@ -310,6 +323,20 @@ int TileEditor::lua_SetSelectedLayer(lua_State* L)
 
     int layer = (int)lua_tonumber(L, 1) == 0 ? 0 : 1;
     te->selectedLayer_ = layer;
+
+    return 0;
+}
+
+int TileEditor::lua_SetCollisionLayer(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    bool toggle = lua_toboolean(L, 1);
+    te->collisionLayerSelected_ = toggle;
 
     return 0;
 }

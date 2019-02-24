@@ -42,6 +42,7 @@ private:
     static int lua_NewMap(lua_State* L);
     static int lua_FillWithSelection(lua_State* L);
     static int lua_SetSelectedLayer(lua_State* L);
+    static int lua_SetCollisionLayer(lua_State* L);
     lua_State*  uiScript_;
     engine::ui::LuaBindings* luaBindings_;
     TileSet*    tileSet_;
@@ -49,5 +50,6 @@ private:
     int selectedIX_ = 0;
     int selectedIY_ = 0;
     int selectedLayer_ = 0;
+    bool collisionLayerSelected_ = false;
     int cameraX_=0, cameraY_=0;
 };

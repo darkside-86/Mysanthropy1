@@ -32,10 +32,21 @@ function OnLayerCBClicked()
     end
 end
 
+function OnCollisionCBClicked()
+    if mainWindow.collisionCB:GetText() == "[_]" then 
+        mainWindow.collisionCB:SetText("[X]")
+        TileEditor_SetCollisionLayer(true)
+    else 
+        mainWindow.collisionCB:SetText("[_]")
+        TileEditor_SetCollisionLayer(false)
+    end
+end
+
 -- main ui
 mainWindow = Window.New(nil, 250, 450, "Options", "sans14")
 mainWindow:SetXPos(GetScreenWidth() - mainWindow:GetWidth())
 mainWindow:SetYPos(GetScreenHeight() - mainWindow:GetHeight())
+mainWindow.closeBtn:SetVisible(false)
 
 mainWindow.fileTf = UITextField.New(mainWindow, mainWindow:GetWidth(), 20, "sans14", TEXTURE_UIBLANK)
 mainWindow.fileTf:SetYPos(mainWindow.closeBtn:GetYPos() + mainWindow.closeBtn:GetHeight() + 5)
@@ -91,6 +102,7 @@ mainWindow.newBtn:SetWidth(mainWindow:GetWidth())
 mainWindow.newBtn:SetColor(0,0,1,0)
 mainWindow.newBtn:SetBorderSize(1)
 mainWindow.newBtn:SetBorderColor(1,1,1,1)
+mainWindow.newBtn:SetTextColor(1,1,1,1)
 mainWindow.newBtn:AddOnClicked(OnNewBtnClicked)
 
 mainWindow.fillBtn = UIButton.New(mainWindow, TEXTURE_UIBLANK, "Fill with selection", "sans14", 5)
@@ -107,3 +119,11 @@ mainWindow.layerCB:AddOnClicked(OnLayerCBClicked)
 mainWindow.label4 = UILabel.New(mainWindow, "Toggle layer 1", "sans14", 1,1,1,1)
 mainWindow.label4:SetYPos(mainWindow.layerCB:GetYPos())
 mainWindow.label4:SetXPos(mainWindow.layerCB:GetXPos() + mainWindow.layerCB:GetWidth() + 1)
+
+mainWindow.collisionCB = UILabel.New(mainWindow, "[_]", "sans14", 1,1,1,1)
+mainWindow.collisionCB:SetYPos(mainWindow.layerCB:GetYPos() + mainWindow.layerCB:GetHeight() + 5)
+mainWindow.collisionCB:AddOnClicked(OnCollisionCBClicked)
+
+mainWindow.label5 = UILabel.New(mainWindow, "Toggle collision layer", "sans14", 1,1,1,1)
+mainWindow.label5:SetYPos(mainWindow.collisionCB:GetYPos())
+mainWindow.label5:SetXPos(mainWindow.collisionCB:GetWidth() + 1)

@@ -111,3 +111,16 @@ void Sprite::AddAnimFrame(const std::string& animName, ogl::Texture* texture)
     }
     animFrames_[animName].push_back(texture);
 }
+
+void Sprite::SetCollisionBox(float left, float top, float right, float bottom)
+{
+    collisionBox_ = { left, top, right, bottom };
+}
+
+void Sprite::GetCollisionBox(float &left, float& top, float &right, float &bottom)
+{
+    left = collisionBox_.left + position_.x;
+    top = collisionBox_.top + position_.y;
+    right = collisionBox_.right + position_.x;
+    bottom = collisionBox_.bottom + position_.y;
+}

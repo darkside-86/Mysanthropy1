@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "ogl/Program.h"
+#include "ogl/Texture.h"
 #include "ogl/VertexArray.h"
 #include "ogl/VertexBuffer.h"
 #include "TileSet.h"
@@ -48,17 +49,25 @@ public:
     Tile GetTile(int ix, int iy, bool layer1 = false);
     void SetTile(int ix, int iy, const Tile& tile, bool layer1=false);
     void FillWithTile(const Tile& tile, bool layer1=false);
+    unsigned char GetCollisionData(int ix, int iy);
+    void SetCollisionData(int ix, int iy, unsigned char value);
+    void RenderCollisionData(int x, int y, ogl::Program& program, float scaleX, float scaleY);
 private:
-    void SetupRender(); 
+    void SetupRender();
     TileSet* tileSet_ = nullptr;
     int width_ = 0;
     int height_ = 0;
     Tile* layer0_ = nullptr;
     Tile* layer1_ = nullptr;
+    unsigned char* collisionLayer_ = nullptr;
     // layer 0
     ogl::VertexArray* vao_ = nullptr;
     ogl::VertexBuffer vbo_;
     // layer 1
     ogl::VertexArray* vao1_ = nullptr;
     ogl::VertexBuffer vbo1_;
+    // collision tile "X" indicator
+    ogl::Texture* redTexture_ = nullptr;
+    ogl::VertexArray* collisionVao_ = nullptr;
+    ogl::VertexBuffer collisionVbo_;
 };

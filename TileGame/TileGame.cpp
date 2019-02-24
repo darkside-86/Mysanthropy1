@@ -42,6 +42,8 @@ bool TileGame::Initialize()
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     testSprite_->SetPosition({0.f,0.f,0.f});
+    testSprite_->SetCollisionBox(4.f, (float)testSprite_->GetWidth() / 2.f, 
+            (float)testSprite_->GetWidth()-4.f, (float)testSprite_->GetHeight());
     
     testSprite_->AddAnimFrame("front_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif"));
     testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif"));
@@ -56,7 +58,7 @@ bool TileGame::Initialize()
     testSprite_->AddAnimFrame("right_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt1.gif"));
     testSprite_->AddAnimFrame("right_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt2.gif"));
     
-    testSprite_->SetCurrentAnim("front_walk", 0.2f);
+    testSprite_->SetCurrentAnim("front_stand", 0.2f);
     testSprite_->StartAnimation();
     engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
         if(e.type == SDL_KEYDOWN)
@@ -107,6 +109,27 @@ void TileGame::Cleanup()
 void TileGame::Update(float dtime)
 {
     testSprite_->Update(dtime);
+    // tile collision detection.
+    float left, top, right, bottom;
+    testSprite_->GetCollisionBox(left, top, right, bottom);
+    // check each corner
+    // TODO: fix update to prevent walking through-trick
+    bool collision = false;
+    int ix = (int)(left / (float)tileMap_->GetTileSet()->GetTileWidth());
+    int iy = (int)(top / (float)tileMap_->GetTileSet()->GetTileHeight());
+    if(tileMap_->GetCollisionData(ix, iy))  collision = true;
+    ix = (int)(right / (float)tileMap_->GetTileSet()->GetTileWidth());
+    iy = (int)(top / (float)tileMap_->GetTileSet()->GetTileHeight());
+    if(tileMap_->GetCollisionData(ix, iy))  collision = true;
+    ix = (int)(left / (float)tileMap_->GetTileSet()->GetTileWidth());
+    iy = (int)(bottom / (float)tileMap_->GetTileSet()->GetTileHeight());
+    if(tileMap_->GetCollisionData(ix, iy))  collision = true;
+    ix = (int)(right / (float)tileMap_->GetTileSet()->GetTileWidth());
+    iy = (int)(bottom / (float)tileMap_->GetTileSet()->GetTileHeight());
+    if(tileMap_->GetCollisionData(ix, iy))  collision = true;
+    if(collision) 
+        testSprite_->Update(-dtime);
+
     // calculate camera.
     float scrW = (float)engine::GameEngine::Get().GetWidth();
     float scrH = (float)engine::GameEngine::Get().GetHeight();
