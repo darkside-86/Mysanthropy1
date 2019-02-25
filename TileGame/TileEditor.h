@@ -37,6 +37,7 @@ public:
     void Render(engine::GraphicsContext& gc) override;
 private:
     void SetTileToSelected(int mouseX, int mouseY);
+    void UpdateHoverData(int mouseX, int mouseY);
     static int lua_SaveMap(lua_State* L);
     static int lua_LoadMap(lua_State* L);
     static int lua_NewMap(lua_State* L);
@@ -49,6 +50,8 @@ private:
     TileMap*    tileMap_;
     int selectedIX_ = 0;
     int selectedIY_ = 0;
+    int hoverIX_ = 0;
+    int hoverIY_ = 0;
     int selectedLayer_ = 0;
     bool collisionLayerSelected_ = false;
     int cameraX_=0, cameraY_=0;

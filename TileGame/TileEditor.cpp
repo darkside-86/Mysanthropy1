@@ -133,7 +133,14 @@ bool TileEditor::Initialize()
             case SDLK_LEFT: cameraX_ += w; break;
             case SDLK_RIGHT: cameraX_ -= w; break;
             }
+            int x,y;
+            SDL_GetMouseState(&x, &y);
+            UpdateHoverData(x,y);
         }
+    });
+
+    engine::GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e){
+        UpdateHoverData(e.x, e.y);        
     });
 
     return true;
@@ -240,6 +247,19 @@ void TileEditor::SetTileToSelected(int mouseX, int mouseY)
     }
 }
 
+void TileEditor::UpdateHoverData(int mouseX, int mouseY)
+{
+    int tileWidth = tileSet_->GetTileWidth();
+    int tileHeight = tileSet_->GetTileHeight();
+    hoverIX_ = (mouseX - cameraX_) / tileWidth;
+    hoverIY_ = (mouseY - cameraY_) / tileHeight;
+    lua_pushinteger(uiScript_, hoverIX_);
+    lua_setglobal(uiScript_, "g_hoverX");
+    lua_pushinteger(uiScript_, hoverIY_);
+    lua_setglobal(uiScript_, "g_hoverY");
+    luaL_dostring(uiScript_, "UpdateHoverData()");
+}
+
 int TileEditor::lua_SaveMap(lua_State* L)
 {
     // get TileEditor
@@ -299,14 +319,6 @@ int TileEditor::lua_FillWithSelection(lua_State* L)
     TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    /*for(int iy=0; iy < te->tileMap_->GetHeight(); ++iy)
-    {
-        for(int ix=0; ix < te->tileMap_->GetWidth(); ++ix)
-        {
-            te->tileMap_->SetTile(ix, iy, {(unsigned short)te->selectedIX_, (unsigned short)te->selectedIY_},
-                    te->selectedLayer_);
-        }
-    }*/
     te->tileMap_->FillWithTile({(unsigned short)te->selectedIX_,(unsigned short)te->selectedIY_}, 
             te->selectedLayer_);
 

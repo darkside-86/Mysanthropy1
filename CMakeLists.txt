@@ -89,7 +89,9 @@ set (
 add_executable ( 
     TileMapEditor
 	    main.cpp
+        TileGame/Entity.cpp
         TileGame/Image2D.cpp
+        TileGame/Sprite.cpp
         TileGame/TileEditor.cpp
         TileGame/TileMap.cpp
         TileGame/TileSet.cpp
@@ -100,6 +102,7 @@ add_executable (
 add_executable ( 
     RPG
 	    gamemain.cpp
+        TileGame/Entity.cpp
         TileGame/Image2D.cpp
         TileGame/Sprite.cpp
         TileGame/TileGame.cpp

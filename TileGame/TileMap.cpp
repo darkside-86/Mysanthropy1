@@ -97,6 +97,7 @@ void TileMap::SaveToFile(const std::string& path)
     out.write((char*)&tileHeight, sizeof(tileHeight));
     out.write((char*)&width_, sizeof(width_));
     out.write((char*)&height_, sizeof(height_));
+    // TODO: write each array all at once
     for(int i=0; i < width_*height_; ++i)
     {
         out.write((char*)&layer0_[i], sizeof(Tile));
@@ -129,6 +130,12 @@ void TileMap::LoadFromFile(const std::string& path)
     
     std::ifstream in;
     in.open(path, std::ios::binary);
+    if(!in.is_open())
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
+            "%s: Unable to open `%s'", __FUNCTION__, path.c_str());
+        return;
+    }
     // first read major, minor version
     unsigned char majorV, minorV;
     in.read((char*)&majorV, sizeof(majorV));
@@ -157,6 +164,7 @@ void TileMap::LoadFromFile(const std::string& path)
     layer0_ = new Tile[width_*height_];
     layer1_ = new Tile[width_*height_];
     collisionLayer_ = new unsigned char[width_ * height_];
+    // TODO: read each array all at once
     for(int i=0; i < width_*height_; ++i)
     {
         Tile tile;
@@ -169,18 +177,11 @@ void TileMap::LoadFromFile(const std::string& path)
             in.read((char*)&tile, sizeof(tile));
             layer1_[i] = tile;
     }
-    if(minorV >= 3)
+    for(int i=0; i < width_ * height_; ++i)
     {
-        for(int i=0; i < width_ * height_; ++i)
-        {
-            unsigned char c;
-            in.read((char*)&c, sizeof(c));
-            collisionLayer_[i] = c;
-        }
-    }
-    else 
-    {
-        memset(collisionLayer_, 0, width_ * height_);
+        unsigned char c;
+        in.read((char*)&c, sizeof(c));
+        collisionLayer_[i] = c;
     }
     in.close();
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
@@ -206,8 +207,6 @@ void TileMap::SetupRender()
     float th = 1.f / (float)nty;
     float x = 0.0f;
     float y = 0.0f;
-    // engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-    //        "%s: Working on vertices...", __FUNCTION__);
     while(vi < numVertices)
     {
         float s0 = (float)layer0_[ti].ix / (float)ntx;
@@ -241,8 +240,6 @@ void TileMap::SetupRender()
             x = 0.f;
         }
     }
-    // engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-    //        "%s: ...Done", __FUNCTION__);
     vbo_.SetData(sizeof(ogl::Vertex)*numVertices, vertices, GL_STATIC_DRAW);
     vbo1_.SetData(sizeof(ogl::Vertex)*numVertices, l1Verts, GL_STATIC_DRAW);
     ogl::VertexBufferLayout vbl;

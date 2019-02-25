@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
+
 #include "TileGame.h"
 
 #include <glm/glm.hpp>
@@ -25,7 +26,7 @@
 
 TileGame::TileGame()
 {
-    tileMap_ = new TileMap("res/tilemaps/testland.bin");
+    tileMap_ = new TileMap("res/tilemaps/island.bin");
 }
 
 TileGame::~TileGame()
@@ -36,7 +37,11 @@ TileGame::~TileGame()
 bool TileGame::Initialize()
 {
     testSprite_ = LoadLGSpr("man1");
-    testSprite_->SetPosition({0.f,0.f,0.f});
+    testSprite_->SetPosition({
+        23.f * (float)tileMap_->GetTileSet()->GetTileWidth(),
+        234.f * (float)tileMap_->GetTileSet()->GetTileHeight(),
+        0.f
+    });
     testSprite_->SetCollisionBox(4.f, (float)testSprite_->GetWidth() / 2.f, 
             (float)testSprite_->GetWidth()-4.f, (float)testSprite_->GetHeight());
 

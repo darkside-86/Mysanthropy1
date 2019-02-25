@@ -42,6 +42,11 @@ function OnCollisionCBClicked()
     end
 end
 
+function UpdateHoverData()
+    -- g_hoverX, g_hoverY
+    dataWindow.hoverTf:SetText("Tile " .. tostring(g_hoverX) .. ", " .. tostring(g_hoverY))
+end
+
 -- main ui
 mainWindow = Window.New(nil, 250, 450, "Options", "sans14")
 mainWindow:SetXPos(GetScreenWidth() - mainWindow:GetWidth())
@@ -127,3 +132,9 @@ mainWindow.collisionCB:AddOnClicked(OnCollisionCBClicked)
 mainWindow.label5 = UILabel.New(mainWindow, "Toggle collision layer", "sans14", 1,1,1,1)
 mainWindow.label5:SetYPos(mainWindow.collisionCB:GetYPos())
 mainWindow.label5:SetXPos(mainWindow.collisionCB:GetWidth() + 1)
+
+dataWindow = Window.New(nil, 75, 75, "Data", "sans14")
+dataWindow:SetXPos(mainWindow:GetXPos() - dataWindow:GetWidth())
+dataWindow:SetYPos(mainWindow:GetYPos() + mainWindow:GetHeight() - dataWindow:GetHeight())
+dataWindow.hoverTf = UILabel.New(dataWindow, "Tile _, _", "sans14", 1, 1, 1, 1)
+dataWindow.hoverTf:SetYPos(dataWindow.closeBtn:GetHeight()+5)
