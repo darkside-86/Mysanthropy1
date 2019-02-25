@@ -35,8 +35,9 @@ public:
     void Update(float dtime);
     void Render(engine::GraphicsContext& gc);
 private:
-    TileMap* tileMap_;
-    ogl::Texture* spriteImage_;    
+    Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
+    void UnloadLGSpr(Sprite*& sprite, const std::string& name);
+    TileMap* tileMap_;  
     Sprite* testSprite_;
     glm::vec3 camera_ = {0.f,0.f,0.f};
 };

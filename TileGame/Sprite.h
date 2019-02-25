@@ -36,7 +36,7 @@ struct BOX
 class Sprite : public engine::GameObject
 {
 public:
-    Sprite(ogl::Texture* img);
+    Sprite(ogl::Texture* img, int width=0, int height=0);
     virtual ~Sprite();
     void Update(float dtime) override;
     void Render(const glm::vec3& camPos, ogl::Program& program) override;

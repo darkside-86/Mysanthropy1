@@ -26,38 +26,20 @@
 TileGame::TileGame()
 {
     tileMap_ = new TileMap("res/tilemaps/testland.bin");
-    spriteImage_ = new ogl::Texture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif", 
-            true, false);
-    testSprite_ = new Sprite(spriteImage_);
 }
 
 TileGame::~TileGame()
 {
     delete tileMap_;
-    delete spriteImage_;
-    delete testSprite_;
 }
 
 bool TileGame::Initialize()
 {
-    auto& tm = engine::GameEngine::Get().GetTextureManager();
+    testSprite_ = LoadLGSpr("man1");
     testSprite_->SetPosition({0.f,0.f,0.f});
     testSprite_->SetCollisionBox(4.f, (float)testSprite_->GetWidth() / 2.f, 
             (float)testSprite_->GetWidth()-4.f, (float)testSprite_->GetHeight());
-    
-    testSprite_->AddAnimFrame("front_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif"));
-    testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr1.gif"));
-    testSprite_->AddAnimFrame("front_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_fr2.gif"));
-    testSprite_->AddAnimFrame("left_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_lf2.gif"));
-    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_lf1.gif"));
-    testSprite_->AddAnimFrame("left_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_lf2.gif"));
-    testSprite_->AddAnimFrame("back_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_bk1.gif"));
-    testSprite_->AddAnimFrame("back_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_bk1.gif"));
-    testSprite_->AddAnimFrame("back_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_bk2.gif"));
-    testSprite_->AddAnimFrame("right_stand", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt2.gif"));
-    testSprite_->AddAnimFrame("right_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt1.gif"));
-    testSprite_->AddAnimFrame("right_walk", tm.GetTexture("res/textures/sprites/last-guardian-sprites/amg1_rt2.gif"));
-    
+
     testSprite_->SetCurrentAnim("front_stand", 0.2f);
     testSprite_->StartAnimation();
     engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
@@ -103,7 +85,7 @@ bool TileGame::Initialize()
 
 void TileGame::Cleanup()
 {
-
+    UnloadLGSpr(testSprite_, "man1");
 }
 
 void TileGame::Update(float dtime)
@@ -142,9 +124,6 @@ void TileGame::Update(float dtime)
         camera_.x = 0.0f;
     if(camera_.y < 0.0f)
         camera_.y = 0.0f;*/
-
-    //engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
-    //        "%s: camera = {%f,%f,%f}", __FUNCTION__, camera_.x, camera_.y, camera_.z);
 }
 
 void TileGame::Render(engine::GraphicsContext& gc)
@@ -164,4 +143,41 @@ void TileGame::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_model", model);
     tileMap_->Render((int)-camera_.x,(int)-camera_.y, program);
     testSprite_->Render(-camera_, program);
+}
+
+Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
+{
+    auto& tm = engine::GameEngine::Get().GetTextureManager();
+    const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
+    ogl::Texture* texture = tm.GetTexture(path + "_fr1.gif");
+    Sprite* sprite = new Sprite(texture, w, h);
+    sprite->AddAnimFrame("front_stand", tm.GetTexture(path + "_fr1.gif"));
+    sprite->AddAnimFrame("front_walk", tm.GetTexture(path + "_fr1.gif"));
+    sprite->AddAnimFrame("front_walk", tm.GetTexture(path + "_fr2.gif"));
+    sprite->AddAnimFrame("left_stand", tm.GetTexture(path + "_lf2.gif"));
+    sprite->AddAnimFrame("left_walk", tm.GetTexture(path + "_lf1.gif"));
+    sprite->AddAnimFrame("left_walk", tm.GetTexture(path + "_lf2.gif"));
+    sprite->AddAnimFrame("back_stand", tm.GetTexture(path + "_bk1.gif"));
+    sprite->AddAnimFrame("back_walk", tm.GetTexture(path + "_bk1.gif"));
+    sprite->AddAnimFrame("back_walk", tm.GetTexture(path + "_bk2.gif"));
+    sprite->AddAnimFrame("right_stand", tm.GetTexture(path + "_rt2.gif"));
+    sprite->AddAnimFrame("right_walk", tm.GetTexture(path + "_rt1.gif"));
+    sprite->AddAnimFrame("right_walk", tm.GetTexture(path + "_rt2.gif"));
+    return sprite;
+}
+
+void TileGame::UnloadLGSpr(Sprite*& sprite, const std::string& name)
+{
+    auto& tm = engine::GameEngine::Get().GetTextureManager();
+    const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
+    tm.UnloadTexture(path + "_fr1.gif");
+    tm.UnloadTexture(path + "_fr2.gif");
+    tm.UnloadTexture(path + "_lf1.gif");
+    tm.UnloadTexture(path + "_lf2.gif");
+    tm.UnloadTexture(path + "_bk1.gif");
+    tm.UnloadTexture(path + "_bk2.gif");
+    tm.UnloadTexture(path + "_rt1.gif");
+    tm.UnloadTexture(path + "_rt2.gif");
+    delete sprite;
+    sprite = nullptr;
 }

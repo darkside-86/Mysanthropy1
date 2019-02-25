@@ -25,11 +25,11 @@
 #include "ogl/ErrorCheck.h"
 #include "ogl/Vertex.h"
 
-Sprite::Sprite(ogl::Texture* img) :
+Sprite::Sprite(ogl::Texture* img, int width, int height) :
     anim0_(img)
 {
-    width_ = anim0_->GetWidth();
-    height_ = anim0_->GetHeight();
+    width_ = width == 0 ? anim0_->GetWidth() : width;
+    height_ = height == 0 ? anim0_->GetHeight() : height;
     float w = (float)width_;
     float h = (float)height_;
     ogl::Vertex vertices[6] = {

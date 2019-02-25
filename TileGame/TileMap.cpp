@@ -56,7 +56,7 @@ TileMap::~TileMap()
 Tile TileMap::GetTile(int ix, int iy, bool layer1)
 {
     int index = iy*width_ + ix;
-    if(index >= width_*height_ || index < 0)
+    if(index < 0 || ix >= width_ || iy >= height_)
         return {0,0};
     return !layer1? layer0_[index] : layer1_[index];
 }
@@ -64,7 +64,7 @@ Tile TileMap::GetTile(int ix, int iy, bool layer1)
 void TileMap::SetTile(int ix, int iy, const Tile& tile, bool layer1)
 {
     int index = iy * width_ + ix;
-    if(index >= width_*height_ || index < 0)
+    if(index < 0 || ix >= width_ || iy >= height_)
         return;
     if(!layer1)
         layer0_[index] = tile;
@@ -334,7 +334,7 @@ void TileMap::FillWithTile(const Tile& tile, bool layer1)
 unsigned char TileMap::GetCollisionData(int ix, int iy)
 {
     int index = iy * width_ + ix;
-    if(index < 0 || index >= width_ * height_)
+    if(index < 0 || ix >= width_ || iy >= height_)
         return 0;
     else
         return collisionLayer_[index];
@@ -343,6 +343,6 @@ unsigned char TileMap::GetCollisionData(int ix, int iy)
 void TileMap::SetCollisionData(int ix, int iy, unsigned char value)
 {
     int index = iy * width_ + ix;
-    if(index >= 0 && index < width_ * height_)
+    if(index >= 0 && ix < width_ && iy < height_)
         collisionLayer_[index] = value;
 }
