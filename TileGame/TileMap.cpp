@@ -19,6 +19,7 @@
 
 #include "TileMap.h"
 
+#include <algorithm>
 #include <fstream>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -89,7 +90,7 @@ void TileMap::SaveToFile(const std::string& path)
     }
 
     const unsigned char MAJOR_VERSION = 0;
-    const unsigned char MINOR_VERSION = 4;
+    const unsigned char MINOR_VERSION = 5;
     const std::string TILESET_PATH = tileSet_->GetPathToTexture();
     out.write((char*)&MAJOR_VERSION, sizeof(unsigned char));
     out.write((char*)&MINOR_VERSION, sizeof(unsigned char));
@@ -118,6 +119,10 @@ void TileMap::SaveToFile(const std::string& path)
     size = scriptPath_.size();
     out.write((char*)&size, sizeof(size));
     out.write(scriptPath_.c_str(), size);
+    // write the entities.
+    size = mapEntities_.size();
+    out.write((char*)&size, sizeof(size));
+    out.write((char*)&mapEntities_[0], sizeof(ENTITY_LOCATION) * mapEntities_.size());
 
     out.close();
 }
@@ -193,15 +198,21 @@ void TileMap::LoadFromFile(const std::string& path)
         in.read((char*)&c, sizeof(c));
         collisionLayer_[i] = c;
     }
-    if( minorV >= 4 )
+    // read script path
+    in.read((char*)&size, sizeof(size));
+    char* szScriptPath = new char[size+1];
+    szScriptPath[size] = 0;
+    in.read(szScriptPath, size);
+    scriptPath_ = szScriptPath;
+    delete [] szScriptPath;
+    // read map entity locations
+    if(minorV >= 5)
     {
         in.read((char*)&size, sizeof(size));
-        char* szScriptPath = new char[size+1];
-        szScriptPath[size] = 0;
-        in.read(szScriptPath, size);
-        scriptPath_ = szScriptPath;
-        delete [] szScriptPath;
+        mapEntities_.resize(size);
+        in.read((char*)&mapEntities_[0], size * sizeof(ENTITY_LOCATION));
     }
+
     in.close();
 
     // run the script at scriptPath_
@@ -345,6 +356,18 @@ void TileMap::RenderCollisionData(int x, int y, ogl::Program& program, float sca
     }
 }
 
+std::vector<Entity*> TileMap::GenerateEntities()
+{
+    std::vector<Entity*> entities;
+    for(auto it=mapEntities_.begin(); it != mapEntities_.end(); ++it)
+    {
+        Entity* e = new Entity(GetEntityType(it->entityID));
+        e->SetPosition({(float)(it->x), (float)(it->y), 0.f});
+        entities.push_back(e);
+    }
+    return entities;
+}
+
 void TileMap::FillWithTile(const Tile& tile, bool layer1)
 {
     for(int i=0; i < width_*height_; ++i)
@@ -381,9 +404,43 @@ ENTITY_TYPE TileMap::GetEntityType(int index)
     }
     else 
     {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "%s: index out of range (%d)", __FUNCTION__, index);
         ENTITY_TYPE blank;
         return blank;
     }
+}
+
+void TileMap::AddEntityLocation(unsigned short entityID, unsigned int x, unsigned int y)
+{
+    ENTITY_LOCATION location = { entityID, x, y };
+    mapEntities_.push_back(location);
+}
+
+bool TileMap::RemoveEntityLocation(unsigned short entityID, unsigned int x, unsigned int y)
+{
+    auto it = std::find_if(mapEntities_.begin(), mapEntities_.end(), 
+        [this, entityID, x, y](const ENTITY_LOCATION& loc){
+            ENTITY_TYPE t = GetEntityType(entityID);
+            return loc.entityID == entityID && 
+                x >= loc.x && x <= loc.x + t.width &&
+                y >= loc.y && y <= loc.y + t.height;
+        }
+    );
+    if(it != mapEntities_.end())
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                "%s: Located for removal", __FUNCTION__);
+        mapEntities_.erase(it);
+        return true;
+    }
+    else
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                "%s: Wasn't found", __FUNCTION__);
+        return false;
+    }
+    
 }
 
 void TileMap::SetupScripting()

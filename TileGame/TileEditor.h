@@ -43,6 +43,7 @@ private:
     void UpdateHoverData(int mouseX, int mouseY);
     void SetupSelection(int index);
     void CleanupEntities();
+    void RemoveEntity(int index, int x, int y);
     static int lua_SaveMap(lua_State* L);
     static int lua_LoadMap(lua_State* L);
     static int lua_NewMap(lua_State* L);
@@ -52,6 +53,7 @@ private:
     static int lua_GetScriptPath(lua_State* L);
     static int lua_SetScriptPath(lua_State* L);
     static int lua_SelectEntity(lua_State* L);
+    static int lua_RemoveEntity(lua_State* L);
     lua_State*  uiScript_;
     engine::ui::LuaBindings* luaBindings_;
     TileSet*    tileSet_;
@@ -62,6 +64,8 @@ private:
     int hoverIY_ = 0;
     int selectedLayer_ = 0;
     Entity* entityToPlace_ = nullptr;
+    int entityID_ = 0;
+    bool entityToRemove_ = false;
     std::vector<Entity*> entities_;
     bool collisionLayerSelected_ = false;
     int cameraX_=0, cameraY_=0;

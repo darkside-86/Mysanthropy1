@@ -65,9 +65,12 @@ bool TileEditor::Initialize()
     lua_setglobal(uiScript_, "TileEditor_SetScriptPath");
     lua_pushcfunction(uiScript_, TileEditor::lua_SelectEntity);
     lua_setglobal(uiScript_, "TileEditor_SelectEntity");
+    lua_pushcfunction(uiScript_, TileEditor::lua_RemoveEntity);
+    lua_setglobal(uiScript_, "TileEditor_RemoveEntity");
 
-    tileMap_ = new TileMap("res/tilemaps/output.bin");
+    tileMap_ = new TileMap("res/tilemaps/island.bin");
     tileSet_ = tileMap_->GetTileSet();
+    entities_ = tileMap_->GenerateEntities();
 
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", "ui/lib/keycodes.lua", "ui/lib/Window.lua", "ui/TileEditor.lua"
@@ -93,16 +96,14 @@ bool TileEditor::Initialize()
     // tileMap_ = new TileMap(tileSet_, 32, 32);
 
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
-        // what is the selected x,y index value based on what is clicked at top with tiles rendered
-        // at 1/4 of original size?
-        //
+
         if(e.type == SDL_MOUSEBUTTONDOWN && e.button == 1)
         {
             int clickedX = e.x, clickedY = e.y;
             engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
 
             // first check to see if we need to place an entity
-            if(entityToPlace_ != nullptr)
+            if(entityToPlace_ != nullptr && entityID_ >= 0 && !entityToRemove_)
             {
                 entityToPlace_->SetPosition({
                     -(float)cameraX_ + (float)clickedX,
@@ -111,9 +112,21 @@ bool TileEditor::Initialize()
                 });
                 entities_.push_back(entityToPlace_);
                 entityToPlace_ = nullptr;
+                tileMap_->AddEntityLocation(entityID_, 
+                    -cameraX_ + clickedX,
+                    -cameraY_ + clickedY);
                 return; // nothing else to do for this mouse click
             }
-
+            else if(entityToRemove_)
+            {
+                tileMap_->RemoveEntityLocation(entityID_, -cameraX_ + clickedX, -cameraY_ + clickedY);
+                RemoveEntity(entityID_, -cameraX_ + clickedX, -cameraY_ + clickedY);
+                entityToRemove_ = false;
+                return;
+            }
+            // what is the selected x,y index value based on what is clicked at top with tiles rendered
+            // at 1/4 of original size?
+            //
             int drawnTileWidth = tileSet_->GetTileWidth() / 2;
             int drawnTileHeight = tileSet_->GetTileHeight() / 2;
             int screenWidth = engine::GameEngine::Get().GetWidth();
@@ -308,6 +321,33 @@ void TileEditor::CleanupEntities()
         delete (*it);
     }
     entities_.clear();
+
+    if(entityToPlace_)
+    {
+        delete entityToPlace_;
+        entityToPlace_ = nullptr;
+    }
+}
+
+void TileEditor::RemoveEntity(int index, int x, int y)
+{
+    auto t = tileMap_->GetEntityType(index);
+    auto it = entities_.begin();
+    for(; it != entities_.end(); ++it)
+    {
+        if( (*it)->GetName()==t.name 
+            && (float)x >= (*it)->GetPosition().x 
+            && (float)x <= (*it)->GetPosition().x + (float)(*it)->GetWidth()
+            && (float)y >= (*it)->GetPosition().y 
+            && (float)x <= (*it)->GetPosition().y + (float)(*it)->GetHeight() )
+        {
+            break;
+        }
+    }
+    if(it != entities_.end())
+    {
+        entities_.erase(it);
+    }
 }
 
 int TileEditor::lua_SaveMap(lua_State* L)
@@ -336,6 +376,7 @@ int TileEditor::lua_LoadMap(lua_State* L)
     te->CleanupEntities();
     te->tileMap_->LoadFromFile(path);
     te->tileSet_ = te->tileMap_->GetTileSet();
+    te->entities_ = te->tileMap_->GenerateEntities();
     return 0;
 }
 
@@ -441,7 +482,22 @@ int TileEditor::lua_SelectEntity(lua_State* L)
     lua_pop(L, 1);
 
     int index = (int)lua_tonumber(L, 1);
+    te->entityID_ = index;
     te->SetupSelection(index);
+
+    return 0;
+}
+
+int TileEditor::lua_RemoveEntity(lua_State* L)
+{
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int index = (int)lua_tonumber(L, 1);
+    te->entityID_ = index;
+    te->entityToRemove_ = true;
 
     return 0;
 }

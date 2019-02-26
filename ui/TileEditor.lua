@@ -53,6 +53,10 @@ function OnPlaceBtnClicked()
     TileEditor_SelectEntity(tonumber(entWindow.selectionTf:GetText()))
 end
 
+function OnRemoveBtnClicked()
+    TileEditor_RemoveEntity(tonumber(entWindow.selectionTf:GetText()))
+end
+
 -- main ui
 mainWindow = Window.New(nil, 250, 450, "Options", "sans14")
 mainWindow:SetXPos(GetScreenWidth() - mainWindow:GetWidth())
@@ -169,5 +173,9 @@ entWindow.placeBtn = UIButton.New(entWindow, TEXTURE_UIBLANK, "Place", "sans14",
 entWindow.placeBtn:SetYPos(entWindow.selectionTf:GetYPos()+entWindow.selectionTf:GetHeight())
 entWindow.placeBtn:AddOnClicked(OnPlaceBtnClicked)
 
+entWindow.removeBtn = UIButton.New(entWindow, TEXTURE_UIBLANK, "Remove", "sans14", 5)
+entWindow.removeBtn:SetYPos(entWindow.placeBtn:GetYPos())
+entWindow.removeBtn:SetXPos(entWindow.placeBtn:GetWidth() + 10)
+entWindow.removeBtn:AddOnClicked(OnRemoveBtnClicked)
 
 

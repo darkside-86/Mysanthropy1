@@ -67,6 +67,9 @@ public:
     std::vector<Entity*> GenerateEntities();
     // Get an entity type from the list. tilemap retains pointer ownership
     ENTITY_TYPE GetEntityType(int index);
+    // Add an entity location to map
+    void AddEntityLocation(unsigned short entityID, unsigned int x, unsigned int y);
+    bool RemoveEntityLocation(unsigned short entityID, unsigned int x, unsigned int y);
 private:
     void SetupRender();
     void SetupScripting();
