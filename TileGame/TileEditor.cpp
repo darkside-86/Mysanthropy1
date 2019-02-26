@@ -63,6 +63,8 @@ bool TileEditor::Initialize()
     lua_setglobal(uiScript_, "TileEditor_GetScriptPath");
     lua_pushcfunction(uiScript_, TileEditor::lua_SetScriptPath);
     lua_setglobal(uiScript_, "TileEditor_SetScriptPath");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SelectEntity);
+    lua_setglobal(uiScript_, "TileEditor_SelectEntity");
 
     tileMap_ = new TileMap("res/tilemaps/output.bin");
     tileSet_ = tileMap_->GetTileSet();
@@ -94,10 +96,24 @@ bool TileEditor::Initialize()
         // what is the selected x,y index value based on what is clicked at top with tiles rendered
         // at 1/4 of original size?
         //
-        if(e.type == SDL_MOUSEBUTTONDOWN)
+        if(e.type == SDL_MOUSEBUTTONDOWN && e.button == 1)
         {
             int clickedX = e.x, clickedY = e.y;
             engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
+
+            // first check to see if we need to place an entity
+            if(entityToPlace_ != nullptr)
+            {
+                entityToPlace_->SetPosition({
+                    -(float)cameraX_ + (float)clickedX,
+                    -(float)cameraY_ + (float)clickedY,
+                    0.f
+                });
+                entities_.push_back(entityToPlace_);
+                entityToPlace_ = nullptr;
+                return; // nothing else to do for this mouse click
+            }
+
             int drawnTileWidth = tileSet_->GetTileWidth() / 2;
             int drawnTileHeight = tileSet_->GetTileHeight() / 2;
             int screenWidth = engine::GameEngine::Get().GetWidth();
@@ -188,6 +204,12 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     tileMap_->Render(cameraX_, cameraY_, program);
     tileMap_->RenderCollisionData(cameraX_, cameraY_, program, 1.f, 1.f);
 
+    // draw the entities.
+    for(auto it : entities_)
+    {
+        it->Render(glm::vec3((float)cameraX_, (float)cameraY_, 0.f), program);
+    }
+
     // draw all tiles from the set across the top
     int screenWidth = engine::GameEngine::Get().GetWidth();
     int screenHeight = engine::GameEngine::Get().GetHeight();
@@ -266,6 +288,28 @@ void TileEditor::UpdateHoverData(int mouseX, int mouseY)
     luaL_dostring(uiScript_, "UpdateHoverData()");
 }
 
+void TileEditor::SetupSelection(int index)
+{
+    ENTITY_TYPE et = tileMap_->GetEntityType(index);
+    if(et.name == nullptr)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "%s: Invalid entity type index %d", __FUNCTION__, index);
+        return;
+    }
+    entityToPlace_ = new Entity(et);
+    // once placed it will be added to vector of entities
+}
+
+void TileEditor::CleanupEntities()
+{
+    for(auto it=entities_.begin(); it != entities_.end(); ++it)
+    {
+        delete (*it);
+    }
+    entities_.clear();
+}
+
 int TileEditor::lua_SaveMap(lua_State* L)
 {
     // get TileEditor
@@ -289,9 +333,9 @@ int TileEditor::lua_LoadMap(lua_State* L)
     lua_pop(L, 1);
 
     const char* path = luaL_checkstring(L, 1);
+    te->CleanupEntities();
     te->tileMap_->LoadFromFile(path);
     te->tileSet_ = te->tileMap_->GetTileSet();
-
     return 0;
 }
 
@@ -383,6 +427,21 @@ int TileEditor::lua_SetScriptPath(lua_State* L)
 
     const char* scriptPath = lua_tostring(L, 1);
     te->tileMap_->SetScriptPath(scriptPath);
+
+    return 0;
+}
+
+// TileEditor_SelectEntity(iIndex)
+int TileEditor::lua_SelectEntity(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int index = (int)lua_tonumber(L, 1);
+    te->SetupSelection(index);
 
     return 0;
 }

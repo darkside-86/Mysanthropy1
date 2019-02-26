@@ -18,10 +18,13 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <vector>
+
 #include <lua/lua.hpp>
 
 #include "engine/Game.h"
 #include "engine/ui/LuaBindings.h"
+#include "Entity.h"
 #include "Image2D.h"
 #include "TileMap.h"
 #include "TileSet.h"
@@ -38,6 +41,8 @@ public:
 private:
     void SetTileToSelected(int mouseX, int mouseY);
     void UpdateHoverData(int mouseX, int mouseY);
+    void SetupSelection(int index);
+    void CleanupEntities();
     static int lua_SaveMap(lua_State* L);
     static int lua_LoadMap(lua_State* L);
     static int lua_NewMap(lua_State* L);
@@ -46,6 +51,7 @@ private:
     static int lua_SetCollisionLayer(lua_State* L);
     static int lua_GetScriptPath(lua_State* L);
     static int lua_SetScriptPath(lua_State* L);
+    static int lua_SelectEntity(lua_State* L);
     lua_State*  uiScript_;
     engine::ui::LuaBindings* luaBindings_;
     TileSet*    tileSet_;
@@ -55,6 +61,8 @@ private:
     int hoverIX_ = 0;
     int hoverIY_ = 0;
     int selectedLayer_ = 0;
+    Entity* entityToPlace_ = nullptr;
+    std::vector<Entity*> entities_;
     bool collisionLayerSelected_ = false;
     int cameraX_=0, cameraY_=0;
 };

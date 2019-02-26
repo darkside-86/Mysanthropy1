@@ -49,6 +49,10 @@ function UpdateHoverData()
     dataWindow.hoverTf:SetText("Tile " .. tostring(g_hoverX) .. ", " .. tostring(g_hoverY))
 end
 
+function OnPlaceBtnClicked()
+    TileEditor_SelectEntity(tonumber(entWindow.selectionTf:GetText()))
+end
+
 -- main ui
 mainWindow = Window.New(nil, 250, 450, "Options", "sans14")
 mainWindow:SetXPos(GetScreenWidth() - mainWindow:GetWidth())
@@ -143,7 +147,7 @@ dataWindow.hoverTf:SetYPos(dataWindow.closeBtn:GetHeight()+5)
 
 -- used to associate map script file with map and place entities
 entWindow = Window.New(nil, 175, 350, "Entities", "sans14")
-entWindow:SetXPos(mainWindow:GetXPos() - entWindow:GetWidth())
+entWindow:SetXPos(0)
 entWindow:SetYPos(mainWindow:GetYPos())
 
 entWindow.label1 = UILabel.New(entWindow, "Script path", "sans14", 1,1,1,1)
@@ -152,5 +156,18 @@ entWindow.label1:SetYPos(entWindow.closeBtn:GetHeight())
 entWindow.scriptPathTf = UITextField.New(entWindow, entWindow:GetWidth(), 20, "sans14", TEXTURE_UIBLANK)
 entWindow.scriptPathTf:SetYPos(entWindow.label1:GetYPos() + entWindow.label1:GetHeight())
 entWindow.scriptPathTf:SetText(TileEditor_GetScriptPath())
+
+entWindow.label2 = UILabel.New(entWindow, "Selected entity: ", "sans14", 1,1,1,1)
+entWindow.label2:SetYPos(entWindow.scriptPathTf:GetYPos() + entWindow.scriptPathTf:GetHeight())
+
+entWindow.selectionTf = UITextField.New(entWindow, entWindow:GetWidth() - entWindow.label2:GetWidth(), 20,
+                                        "sans14", TEXTURE_UIBLANK)
+entWindow.selectionTf:SetXPos(entWindow.label2:GetWidth())
+entWindow.selectionTf:SetYPos(entWindow.label2:GetYPos())
+
+entWindow.placeBtn = UIButton.New(entWindow, TEXTURE_UIBLANK, "Place", "sans14", 5)
+entWindow.placeBtn:SetYPos(entWindow.selectionTf:GetYPos()+entWindow.selectionTf:GetHeight())
+entWindow.placeBtn:AddOnClicked(OnPlaceBtnClicked)
+
 
 

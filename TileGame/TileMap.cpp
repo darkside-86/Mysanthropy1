@@ -373,6 +373,19 @@ void TileMap::SetCollisionData(int ix, int iy, unsigned char value)
         collisionLayer_[index] = value;
 }
 
+ENTITY_TYPE TileMap::GetEntityType(int index)
+{
+    if(index >= 0 && index < entityTypes_.size())
+    {
+        return entityTypes_[index];
+    }
+    else 
+    {
+        ENTITY_TYPE blank;
+        return blank;
+    }
+}
+
 void TileMap::SetupScripting()
 {
     scripting_ = luaL_newstate();
@@ -381,6 +394,17 @@ void TileMap::SetupScripting()
     lua_pushstring(scripting_, "TileMap");
     lua_pushlightuserdata(scripting_, this);
     lua_settable(scripting_, LUA_REGISTRYINDEX);
+
+    lua_pushcfunction(scripting_, TileMap::lua_BeginEntity);
+    lua_setglobal(scripting_, "BEGIN_ENTITY");
+    lua_pushcfunction(scripting_, TileMap::lua_UseTexture);
+    lua_setglobal(scripting_, "USE_TEXTURE");
+    lua_pushcfunction(scripting_, TileMap::lua_EndEntity);
+    lua_setglobal(scripting_, "END_ENTITY");
+    lua_pushcfunction(scripting_, TileMap::lua_Width);
+    lua_setglobal(scripting_, "WIDTH");
+    lua_pushcfunction(scripting_, TileMap::lua_Height);
+    lua_setglobal(scripting_, "HEIGHT");
 }
 
 void TileMap::CleanupEntities()
@@ -404,7 +428,7 @@ int TileMap::lua_BeginEntity(lua_State* L)
 
     const char* nameOfEntity = lua_tostring(L, 1);
     tileMap->currentEntityType_.name = new char[strlen(nameOfEntity)+1];
-    strcpy(tileMap->currentEntityType_.name, nameOfEntity);
+    strcpy_s(tileMap->currentEntityType_.name, strlen(nameOfEntity)+1, nameOfEntity);
     return 0;
 }
 
@@ -419,7 +443,7 @@ int TileMap::lua_UseTexture(lua_State* L)
 
     const char* pathToTexture = lua_tostring(L, 1);
     tileMap->currentEntityType_.texturePath = new char[strlen(pathToTexture)+1];
-    strcpy(tileMap->currentEntityType_.texturePath, pathToTexture);
+    strcpy_s(tileMap->currentEntityType_.texturePath, strlen(pathToTexture)+1, pathToTexture);
     return 0;
 }
 
@@ -436,5 +460,29 @@ int TileMap::lua_EndEntity(lua_State* L)
     ENTITY_TYPE et;
     tileMap->currentEntityType_ = et;
 
+    return 0;
+}
+
+int TileMap::lua_Width(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tileMap->currentEntityType_.width = (int)lua_tonumber(L, 1);
+    return 0;
+}
+
+int TileMap::lua_Height(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tileMap->currentEntityType_.height = (int)lua_tonumber(L, 1);
     return 0;
 }

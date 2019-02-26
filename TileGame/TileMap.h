@@ -65,6 +65,8 @@ public:
     void RenderCollisionData(int x, int y, ogl::Program& program, float scaleX, float scaleY);
     // Generate the entity list for the caller, which will own the pointers
     std::vector<Entity*> GenerateEntities();
+    // Get an entity type from the list. tilemap retains pointer ownership
+    ENTITY_TYPE GetEntityType(int index);
 private:
     void SetupRender();
     void SetupScripting();
@@ -72,6 +74,8 @@ private:
     // start processing the next entity
     static int lua_BeginEntity(lua_State* L);
     static int lua_UseTexture(lua_State* L);
+    static int lua_Width(lua_State* L);
+    static int lua_Height(lua_State* L);
     static int lua_EndEntity(lua_State* L);
     TileSet* tileSet_ = nullptr;
     std::string scriptPath_ = "";

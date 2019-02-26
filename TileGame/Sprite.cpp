@@ -28,8 +28,16 @@
 Sprite::Sprite(ogl::Texture* img, int width, int height) :
     anim0_(img)
 {
-    width_ = width == 0 ? anim0_->GetWidth() : width;
-    height_ = height == 0 ? anim0_->GetHeight() : height;
+    if(img == nullptr)
+    {
+        width_ = 0;
+        height_ = 0;
+    }
+    else 
+    {
+        width_ = width == 0 ? anim0_->GetWidth() : width;
+        height_ = height == 0 ? anim0_->GetHeight() : height;
+    }
     float w = (float)width_;
     float h = (float)height_;
     ogl::Vertex vertices[6] = {
