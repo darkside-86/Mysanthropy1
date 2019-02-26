@@ -1,12 +1,14 @@
 -- callbacks
 function OnSaveBtnClicked()
     local text = "res/tilemaps/" .. mainWindow.fileTf:GetText() .. ".bin"
+    TileEditor_SetScriptPath(entWindow.scriptPathTf:GetText())
     TileEditor_SaveMap(text)
 end
 
 function OnLoadBtnClicked()
     local text = "res/tilemaps/" .. mainWindow.fileTf:GetText() .. ".bin"
     TileEditor_LoadMap(text)
+    entWindow.scriptPathTf:SetText(TileEditor_GetScriptPath())
 end
 
 function OnNewBtnClicked()
@@ -138,3 +140,17 @@ dataWindow:SetXPos(mainWindow:GetXPos() - dataWindow:GetWidth())
 dataWindow:SetYPos(mainWindow:GetYPos() + mainWindow:GetHeight() - dataWindow:GetHeight())
 dataWindow.hoverTf = UILabel.New(dataWindow, "Tile _, _", "sans14", 1, 1, 1, 1)
 dataWindow.hoverTf:SetYPos(dataWindow.closeBtn:GetHeight()+5)
+
+-- used to associate map script file with map and place entities
+entWindow = Window.New(nil, 175, 350, "Entities", "sans14")
+entWindow:SetXPos(mainWindow:GetXPos() - entWindow:GetWidth())
+entWindow:SetYPos(mainWindow:GetYPos())
+
+entWindow.label1 = UILabel.New(entWindow, "Script path", "sans14", 1,1,1,1)
+entWindow.label1:SetYPos(entWindow.closeBtn:GetHeight())
+
+entWindow.scriptPathTf = UITextField.New(entWindow, entWindow:GetWidth(), 20, "sans14", TEXTURE_UIBLANK)
+entWindow.scriptPathTf:SetYPos(entWindow.label1:GetYPos() + entWindow.label1:GetHeight())
+entWindow.scriptPathTf:SetText(TileEditor_GetScriptPath())
+
+

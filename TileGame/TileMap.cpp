@@ -34,10 +34,12 @@ TileMap::TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, 
     collisionLayer_ = new unsigned char [width_ * height_];
     memset(collisionLayer_, 0, width_ * height_);
     SetupRender();
+    SetupScripting();
 }
 
 TileMap::TileMap(const std::string& path)
 {
+    SetupScripting();
     LoadFromFile(path);
 }
 
@@ -51,6 +53,8 @@ TileMap::~TileMap()
     delete vao1_;
     delete collisionVao_;
     delete redTexture_;
+    CleanupEntities();
+    lua_close(scripting_);
 }
 
 Tile TileMap::GetTile(int ix, int iy, bool layer1)
@@ -85,7 +89,7 @@ void TileMap::SaveToFile(const std::string& path)
     }
 
     const unsigned char MAJOR_VERSION = 0;
-    const unsigned char MINOR_VERSION = 3;
+    const unsigned char MINOR_VERSION = 4;
     const std::string TILESET_PATH = tileSet_->GetPathToTexture();
     out.write((char*)&MAJOR_VERSION, sizeof(unsigned char));
     out.write((char*)&MINOR_VERSION, sizeof(unsigned char));
@@ -110,6 +114,10 @@ void TileMap::SaveToFile(const std::string& path)
     {
         out.write((char*)&collisionLayer_[i], sizeof(unsigned char));
     }
+    // write the script path
+    size = scriptPath_.size();
+    out.write((char*)&size, sizeof(size));
+    out.write(scriptPath_.c_str(), size);
 
     out.close();
 }
@@ -127,6 +135,8 @@ void TileMap::LoadFromFile(const std::string& path)
     collisionLayer_ = nullptr;
     width_ = 0;
     height_ = 0;
+    scriptPath_ = "";
+    CleanupEntities();
     
     std::ifstream in;
     in.open(path, std::ios::binary);
@@ -173,9 +183,9 @@ void TileMap::LoadFromFile(const std::string& path)
     }
     for(int i=0; i < width_*height_; ++i)
     {
-            Tile tile;
-            in.read((char*)&tile, sizeof(tile));
-            layer1_[i] = tile;
+        Tile tile;
+        in.read((char*)&tile, sizeof(tile));
+        layer1_[i] = tile;
     }
     for(int i=0; i < width_ * height_; ++i)
     {
@@ -183,7 +193,26 @@ void TileMap::LoadFromFile(const std::string& path)
         in.read((char*)&c, sizeof(c));
         collisionLayer_[i] = c;
     }
+    if( minorV >= 4 )
+    {
+        in.read((char*)&size, sizeof(size));
+        char* szScriptPath = new char[size+1];
+        szScriptPath[size] = 0;
+        in.read(szScriptPath, size);
+        scriptPath_ = szScriptPath;
+        delete [] szScriptPath;
+    }
     in.close();
+
+    // run the script at scriptPath_
+    int ok = luaL_dofile(scripting_, scriptPath_.c_str());
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "%s: Error loading map - %s", __FUNCTION__, lua_tostring(scripting_, -1));
+        lua_pop(scripting_, 1);
+    }
+
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
             "%s: Finished loading", __FUNCTION__);
     SetupRender();
@@ -342,4 +371,70 @@ void TileMap::SetCollisionData(int ix, int iy, unsigned char value)
     int index = iy * width_ + ix;
     if(index >= 0 && ix < width_ && iy < height_)
         collisionLayer_[index] = value;
+}
+
+void TileMap::SetupScripting()
+{
+    scripting_ = luaL_newstate();
+    luaL_openlibs(scripting_);
+    // store "this" in lua registry since each TileMap has its own lua state
+    lua_pushstring(scripting_, "TileMap");
+    lua_pushlightuserdata(scripting_, this);
+    lua_settable(scripting_, LUA_REGISTRYINDEX);
+}
+
+void TileMap::CleanupEntities()
+{
+    for(auto it = entityTypes_.begin(); it != entityTypes_.end(); ++it)
+    {
+        delete [] it->name;
+        delete [] it->texturePath;
+    }
+    entityTypes_.clear();
+}
+
+// lua : BEGIN_ENTITY(nameOfEnt)
+int TileMap::lua_BeginEntity(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* nameOfEntity = lua_tostring(L, 1);
+    tileMap->currentEntityType_.name = new char[strlen(nameOfEntity)+1];
+    strcpy(tileMap->currentEntityType_.name, nameOfEntity);
+    return 0;
+}
+
+// lua  : USE_TEXTURE(path)
+int TileMap::lua_UseTexture(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* pathToTexture = lua_tostring(L, 1);
+    tileMap->currentEntityType_.texturePath = new char[strlen(pathToTexture)+1];
+    strcpy(tileMap->currentEntityType_.texturePath, pathToTexture);
+    return 0;
+}
+
+// lua : END_ENTITY ()
+int TileMap::lua_EndEntity(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tileMap->entityTypes_.push_back(tileMap->currentEntityType_);
+    ENTITY_TYPE et;
+    tileMap->currentEntityType_ = et;
+
+    return 0;
 }

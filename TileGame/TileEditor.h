@@ -44,6 +44,8 @@ private:
     static int lua_FillWithSelection(lua_State* L);
     static int lua_SetSelectedLayer(lua_State* L);
     static int lua_SetCollisionLayer(lua_State* L);
+    static int lua_GetScriptPath(lua_State* L);
+    static int lua_SetScriptPath(lua_State* L);
     lua_State*  uiScript_;
     engine::ui::LuaBindings* luaBindings_;
     TileSet*    tileSet_;

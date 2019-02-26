@@ -44,6 +44,29 @@ bool TileEditor::Initialize()
     luaL_openlibs(uiScript_);
     luaBindings_ = new engine::ui::LuaBindings(uiScript_);
 
+    lua_pushstring(uiScript_, "TileEditor");
+    lua_pushlightuserdata(uiScript_, this);
+    lua_settable(uiScript_, LUA_REGISTRYINDEX);
+    lua_pushcfunction(uiScript_, TileEditor::lua_SaveMap);
+    lua_setglobal(uiScript_, "TileEditor_SaveMap");
+    lua_pushcfunction(uiScript_, TileEditor::lua_LoadMap);
+    lua_setglobal(uiScript_, "TileEditor_LoadMap");
+    lua_pushcfunction(uiScript_, TileEditor::lua_NewMap);
+    lua_setglobal(uiScript_, "TileEditor_NewMap");
+    lua_pushcfunction(uiScript_, TileEditor::lua_FillWithSelection);
+    lua_setglobal(uiScript_, "TileEditor_FillWithSelection");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SetSelectedLayer);
+    lua_setglobal(uiScript_, "TileEditor_SetSelectedLayer");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SetCollisionLayer);
+    lua_setglobal(uiScript_, "TileEditor_SetCollisionLayer");
+    lua_pushcfunction(uiScript_, TileEditor::lua_GetScriptPath);
+    lua_setglobal(uiScript_, "TileEditor_GetScriptPath");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SetScriptPath);
+    lua_setglobal(uiScript_, "TileEditor_SetScriptPath");
+
+    tileMap_ = new TileMap("res/tilemaps/output.bin");
+    tileSet_ = tileMap_->GetTileSet();
+
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", "ui/lib/keycodes.lua", "ui/lib/Window.lua", "ui/TileEditor.lua"
     };
@@ -62,27 +85,10 @@ bool TileEditor::Initialize()
                 "Lua error %d: %s", err, lua_tostring(uiScript_, -1));
         lua_pop(uiScript_, 1);
     }
-    lua_pushstring(uiScript_, "TileEditor");
-    lua_pushlightuserdata(uiScript_, this);
-    lua_settable(uiScript_, LUA_REGISTRYINDEX);
-    lua_pushcfunction(uiScript_, TileEditor::lua_SaveMap);
-    lua_setglobal(uiScript_, "TileEditor_SaveMap");
-    lua_pushcfunction(uiScript_, TileEditor::lua_LoadMap);
-    lua_setglobal(uiScript_, "TileEditor_LoadMap");
-    lua_pushcfunction(uiScript_, TileEditor::lua_NewMap);
-    lua_setglobal(uiScript_, "TileEditor_NewMap");
-    lua_pushcfunction(uiScript_, TileEditor::lua_FillWithSelection);
-    lua_setglobal(uiScript_, "TileEditor_FillWithSelection");
-    lua_pushcfunction(uiScript_, TileEditor::lua_SetSelectedLayer);
-    lua_setglobal(uiScript_, "TileEditor_SetSelectedLayer");
-    lua_pushcfunction(uiScript_, TileEditor::lua_SetCollisionLayer);
-    lua_setglobal(uiScript_, "TileEditor_SetCollisionLayer");
 
     // tileSet_ = new TileSet("res/textures/tilesets/ts2.png", 32, 32);
 
     // tileMap_ = new TileMap(tileSet_, 32, 32);
-    tileMap_ = new TileMap("res/tilemaps/output.bin");
-    tileSet_ = tileMap_->GetTileSet();
 
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
         // what is the selected x,y index value based on what is clicked at top with tiles rendered
@@ -349,6 +355,34 @@ int TileEditor::lua_SetCollisionLayer(lua_State* L)
 
     bool toggle = lua_toboolean(L, 1);
     te->collisionLayerSelected_ = toggle;
+
+    return 0;
+}
+
+int TileEditor::lua_GetScriptPath(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    std::string scriptPath = te->tileMap_->GetScriptPath();
+    lua_pushstring(L, scriptPath.c_str());
+
+    return 1;
+}
+
+int TileEditor::lua_SetScriptPath(lua_State* L)
+{
+    // get TileEditor
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* scriptPath = lua_tostring(L, 1);
+    te->tileMap_->SetScriptPath(scriptPath);
 
     return 0;
 }

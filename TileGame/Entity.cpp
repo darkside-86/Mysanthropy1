@@ -19,14 +19,17 @@
 
 #include "Entity.h"
 
+#include "engine/GameEngine.h"
 
-Entity::Entity(ogl::Texture* anim0, int w, int h)
-    : Sprite(anim0, w, h)
+Entity::Entity(const ENTITY_TYPE& etype)
+    : Sprite(nullptr, etype.width, etype.height), name_(etype.name), maxClicks_(etype.maxClicks), 
+      remainingClicks_(etype.maxClicks)
 {
+    anim0_ = engine::GameEngine::Get().GetTextureManager().GetTexture(etype.texturePath);
 
 }
 
 Entity::~Entity()
 {
-    
+
 }

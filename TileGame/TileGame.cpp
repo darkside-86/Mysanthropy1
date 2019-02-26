@@ -116,6 +116,8 @@ void TileGame::Update(float dtime)
     if(tileMap_->GetCollisionData(ix, iy))  collision = true;
     if(collision) 
         testSprite_->Update(-dtime);
+    
+    // todo: bound player to map area
 
     // calculate camera.
     float scrW = (float)engine::GameEngine::Get().GetWidth();
@@ -125,6 +127,7 @@ void TileGame::Update(float dtime)
     camera_.x = playerPos.x - scrW / 2.f;
     camera_.y = playerPos.y - scrH / 2.f;
 
+    // TODO: bound camera to map area
     /*if(camera_.x < 0.0f)
         camera_.x = 0.0f;
     if(camera_.y < 0.0f)
@@ -133,19 +136,24 @@ void TileGame::Update(float dtime)
 
 void TileGame::Render(engine::GraphicsContext& gc)
 {
+    // disable for 2D rendering with semi-transparent data
     glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);
     ogl::Program& program = gc.GetProgram();
     program.Use();
+    // colors = texture data only
     gc.SetUseTexture(true);
     gc.SetUseColorBlending(false);
+    // model view projection matrices
     glm::mat4 projection(1.f), view(1.f), model(1.f);
     float scrW = (float)engine::GameEngine::Get().GetWidth();
     float scrH = (float)engine::GameEngine::Get().GetHeight();
+    // screen 0,0 is top left
     projection = glm::ortho(0.f, scrW, scrH, 0.f);
     program.SetUniform<glm::mat4>("u_projection", projection);
     program.SetUniform<glm::mat4>("u_view", view);
     program.SetUniform<glm::mat4>("u_model", model);
+    // rendering with camera takes negative camera coordinates
     tileMap_->Render((int)-camera_.x,(int)-camera_.y, program);
     testSprite_->Render(-camera_, program);
 }

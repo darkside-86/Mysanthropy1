@@ -23,19 +23,19 @@
 
 struct ENTITY_TYPE 
 {
-    char* name;
-    char* texturePath;
-    int width, height;
-    BOX collision;
-    int maxClicks;
+    char* name = nullptr;
+    char* texturePath = nullptr;
+    int width = 0, height = 0;
+    BOX collision = {0,0,0,0};
+    int maxClicks = 0;
     struct ITEM_DROP
     {
-        float percentChance;
-        int amount;
-        char* name;
+        float percentChance = 0.f;
+        int amount = 0;
+        char* name = "";
     };
-    int numDrops;
-    ITEM_DROP* drops;
+    int numDrops = 0;
+    ITEM_DROP* drops = nullptr;
     ITEM_DROP onDestroy;
 };
 
@@ -43,10 +43,12 @@ struct ENTITY_TYPE
 class Entity : public Sprite 
 {
 public:
-    Entity(ogl::Texture* anim0, int w=0, int h=0);
+    Entity(const ENTITY_TYPE& etype);
     virtual ~Entity();
+
+    std::string GetName() { return name_; }
 private:
-    std::string name;
-    int maxClicks;
-    int remainingClicks;
+    std::string name_;
+    int maxClicks_;
+    int remainingClicks_;
 };

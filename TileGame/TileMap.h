@@ -21,6 +21,9 @@
 #include <string>
 #include <vector>
 
+#include <lua/lua.hpp>
+
+#include "Entity.h"
 #include "ogl/Program.h"
 #include "ogl/Texture.h"
 #include "ogl/VertexArray.h"
@@ -31,6 +34,12 @@ struct Tile
 {
     unsigned short ix=0;
     unsigned short iy=0;
+};
+
+struct ENTITY_LOCATION
+{
+    unsigned short entityID = 0;
+    unsigned int x = 0, y = 0;
 };
 
 class TileMap
@@ -44,6 +53,8 @@ public:
     void SaveToFile(const std::string& path);
     void LoadFromFile(const std::string& path);
     TileSet* GetTileSet() { return tileSet_; }
+    std::string GetScriptPath() { return scriptPath_; }
+    void SetScriptPath(const std::string& path) { scriptPath_ = path; }
     int GetWidth() { return width_; }
     int GetHeight() { return height_; }
     Tile GetTile(int ix, int iy, bool layer1 = false);
@@ -52,9 +63,18 @@ public:
     unsigned char GetCollisionData(int ix, int iy);
     void SetCollisionData(int ix, int iy, unsigned char value);
     void RenderCollisionData(int x, int y, ogl::Program& program, float scaleX, float scaleY);
+    // Generate the entity list for the caller, which will own the pointers
+    std::vector<Entity*> GenerateEntities();
 private:
     void SetupRender();
+    void SetupScripting();
+    void CleanupEntities();
+    // start processing the next entity
+    static int lua_BeginEntity(lua_State* L);
+    static int lua_UseTexture(lua_State* L);
+    static int lua_EndEntity(lua_State* L);
     TileSet* tileSet_ = nullptr;
+    std::string scriptPath_ = "";
     int width_ = 0;
     int height_ = 0;
     Tile* layer0_ = nullptr;
@@ -70,4 +90,10 @@ private:
     ogl::Texture* redTexture_ = nullptr;
     ogl::VertexArray* collisionVao_ = nullptr;
     ogl::VertexBuffer collisionVbo_;
+    // for running entity scripting and map loading
+    lua_State* scripting_ = nullptr;
+    // entity index
+    std::vector<ENTITY_TYPE> entityTypes_;
+    ENTITY_TYPE currentEntityType_;
+    std::vector<ENTITY_LOCATION> mapEntities_;
 };
