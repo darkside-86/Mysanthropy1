@@ -23,6 +23,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/GameEngine.h"
+#include "engine/ui/Root.h"
 
 TileGame::TileGame()
 {
@@ -87,12 +88,21 @@ bool TileGame::Initialize()
             testSprite_->SetVelocity({0.f,0.f,0.f});
         }
     });
+
+    SetupRenderList();
+
+    engine::ui::Root::Get()->Initialize();
+    SetupUIScript();
+
     return true;
 }
 
 void TileGame::Cleanup()
 {
     UnloadLGSpr(testSprite_, "man1");
+    RemoveSpriteFromRenderList(testSprite_);
+    delete luaBindings_;
+    lua_close(uiScript_);
 }
 
 void TileGame::Update(float dtime)
@@ -134,6 +144,8 @@ void TileGame::Update(float dtime)
         camera_.x = 0.0f;
     if(camera_.y < 0.0f)
         camera_.y = 0.0f;*/
+
+    engine::ui::Root::Get()->Update(dtime);
 }
 
 void TileGame::Render(engine::GraphicsContext& gc)
@@ -157,12 +169,17 @@ void TileGame::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_model", model);
     // rendering with camera takes negative camera coordinates
     tileMap_->Render((int)-camera_.x,(int)-camera_.y, program);
-    testSprite_->Render(-camera_, program);
-    // render all entities. TODO: render list instead
+    /*testSprite_->Render(-camera_, program);
     for(auto it=loadedEntities_.begin(); it != loadedEntities_.end(); ++it)
     {
         (*it)->Render(-camera_, program);
+    }*/
+    RenderSortPass();
+    for(auto it=renderList_.begin(); it != renderList_.end(); ++it)
+    {
+        (*it)->Render(-camera_, program);
     }
+    engine::ui::Root::Get()->Render(gc);
 }
 
 Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
@@ -209,4 +226,67 @@ void TileGame::CleanupLoadedEntities()
         delete (*it);
     }
     loadedEntities_.clear();
+}
+
+void TileGame::SetupRenderList()
+{
+    renderList_.clear();
+    renderList_.push_back(testSprite_);
+    for(int i=0; i < loadedEntities_.size(); ++i)
+    {
+        renderList_.push_back(loadedEntities_[i]);
+    }
+}
+
+void TileGame::RenderSortPass()
+{
+    // one pass of sorting. The larger the Y-base position, the later rendered
+    for(int i=0; i < renderList_.size() - 1; ++i)
+    {
+        float y0 = renderList_[i]->GetPosition().y + (float)renderList_[i]->GetHeight();
+        float y1 = renderList_[i+1]->GetPosition().y + (float)renderList_[i+1]->GetHeight();
+        if(y0 > y1)
+        {
+            Sprite* swap = renderList_[i];
+            renderList_[i] = renderList_[i+1];
+            renderList_[i+1] = swap;
+        }
+    }
+}
+
+void TileGame::RemoveSpriteFromRenderList(const Sprite* sprite)
+{
+    auto it = std::find_if(renderList_.begin(), renderList_.end(), [sprite](const Sprite* spr){
+        return sprite == spr;
+    });
+    if(it != renderList_.end())
+        renderList_.erase(it);
+}
+
+void TileGame::SetupUIScript()
+{
+    uiScript_ = luaL_newstate();
+    luaL_openlibs(uiScript_);
+    luaBindings_ = new engine::ui::LuaBindings(uiScript_);
+    std::vector<const char*> CORE_UI_LIB = {
+        "ui/lib/fonts.lua", 
+        "ui/lib/keycodes.lua", 
+        "ui/lib/Window.lua", 
+        "ui/TileGame.lua" // main UI code
+    };
+    try 
+    {
+        int errCode = 0;
+        for(auto luaFile : CORE_UI_LIB)
+        {
+            errCode = luaL_dofile(uiScript_, luaFile);
+            if(errCode != 0) throw errCode;
+        }
+    }
+    catch(int err)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "Lua error %d: %s", err, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
 }

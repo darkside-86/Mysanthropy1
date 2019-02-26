@@ -20,7 +20,10 @@
 
 #include <vector>
 
+#include <lua/lua.hpp>
+
 #include "engine/Game.h"
+#include "engine/ui/LuaBindings.h"
 #include "ogl/Texture.h"
 #include "TileMap.h"
 #include "Sprite.h"
@@ -40,6 +43,10 @@ private:
     // unload textures associated with lost guardian sprite and destroy sprite
     void UnloadLGSpr(Sprite*& sprite, const std::string& name);
     void CleanupLoadedEntities();
+    void SetupRenderList();
+    void RenderSortPass();
+    void RemoveSpriteFromRenderList(const Sprite* sprite);
+    void SetupUIScript();
     TileMap* tileMap_;  
     Sprite* testSprite_;
     glm::vec3 camera_ = {0.f,0.f,0.f};
@@ -47,4 +54,6 @@ private:
     std::vector<Sprite*> renderList_;
     // list of loaded map entities. Owns pointers
     std::vector<Entity*> loadedEntities_;
+    lua_State* uiScript_ = nullptr;
+    engine::ui::LuaBindings* luaBindings_ = nullptr;
 };
