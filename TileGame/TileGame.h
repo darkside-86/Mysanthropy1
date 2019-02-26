@@ -39,9 +39,12 @@ private:
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
     // unload textures associated with lost guardian sprite and destroy sprite
     void UnloadLGSpr(Sprite*& sprite, const std::string& name);
+    void CleanupLoadedEntities();
     TileMap* tileMap_;  
     Sprite* testSprite_;
     glm::vec3 camera_ = {0.f,0.f,0.f};
     // list of all sprites to try to render including player. Does not own pointers
     std::vector<Sprite*> renderList_;
+    // list of loaded map entities. Owns pointers
+    std::vector<Entity*> loadedEntities_;
 };

@@ -27,11 +27,13 @@
 TileGame::TileGame()
 {
     tileMap_ = new TileMap("res/tilemaps/island.bin");
+    loadedEntities_ = tileMap_->GenerateEntities();
 }
 
 TileGame::~TileGame()
 {
     delete tileMap_;
+    CleanupLoadedEntities();
 }
 
 bool TileGame::Initialize()
@@ -156,6 +158,11 @@ void TileGame::Render(engine::GraphicsContext& gc)
     // rendering with camera takes negative camera coordinates
     tileMap_->Render((int)-camera_.x,(int)-camera_.y, program);
     testSprite_->Render(-camera_, program);
+    // render all entities. TODO: render list instead
+    for(auto it=loadedEntities_.begin(); it != loadedEntities_.end(); ++it)
+    {
+        (*it)->Render(-camera_, program);
+    }
 }
 
 Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
@@ -193,4 +200,13 @@ void TileGame::UnloadLGSpr(Sprite*& sprite, const std::string& name)
     tm.UnloadTexture(path + "_rt2.gif");
     delete sprite;
     sprite = nullptr;
+}
+
+void TileGame::CleanupLoadedEntities()
+{
+    for(auto it=loadedEntities_.begin(); it != loadedEntities_.end(); ++it)
+    {
+        delete (*it);
+    }
+    loadedEntities_.clear();
 }

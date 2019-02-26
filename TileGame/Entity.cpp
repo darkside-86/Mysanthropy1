@@ -26,10 +26,10 @@ Entity::Entity(const ENTITY_TYPE& etype)
       etype.width, etype.height), name_(etype.name), maxClicks_(etype.maxClicks), 
       remainingClicks_(etype.maxClicks)
 {
-
+    SetCollisionBox(etype.collision.left, etype.collision.top, etype.collision.right, etype.collision.bottom);
 }
 
 Entity::~Entity()
 {
-
+    // todo: retain path to texture for unloading
 }

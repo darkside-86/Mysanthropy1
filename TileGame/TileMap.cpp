@@ -462,6 +462,8 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "WIDTH");
     lua_pushcfunction(scripting_, TileMap::lua_Height);
     lua_setglobal(scripting_, "HEIGHT");
+    lua_pushcfunction(scripting_, TileMap::lua_CollisionBox);
+    lua_setglobal(scripting_, "COLLISION_BOX");
 }
 
 void TileMap::CleanupEntities()
@@ -541,5 +543,23 @@ int TileMap::lua_Height(lua_State* L)
     lua_pop(L, 1);
 
     tileMap->currentEntityType_.height = (int)lua_tonumber(L, 1);
+    return 0;
+}
+
+int TileMap::lua_CollisionBox(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    BOX box;
+    box.left = (float)lua_tonumber(L, 1);
+    box.top = (float)lua_tonumber(L, 2);
+    box.right = (float)lua_tonumber(L, 3);
+    box.bottom = (float)lua_tonumber(L, 4);
+    tileMap->currentEntityType_.collision = box;
+
     return 0;
 }
