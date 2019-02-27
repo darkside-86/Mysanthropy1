@@ -24,8 +24,12 @@
 
 namespace engine
 {
+    // defines a generic function signature for handling any SDL_Event
     typedef std::function<void(const SDL_Event&)> EventListener;
+    // defines a function signature for handling SDL_Keyboard events
     typedef std::function<void(const SDL_KeyboardEvent&)> KeyboardListener;
+    // defines a function signature for handling SDL_MouseButtonEvents
     typedef std::function<void(const SDL_MouseButtonEvent&)> MouseButtonListener;
+    // defines a function signature for handling SDL_MouseMotionEvents
     typedef std::function<void(const SDL_MouseMotionEvent&)> MouseMotionListener;
 }

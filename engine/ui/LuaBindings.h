@@ -26,12 +26,16 @@
 
 namespace engine { namespace ui {
 
+    // Defines a class that exposes the engine::ui library
     class LuaBindings
     {
     public:
+        // Constructor. Exposes the library functions to the given lua state.
         LuaBindings(lua_State*);
+        // Destructor. Removes leftover internal lua registry data but not the bindings
         ~LuaBindings();
     private:
+        // The lua state associated with the bindings.
         lua_State* luastate_;
     };
 

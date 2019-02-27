@@ -4,6 +4,7 @@
 
 namespace engine 
 {
+    // Used by model loading code
     struct Material
     {
         glm::vec3 diffuse;

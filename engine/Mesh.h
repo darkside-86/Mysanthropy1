@@ -31,6 +31,7 @@
 
 namespace engine
 {
+    // Used by 3D model loading code
     class Mesh
     {
     public:

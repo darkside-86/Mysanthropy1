@@ -22,6 +22,7 @@
 
 namespace engine
 {
+    // Defines a base abstract class from which each application inherits.
     class Game
     {
     public:

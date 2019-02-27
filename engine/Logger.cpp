@@ -54,7 +54,7 @@ namespace engine
     // todo: mirror output to file
     void Logger::Logf(const Severity& sev, const char* format, ...)
     {
-        const unsigned int BUFFER_SIZE = 1024;
+        const unsigned int BUFFER_SIZE = 512;
         char buffer[BUFFER_SIZE];
         va_list argList;
         va_start(argList, format);
@@ -75,6 +75,11 @@ namespace engine
         case Severity::WARNING:
             fprintf(stderr, "[WARNING] %s\n", buffer); 
             if(fp) fprintf(fp, "[WARNING] %s\n", buffer);
+            fflush(stderr);
+            break;
+        case Severity::ERROR:
+            fprintf(stderr, "[ERROR] %s\n", buffer); 
+            if(fp) fprintf(fp, "[ERROR] %s\n", buffer);
             fflush(stderr);
             break;
         }

@@ -22,12 +22,17 @@
 
 namespace engine
 {
+    // Defines a 2D drawable circle shape with varying precision--number of points
     class CircleShape : public Shape
     {
     public:
+        // Constructor. precision is the number of points e.g. precision=5 results in a pentagon shape
         CircleShape(float x, float y, float radius, int precision);
+        // Destructor
         virtual ~CircleShape();
+        // Render the circle
         virtual void Render(GraphicsContext& gc) override;  
+        // Save the modified vertices (see Shape) to graphics card memory
         virtual void ModifyVertices() override;
     };
 }

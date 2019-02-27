@@ -30,6 +30,8 @@
 
 namespace engine 
 {
+    // Defines a singleton for global access to various parts of the Mysanthropy game engine
+    //  such as the TextureManager, TextRenderer, etc. Also contains utility methods.
     class GameEngine
     {
     public:
@@ -88,18 +90,30 @@ namespace engine
         // Return contents of a small text file as a string
         std::string ReadFileAsString(const std::string& path);
     private:
+        // Hidden constructor. Only accessible through singleton
         GameEngine() {}
+        // Hidden destructor.
         ~GameEngine() {}
-
+        // List of keyboard event listeners. See AddKeyboardListener
         std::vector<KeyboardListener> keyboardListeners_;
+        // List of mouse button event listeners. 
         std::vector<MouseButtonListener> mouseButtonListeners_;
+        // List of mouse motion event listeners
         std::vector<MouseMotionListener> mouseMotionListeners_;
-        int width_, height_; // logical pixels. scalable with window resize
+        // Logical dimensions of the game "screen." On PC, this is the initial non maximized window size.
+        //  When the window is resized, the game scales the pixels.
+        int width_, height_;
+        // Number of frames iterated divided by amount of time game engine has been looping
         double framesPerSecond_;
+        // Logger object for general logging to a file and stderr. See GetLogger
         Logger logger_;
+        // Sound manager for playing music loops and individual sounds. TODO: Needs more work
         SoundManager soundManager_;
+        // Renders text as a heap allocated ogl::Texture*
         TextRenderer textRenderer_;
+        // Manages loading textures from files and prevents memory duplication.
         TextureManager textureManager_;
+        // Random number generator. Used as rng_()
         std::default_random_engine rng_;
     };
 }

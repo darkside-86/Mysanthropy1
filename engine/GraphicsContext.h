@@ -30,6 +30,8 @@
 
 namespace engine
 {
+    // Deprecated. Encapsulates a stock 2D or 3D shader for basic rendering. Used heavily by UI library.
+    // TODO: Replace all use of this class with direct ogl::Program uniform manipulation
     class GraphicsContext
     {
     public:

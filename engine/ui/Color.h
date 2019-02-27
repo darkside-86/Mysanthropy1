@@ -20,6 +20,7 @@
 
 namespace engine { namespace ui {
 
+    // defines a color as a 4-component RGBA with each value between 0 and 1
     struct Color 
     {
         float r, g, b, a;

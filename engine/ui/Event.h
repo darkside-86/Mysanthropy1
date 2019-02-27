@@ -22,6 +22,7 @@
 
 namespace engine { namespace ui {
 
+    // Base class for all events. Contains rudimentary RTTI that is unused so far
     class Event 
     {
     public:
@@ -32,6 +33,9 @@ namespace engine { namespace ui {
         Type type;
     };
 
+    // Defines an event parameter for when a UI object is clicked. To be clicked means
+    // that the mouse button is down while the cursor is over the object, followed by a release
+    // of the mouse button while the cursor is still over the object.
     class ClickedEvent : Event 
     {
     public:
@@ -40,44 +44,71 @@ namespace engine { namespace ui {
         int x, y, button;
     };
 
+    // Defines an event parameter for when the mouse cursor either moves into the area of the
+    // UI object, or when the mouse moves while the cursor is still within the bounds of the
+    // object. Hover events are also generated when the mouse cursor leaves the bounds of the
+    // object. In such a case, the "over" member is false.
     class HoverEvent : Event
     {
     public:
         HoverEvent(int sx, int sy, int dx, int dy, bool o) : Event(Type::HOVER),
             x(sx), y(sy), xrel(dx), yrel(dy), over(o) {}
-        int x, y, xrel, yrel;
-        bool over; // false when mouse moves away
+        // The relative logical pixel coordinates of the mouse based on UI parent tree.
+        int x, y; 
+        // The amount of logical pixel movement
+        int xrel, yrel;
+        // false when mouse moves away from object. True any other time event is fired
+        bool over; 
     };
 
+    // Defines an event parameter for when a keyboard button is pressed while the UI object has
+    // "focus." Focus occurs when the object was previously clicked and no other object has been clicked.
     class KeypressedEvent : Event 
     {
     public:
         KeypressedEvent(int keycode, int scancode, int modifiers, bool repeat) : Event(Type::KEYPRESSED),
             keyCode(keycode), scanCode(scancode), mod(modifiers), repeated(repeat) {}
+        // The SDL keycode e.g. SDLK_UP, the sdl scancode, and key modifier flags
         int keyCode, scanCode, mod;
+        // True if the event was fired as a result of the user holding down on the same key without releasing.
+        // otherwise false.
         bool repeated;
     };
 
+    // Defines an event parameter for when a UI object is "dragged" with the mouse. Dragging is when
+    // the mouse button is pressed down over the object, and the mouse is moved before the mouse button
+    // is released.
     class DraggedEvent : Event
     {
     public:
         DraggedEvent(int sx, int sy, int dx, int dy) : Event(Type::DRAGGED),
             x(sx), y(sy), xrel(dx), yrel(dy) {}
-        int x, y, xrel, yrel;
+        // the final location of the mouse
+        int x, y;
+        // the direction the object was "dragged." Object does not necessarily move.
+        int xrel, yrel;
     };
 
+    // Defines an event parameter with no information so far for when a "timer" callback is run.
     class TimerEvent : Event 
     {
     public:
         TimerEvent() : Event(Type::TIMER) {}
     };
 
+    // Defines a type of callback to handle when an object is clicked.
     typedef std::function<void(const ClickedEvent&)> ClickedEventCallback;
+    // Defines a type of callback to handle when an object is hovered over.
     typedef std::function<void(const HoverEvent&)> HoverEventCallback;
+    // Defines a type of callback to handle when a focused object receives a keystroke
     typedef std::function<void(const KeypressedEvent&)> KeypressedEventCallback;
+    // Defines a type of callback to handle when an object is "dragged"
     typedef std::function<void(const DraggedEvent&)> DraggedEventCallback;
+    // Defines a callback to be run when a timer has expired. TimerEventCallbacks can safely
+    // add new TimerCallbacks to the same object to create repeating ticking callbacks.
     typedef std::function<void(const TimerEvent&)> TimerEventCallback;
 
+    // Defines a data structure to keep track of when a timer event callback should be run then discarded.
     struct TimerEventCallbackData
     {
         TimerEventCallback callback;

@@ -32,12 +32,15 @@
 
 namespace engine
 {
-
+    // Loads and renders 3D models
     class Model
     {
     public:
+        // constructor. Parameter is a 3D model file
         Model(const std::string& path);
+        // destructor
         virtual ~Model();
+        // TODO: better render method.
         void Draw(ogl::Program& program);
     private:
         void LoadModel(const std::string& path);

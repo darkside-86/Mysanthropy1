@@ -20,18 +20,23 @@
 
 namespace engine
 {
+    // Defines a basic logging utility.
+    // Only accessible through GameEngine singleton. This is to prevent multiple
+    // Logger instances writing to the same log.txt file.
     class Logger
     {
     public:
         // Level of severity of message
-        enum class Severity { WARNING, INFO, FATAL };
+        enum class Severity { WARNING, INFO, ERROR, FATAL };
         // Logs a formatted string with sprintf.
-        //  sev - If FATAL, an assert statement will be called.
+        //  sev - If FATAL, an assert(false) statement will be called.
         static void Logf(const Severity& sev, const char* format, ...);
     private:
+        // constructor
         Logger();
+        // destructor
         virtual ~Logger();
-        // Only accessible through GameEngine singleton
+
         friend class GameEngine;
     };
 }

@@ -25,17 +25,27 @@
 #include "Object.h"
 
 namespace engine { namespace ui {
-    // handles the UI event system as the root of UI Object tree
+    // Defines the root parent of the entire UI object tree. Manages the callback lists by translating
+    // SDL events into the equivalent UI event for the appropriate object in the tree.
     class Root : public Object 
     {
     public:
+        // Destructor
         virtual ~Root() {}
+        // Simply begins the render cycle of rendering from the base of the tree downward. The Root itself
+        // has no pixels to render.
         virtual void Render(GraphicsContext& gc) override;
+        // Converts an SDL_MouseButtonEvent into the appropriate event for an object in the tree
         void ProcessMouseButtonEvent(const SDL_MouseButtonEvent& mbe);
+        // Converts an SDL_MouseMotionEvent into the appropriate UI event for an object in the tree
         void ProcessMouseMotionEvent(const SDL_MouseMotionEvent& mme);
+        // Converts an SDL_KeyboardEvent into the appropriate UI event for an object in the tree
         void ProcessKeyboardEvent(const SDL_KeyboardEvent& kbe);
+        // ...(TODO: remember what this does and document it)
         void GetNodePosition(Object* node, int& x, int &y);
+        // Set up SDL_Event handlers to start the Proces...Event functions
         void Initialize();
+        // Returns the singleton instance
         static Root* Get() 
         {
             static Root* root = nullptr;
@@ -44,6 +54,7 @@ namespace engine { namespace ui {
             return root;
         }
     private:
+        // Constructor. The width and height of this object are the logical screen dimensions
         Root() : Object(nullptr)
         {
             xPos_ = 0;
@@ -51,8 +62,12 @@ namespace engine { namespace ui {
             width_ = GameEngine::Get().GetWidth();
             height_ = GameEngine::Get().GetHeight();
         }
+        // Keeps track of what object was targeted by a mouse press
         Object*     mousePressed_ = nullptr;
+        // Keeps track of what object is currently being hovered
         Object*     mouseOver_ = nullptr;
+        // Keeps track of whether a mouse button is up or down.
+        // TODO: which button??? May be the source of "unrepeatable" "random" crashes
         bool        mouseDown_ = false;
     };
 
