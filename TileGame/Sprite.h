@@ -40,8 +40,8 @@ public:
     virtual ~Sprite();
     void Update(float dtime) override;
     void Render(const glm::vec3& camPos, ogl::Program& program) override;
-    int GetWidth() { return width_; }
-    int GetHeight() { return height_; }
+    int GetWidth() const { return width_; }
+    int GetHeight() const { return height_; }
     void SetCurrentAnim(const std::string& name, float maxTime);
     std::string GetCurrentAnim() { return currentAnim_; }
     void AddAnimFrame(const std::string& animName, ogl::Texture* texture);

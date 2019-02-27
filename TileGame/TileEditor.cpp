@@ -214,8 +214,8 @@ void TileEditor::Render(engine::GraphicsContext& gc)
 
     // draw tilemap first
     // tileMap_->Draw(cameraX_, cameraY_, program);
-    tileMap_->Render(cameraX_, cameraY_, program);
-    tileMap_->RenderCollisionData(cameraX_, cameraY_, program, 1.f, 1.f);
+    tileMap_->Render((float)cameraX_, (float)cameraY_, program);
+    tileMap_->RenderCollisionData((float)cameraX_, (float)cameraY_, program, 1.f, 1.f);
 
     // draw the entities.
     for(auto it : entities_)
@@ -267,7 +267,7 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     }
     float screenX = ((float)screenWidth / 2.f - (scaledMapWidth / 2.f));
     float screenY = ((float)screenHeight - scaledMapHeight);
-    tileMap_->Render((int)screenX, (int)screenY, program, scaleX, scaleY);
+    tileMap_->Render(screenX, screenY, program, scaleX, scaleY);
 
     engine::ui::Root::Get()->Render(gc);
 }

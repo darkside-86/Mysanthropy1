@@ -105,6 +105,7 @@ add_executable (
         TileGame/Entity.cpp
         TileGame/Image2D.cpp
         TileGame/Sprite.cpp
+        TileGame/Target.cpp
         TileGame/TileGame.cpp
         TileGame/TileMap.cpp
         TileGame/TileSet.cpp

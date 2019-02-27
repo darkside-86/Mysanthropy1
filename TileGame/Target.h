@@ -1,4 +1,4 @@
-// GameObject.h
+// Target.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,28 +18,32 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "GraphicsContext.h"
-
 #include <glm/glm.hpp>
 
 #include "ogl/Program.h"
+#include "ogl/Texture.h"
+#include "ogl/VertexArray.h"
+#include "ogl/VertexBuffer.h"
+#include "ogl/Vertex.h"
+#include "Sprite.h"
 
-namespace engine 
+class Target
 {
-    class GameObject
-    {
-    public:
-        virtual void Update(float dtime) = 0;
-        virtual void Render(const glm::vec3& camPos, ogl::Program& program) = 0;
-        virtual glm::vec3 GetPosition() const { return position_; }
-        virtual void SetPosition(const glm::vec3& pos) { position_ = pos; }
-        virtual glm::vec3 GetVelocity() const { return velocity_; }
-        virtual void SetVelocity(const glm::vec3& vel) { velocity_ = vel; }
-        virtual glm::vec3 GetAcceleration() const { return acceleration_; }
-        virtual void SetAcceleration(const glm::vec3& acc) { acceleration_ = acc; }
-    protected:
-        glm::vec3 position_ = {0.f,0.f,0.f};
-        glm::vec3 velocity_ = {0.f,0.f,0.f};
-        glm::vec3 acceleration_ = {0.f,0.f,0.f};
-    };
-}
+public:
+    Target();
+    virtual ~Target();
+    inline bool IsVisible() { return visible_; }
+    inline void SetVisible(bool v) { visible_ = v; }
+    void SetTargetSprite(const Sprite* sprite = nullptr);
+    void Render(const glm::vec3 camera, ogl::Program& prog);
+private:
+    bool visible_ = false;
+    ogl::Vertex vertices_[6];
+    ogl::VertexArray vao_;
+    ogl::VertexBuffer vbo_;
+    ogl::Texture* currentTexture_;
+    ogl::Texture* redTexture_;
+    ogl::Texture* yellowTexture_;
+    ogl::Texture* greenTexture_;
+    glm::vec3 currentLocation_; 
+};

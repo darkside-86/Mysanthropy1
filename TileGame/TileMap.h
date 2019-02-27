@@ -49,7 +49,7 @@ public:
     TileMap(const std::string& path);
     virtual ~TileMap();
     // Render map to screen
-    void Render(int x, int y, ogl::Program &program, float scaleX=1.f, float scaleY=1.f);
+    void Render(float x, float y, ogl::Program &program, float scaleX=1.f, float scaleY=1.f);
     void SaveToFile(const std::string& path);
     void LoadFromFile(const std::string& path);
     TileSet* GetTileSet() { return tileSet_; }
@@ -62,7 +62,7 @@ public:
     void FillWithTile(const Tile& tile, bool layer1=false);
     unsigned char GetCollisionData(int ix, int iy);
     void SetCollisionData(int ix, int iy, unsigned char value);
-    void RenderCollisionData(int x, int y, ogl::Program& program, float scaleX, float scaleY);
+    void RenderCollisionData(float x, float y, ogl::Program& program, float scaleX, float scaleY);
     // Generate the entity list for the caller, which will own the pointers
     std::vector<Entity*> GenerateEntities();
     // Get an entity type from the list. tilemap retains pointer ownership

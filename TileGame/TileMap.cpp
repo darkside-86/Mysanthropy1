@@ -311,14 +311,14 @@ void TileMap::SetupRender()
     }
 }
 
-void TileMap::Render(int x, int y, ogl::Program& program, float scaleX, float scaleY)
+void TileMap::Render(float x, float y, ogl::Program& program, float scaleX, float scaleY)
 {
     if(vao_ == nullptr)
         return;
     program.Use();
     vao_->Bind();
     tileSet_->GetTexture()->Bind();
-    glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3((float)x, (float)y, 0.f));    
+    glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(x, y, 0.f));    
     model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.f));
     // model = glm::translate(model, glm::vec3(0.f, 0.f, 0.f));
     program.SetUniform<glm::mat4>("u_model", model);
@@ -328,12 +328,12 @@ void TileMap::Render(int x, int y, ogl::Program& program, float scaleX, float sc
     // RenderCollisionData(x,y,program,scaleX,scaleY);
 }
 
-void TileMap::RenderCollisionData(int x, int y, ogl::Program& program, float scaleX, float scaleY)
+void TileMap::RenderCollisionData(float x, float y, ogl::Program& program, float scaleX, float scaleY)
 {
     int ix, iy;
     float w = (float)tileSet_->GetTileWidth() * scaleX;
     float h = (float)tileSet_->GetTileHeight() * scaleY;
-    glm::vec3 location = {(float)x, (float)y, 0.f};
+    glm::vec3 location = {x, y, 0.f};
     collisionVao_->Bind();
     redTexture_->Bind();
     program.Use();

@@ -37,6 +37,7 @@ public:
     void Cleanup();
     void Update(float dtime);
     void Render(engine::GraphicsContext& gc);
+    void WriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
 private:
     // load a sprite and animations from lost guardian folder
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);

@@ -89,10 +89,47 @@ bool TileGame::Initialize()
         }
     });
 
+    engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
+        if(e.type == SDL_MOUSEBUTTONDOWN)
+        {
+            if(e.button == 1) // primary mouse button
+            {
+                int clickedX = e.x;
+                int clickedY = e.y;
+                engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
+                // look for an entity to target.
+                auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
+                    [this, clickedX, clickedY](const Entity* ent) {
+                        float x = camera_.x + (float)clickedX;
+                        float y = camera_.y + (float)clickedY;
+                        return (
+                            x > ent->GetPosition().x && x < ent->GetPosition().x + (float)ent->GetWidth() &&
+                            y > ent->GetPosition().y && y < ent->GetPosition().y + (float)ent->GetHeight()
+                        );
+                    }
+                );
+                if(found != loadedEntities_.end())
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                            "Targeting entity %x", *found);
+                    WriteLineToConsole(std::string("Now targeting a ") + (*found)->GetName());
+                }
+                else 
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                            "Targeting none");
+                    WriteLineToConsole(std::string("Now targeting nothing"));
+                }
+            }
+        }
+    });
+
     SetupRenderList();
 
     engine::ui::Root::Get()->Initialize();
     SetupUIScript();
+
+    WriteLineToConsole("Hello from C++", 1.f, 0.f, 1.f, 1.f);
 
     return true;
 }
@@ -171,7 +208,7 @@ void TileGame::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_view", view);
     program.SetUniform<glm::mat4>("u_model", model);
     // rendering with camera takes negative camera coordinates
-    tileMap_->Render((int)-camera_.x,(int)-camera_.y, program);
+    tileMap_->Render(-camera_.x,-camera_.y, program);
     /*testSprite_->Render(-camera_, program);
     for(auto it=loadedEntities_.begin(); it != loadedEntities_.end(); ++it)
     {
@@ -183,6 +220,23 @@ void TileGame::Render(engine::GraphicsContext& gc)
         (*it)->Render(-camera_, program);
     }
     engine::ui::Root::Get()->Render(gc);
+}
+
+void TileGame::WriteLineToConsole(const std::string& line, float r, float g, float b, float a)
+{
+    lua_getglobal(uiScript_, "WriteLineToConsole");
+    lua_pushstring(uiScript_, line.c_str());
+    lua_pushnumber(uiScript_, r);
+    lua_pushnumber(uiScript_, g);
+    lua_pushnumber(uiScript_, b);
+    lua_pushnumber(uiScript_, a);
+    int ok = lua_pcall(uiScript_, 5, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
 }
 
 Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
