@@ -1,0 +1,5 @@
+PLAYER_SPEED = 50.0
+SPAWN_POINT = { 23, 234 }
+BOY_SURV = "man1"
+GIRL_SURV = "wmn2"
+

@@ -29,63 +29,77 @@ TileGame::TileGame()
 {
     tileMap_ = new TileMap("res/tilemaps/island.bin");
     loadedEntities_ = tileMap_->GenerateEntities();
+    configuration_ = new Configuration("TileGame/gameconfig.lua");
 }
 
 TileGame::~TileGame()
 {
     delete tileMap_;
+    delete configuration_;
     CleanupLoadedEntities();
 }
 
 bool TileGame::Initialize()
 {
-    testSprite_ = LoadLGSpr("man1");
-    testSprite_->SetPosition({
-        23.f * (float)tileMap_->GetTileSet()->GetTileWidth(),
-        234.f * (float)tileMap_->GetTileSet()->GetTileHeight(),
+    // TODO: place survivalist gender or current class choice in savegame.bin
+    // for now default boy sprite
+    playerSprite_ = LoadLGSpr(configuration_->GetBoySurvivalistSprite());
+    int ix, iy;
+    configuration_->GetTileSpawnPoint(ix, iy);
+    playerSprite_->SetPosition({
+        (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
+        (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight(),
         0.f
     });
-    testSprite_->SetCollisionBox(4.f, (float)testSprite_->GetWidth() / 2.f, 
-            (float)testSprite_->GetWidth()-4.f, (float)testSprite_->GetHeight());
+    playerSprite_->SetCollisionBox(5.f, (float)playerSprite_->GetWidth() / 2.f, 
+            (float)playerSprite_->GetWidth()-5.f, (float)playerSprite_->GetHeight());
 
-    testSprite_->SetCurrentAnim("front_stand", 0.2f);
-    testSprite_->StartAnimation();
-    engine::GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e){
+    playerSprite_->SetCurrentAnim("front_stand", 0.2f);
+    playerSprite_->StartAnimation();
+    const float baseSpeed = configuration_->GetBasePlayerSpeed();
+    engine::GameEngine::Get().AddKeyboardListener([this, baseSpeed](const SDL_KeyboardEvent& e){
         if(e.type == SDL_KEYDOWN)
         {
-            glm::vec3 vel = testSprite_->GetVelocity();
+            glm::vec3 vel = playerSprite_->GetVelocity();
             switch(e.keysym.sym)
             {
                 case SDLK_LEFT: 
-                    vel.x = -50.f;
-                    if(testSprite_->GetCurrentAnim() != "left_walk")
-                        testSprite_->SetCurrentAnim("left_walk", 0.2f);
+                    if(playerSprite_->GetCurrentAnim() != "left_walk")
+                        playerSprite_->SetCurrentAnim("left_walk", 0.2f);
+                    vel.x = -1.f;
                     break;
                 case SDLK_RIGHT:
-                    if(testSprite_->GetCurrentAnim() != "right_walk")
-                        testSprite_->SetCurrentAnim("right_walk", 0.2f); 
-                    vel.x = 50.f; 
+                    if(playerSprite_->GetCurrentAnim() != "right_walk")
+                        playerSprite_->SetCurrentAnim("right_walk", 0.2f); 
+                    vel.x = 1.f; 
                     break;
                 case SDLK_UP:
-                    if(testSprite_->GetCurrentAnim() != "back_walk")
-                        testSprite_->SetCurrentAnim("back_walk", 0.2f); 
-                    vel.y = -50.f; 
+                    if(playerSprite_->GetCurrentAnim() != "back_walk")
+                        playerSprite_->SetCurrentAnim("back_walk", 0.2f); 
+                    vel.y = -1.f; 
                     break;
                 case SDLK_DOWN:
-                    if(testSprite_->GetCurrentAnim() != "front_walk")
-                        testSprite_->SetCurrentAnim("front_walk", 0.2f); 
-                    vel.y = 50.f; 
+                    if(playerSprite_->GetCurrentAnim() != "front_walk")
+                        playerSprite_->SetCurrentAnim("front_walk", 0.2f); 
+                    vel.y = 1.f; 
                     break;
             }
             if(vel.length() != 0)
-                testSprite_->StartAnimation();
-            testSprite_->SetVelocity(vel);
+            {
+                playerSprite_->StartAnimation();
+                if(vel.y != 0)
+                    vel.y /= glm::abs(vel.y); // set to 1 or -1
+                if(vel.x != 0)
+                    vel.x /= glm::abs(vel.x); // set to 1 or -1
+                vel = glm::normalize(vel) * baseSpeed;
+            }
+            playerSprite_->SetVelocity(vel);
         }
         else 
         {
             // todo: stop movement based on key up
-            testSprite_->PauseAnimation();
-            testSprite_->SetVelocity({0.f,0.f,0.f});
+            playerSprite_->PauseAnimation();
+            playerSprite_->SetVelocity({0.f,0.f,0.f});
         }
     });
 
@@ -97,7 +111,7 @@ bool TileGame::Initialize()
                 int clickedX = e.x;
                 int clickedY = e.y;
                 engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
-                // look for an entity to target.
+                // look for an entity/mob to target.
                 auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
                     [this, clickedX, clickedY](const Entity* ent) {
                         float x = camera_.x + (float)clickedX;
@@ -110,14 +124,20 @@ bool TileGame::Initialize()
                 );
                 if(found != loadedEntities_.end())
                 {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-                            "Targeting entity %x", *found);
-                    WriteLineToConsole(std::string("Now targeting a ") + (*found)->GetName());
+                    if((*found) == targetedEntity_)
+                    {
+                        WriteLineToConsole("Attempting to interact with target");
+                        InteractWithTarget();
+                    }
+                    else 
+                    {
+                        targetedEntity_ = (*found);
+                        WriteLineToConsole(std::string("Now targeting a ") + targetedEntity_->GetName());
+                    }
                 }
                 else 
                 {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
-                            "Targeting none");
+                    targetedEntity_ = nullptr;
                     WriteLineToConsole(std::string("Now targeting nothing"));
                 }
             }
@@ -136,20 +156,21 @@ bool TileGame::Initialize()
 
 void TileGame::Cleanup()
 {
-    UnloadLGSpr(testSprite_, "man1");
-    RemoveSpriteFromRenderList(testSprite_);
+    // TODO: unloaded sprite choice reflected by what was loaded in savegame.lua
+    UnloadLGSpr(playerSprite_, configuration_->GetBoySurvivalistSprite());
+    RemoveSpriteFromRenderList(playerSprite_);
     delete luaBindings_;
     lua_close(uiScript_);
 }
 
 void TileGame::Update(float dtime)
 {
-    testSprite_->Update(dtime);
+    playerSprite_->Update(dtime);
     // tile collision detection.
     float left, top, right, bottom;
-    testSprite_->GetCollisionBox(left, top, right, bottom);
+    playerSprite_->GetCollisionBox(left, top, right, bottom);
     // check each corner
-    // TODO: fix update to prevent walking through-trick
+    // TODO: fix GameEngine update loop to prevent walking through tile hack
     bool collision = false;
     int ix = (int)(left / (float)tileMap_->GetTileSet()->GetTileWidth());
     int iy = (int)(top / (float)tileMap_->GetTileSet()->GetTileHeight());
@@ -164,17 +185,17 @@ void TileGame::Update(float dtime)
     iy = (int)(bottom / (float)tileMap_->GetTileSet()->GetTileHeight());
     if(tileMap_->GetCollisionData(ix, iy))  collision = true;
     if(collision) 
-        testSprite_->Update(-dtime);
+        playerSprite_->Update(-dtime);
     // test player against entity collision
-    else if(EntityCollisionCheck(testSprite_))
-        testSprite_->Update(-dtime);
+    else if(EntityCollisionCheck(playerSprite_))
+        playerSprite_->Update(-dtime);
     
     // todo: bound player to map area
 
     // calculate camera.
     float scrW = (float)engine::GameEngine::Get().GetWidth();
     float scrH = (float)engine::GameEngine::Get().GetHeight();
-    glm::vec3 playerPos = testSprite_->GetPosition();
+    glm::vec3 playerPos = playerSprite_->GetPosition();
 
     camera_.x = playerPos.x - scrW / 2.f;
     camera_.y = playerPos.y - scrH / 2.f;
@@ -195,9 +216,9 @@ void TileGame::Render(engine::GraphicsContext& gc)
     glDisable(GL_DEPTH_TEST);
     ogl::Program& program = gc.GetProgram();
     program.Use();
-    // colors = texture data only
-    gc.SetUseTexture(true);
-    gc.SetUseColorBlending(false);
+    // colors are texture data only
+    program.SetUniform<int>("u_useTexture", true);
+    program.SetUniform<int>("u_useColorBlending", false);
     // model view projection matrices
     glm::mat4 projection(1.f), view(1.f), model(1.f);
     float scrW = (float)engine::GameEngine::Get().GetWidth();
@@ -208,12 +229,8 @@ void TileGame::Render(engine::GraphicsContext& gc)
     program.SetUniform<glm::mat4>("u_view", view);
     program.SetUniform<glm::mat4>("u_model", model);
     // rendering with camera takes negative camera coordinates
+    // TODO: fix glitchy tile movement
     tileMap_->Render(-camera_.x,-camera_.y, program);
-    /*testSprite_->Render(-camera_, program);
-    for(auto it=loadedEntities_.begin(); it != loadedEntities_.end(); ++it)
-    {
-        (*it)->Render(-camera_, program);
-    }*/
     RenderSortPass();
     for(auto it=renderList_.begin(); it != renderList_.end(); ++it)
     {
@@ -288,7 +305,7 @@ void TileGame::CleanupLoadedEntities()
 void TileGame::SetupRenderList()
 {
     renderList_.clear();
-    renderList_.push_back(testSprite_);
+    renderList_.push_back(playerSprite_);
     for(int i=0; i < loadedEntities_.size(); ++i)
     {
         renderList_.push_back(loadedEntities_[i]);
@@ -376,4 +393,25 @@ bool TileGame::EntityCollisionCheck(Sprite* sprite)
 bool TileGame::CheckPoint(float x, float y, float left, float top, float right, float bottom)
 {
     return (x >= left && x <= right && y >= top && y <= bottom);
+}
+
+void TileGame::InteractWithTarget()
+{
+    // check to see if we are in 32.f units of bottom center of targeted entity.
+    glm::vec3 bottomCenter = targetedEntity_->GetPosition();
+    bottomCenter.x += (float)targetedEntity_->GetWidth() / 2.f;
+    bottomCenter.y += (float)targetedEntity_->GetHeight();
+    glm::vec3 playerCenter = playerSprite_->GetPosition();
+    playerCenter.x += (float)playerSprite_->GetWidth() / 2.f;
+    playerCenter.y += (float)playerSprite_->GetHeight() / 2.f;
+    float dist = glm::distance(bottomCenter, playerCenter);
+    const float maxDistance = 48.f;
+    if(dist > maxDistance)
+    {
+        WriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
+    }
+    else 
+    {
+        WriteLineToConsole("Interacting with target...", 0.f, 1.f, 0.f, 1.f);
+    }
 }

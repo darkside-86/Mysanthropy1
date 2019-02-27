@@ -102,8 +102,10 @@ add_executable (
 add_executable ( 
     RPG
 	    gamemain.cpp
+        TileGame/Configuration.cpp
         TileGame/Entity.cpp
         TileGame/Image2D.cpp
+        TileGame/Player.cpp
         TileGame/Sprite.cpp
         TileGame/Target.cpp
         TileGame/TileGame.cpp
