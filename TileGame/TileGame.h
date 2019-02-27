@@ -47,6 +47,8 @@ private:
     void RenderSortPass();
     void RemoveSpriteFromRenderList(const Sprite* sprite);
     void SetupUIScript();
+    bool EntityCollisionCheck(Sprite* sprite);
+    bool CheckPoint(float x, float y, float left, float top, float right, float bottom);
     TileMap* tileMap_;  
     Sprite* testSprite_;
     glm::vec3 camera_ = {0.f,0.f,0.f};

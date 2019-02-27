@@ -128,6 +128,9 @@ void TileGame::Update(float dtime)
     if(tileMap_->GetCollisionData(ix, iy))  collision = true;
     if(collision) 
         testSprite_->Update(-dtime);
+    // test player against entity collision
+    else if(EntityCollisionCheck(testSprite_))
+        testSprite_->Update(-dtime);
     
     // todo: bound player to map area
 
@@ -289,4 +292,34 @@ void TileGame::SetupUIScript()
                 "Lua error %d: %s", err, lua_tostring(uiScript_, -1));
         lua_pop(uiScript_, 1);
     }
+}
+
+bool TileGame::EntityCollisionCheck(Sprite* sprite)
+{
+    // given a sprite check collision (for now) for all entities.
+    float spriteLeft, spriteTop, spriteRight, spriteBottom;
+    sprite->GetCollisionBox(spriteLeft, spriteTop, spriteRight, spriteBottom);
+    for(auto it : loadedEntities_)
+    {
+        float l, t, r, b;
+        it->GetCollisionBox(l,t,r,b);
+        if(sprite != it && it->HasValidCollisionBox()) // don't check sprite against itself
+        {
+            if(CheckPoint(spriteLeft, spriteTop, l,t,r,b) ||
+              CheckPoint(spriteRight, spriteTop, l,t,r,b) ||
+              CheckPoint(spriteLeft, spriteBottom, l,t,r,b) ||
+              CheckPoint(spriteRight, spriteBottom, l,t,r,b) ||
+              CheckPoint(l,t, spriteLeft, spriteTop, spriteRight, spriteBottom) ||
+              CheckPoint(r,t, spriteLeft, spriteTop, spriteRight, spriteBottom) || 
+              CheckPoint(l,b, spriteLeft, spriteTop, spriteRight, spriteBottom) ||
+              CheckPoint(r,b, spriteLeft, spriteTop, spriteRight, spriteBottom))
+                return true;
+        }
+    }
+    return false;
+}
+
+bool TileGame::CheckPoint(float x, float y, float left, float top, float right, float bottom)
+{
+    return (x >= left && x <= right && y >= top && y <= bottom);
 }

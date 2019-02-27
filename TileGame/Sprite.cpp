@@ -132,3 +132,8 @@ void Sprite::GetCollisionBox(float &left, float& top, float &right, float &botto
     right = collisionBox_.right + position_.x;
     bottom = collisionBox_.bottom + position_.y;
 }
+
+bool Sprite::HasValidCollisionBox()
+{
+    return collisionBox_.left != -1;
+}

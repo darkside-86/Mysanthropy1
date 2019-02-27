@@ -464,6 +464,12 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "HEIGHT");
     lua_pushcfunction(scripting_, TileMap::lua_CollisionBox);
     lua_setglobal(scripting_, "COLLISION_BOX");
+    lua_pushcfunction(scripting_, TileMap::lua_MaxClicks);
+    lua_setglobal(scripting_, "MAX_CLICKS");
+    lua_pushcfunction(scripting_, TileMap::lua_OnInteract);
+    lua_setglobal(scripting_, "ON_INTERACT");
+    lua_pushcfunction(scripting_, TileMap::lua_OnDestroy);
+    lua_setglobal(scripting_, "ON_DESTROY");
 }
 
 void TileMap::CleanupEntities()
@@ -560,6 +566,47 @@ int TileMap::lua_CollisionBox(lua_State* L)
     box.right = (float)lua_tonumber(L, 3);
     box.bottom = (float)lua_tonumber(L, 4);
     tileMap->currentEntityType_.collision = box;
+
+    return 0;
+}
+
+int TileMap::lua_MaxClicks(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tileMap->currentEntityType_.maxClicks = (int)lua_tonumber(L, 1);
+
+    return 0;
+}
+
+int TileMap::lua_OnInteract(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    // todo: process args (% 3 == 0) as percent(0-100) chance of drop,
+    //  number to drop, and item ID (a string)
+
+    return 0;
+}
+
+int TileMap::lua_OnDestroy(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    // todo: process args (%  3 == 0) as percent(0-100) chance of drop,
+    //  number to drop, and item ID (a string)
 
     return 0;
 }

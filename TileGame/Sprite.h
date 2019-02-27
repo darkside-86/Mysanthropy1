@@ -51,6 +51,8 @@ public:
     void SetCollisionBox(float left, float top, float right, float bottom);
     // return absolute position of collision box based on position_
     void GetCollisionBox(float &left, float& top, float &right, float &bottom);
+    // return true if collision box is valid for checking anything
+    bool HasValidCollisionBox();
 protected:
     int width_ = 0, height_ = 0;
     ogl::Texture* anim0_;
