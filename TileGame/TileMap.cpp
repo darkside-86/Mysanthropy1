@@ -466,6 +466,8 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "COLLISION_BOX");
     lua_pushcfunction(scripting_, TileMap::lua_MaxClicks);
     lua_setglobal(scripting_, "MAX_CLICKS");
+    lua_pushcfunction(scripting_, TileMap::lua_ClickTime);
+    lua_setglobal(scripting_, "CLICK_TIME");
     lua_pushcfunction(scripting_, TileMap::lua_OnInteract);
     lua_setglobal(scripting_, "ON_INTERACT");
     lua_pushcfunction(scripting_, TileMap::lua_OnDestroy);
@@ -593,6 +595,19 @@ int TileMap::lua_OnInteract(lua_State* L)
 
     // todo: process args (% 3 == 0) as percent(0-100) chance of drop,
     //  number to drop, and item ID (a string)
+
+    return 0;
+}
+
+int TileMap::lua_ClickTime(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tileMap->currentEntityType_.clickTime = (float)lua_tonumber(L, 1);
 
     return 0;
 }

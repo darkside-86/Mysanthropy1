@@ -24,7 +24,7 @@
 Entity::Entity(const ENTITY_TYPE& etype)
     : Sprite(engine::GameEngine::Get().GetTextureManager().GetTexture(etype.texturePath), 
       etype.width, etype.height), name_(etype.name), maxClicks_(etype.maxClicks), 
-      remainingClicks_(etype.maxClicks)
+      remainingClicks_(etype.maxClicks), clickTime_(etype.clickTime)
 {
     SetCollisionBox(etype.collision.left, etype.collision.top, etype.collision.right, etype.collision.bottom);
 }

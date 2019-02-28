@@ -15,6 +15,7 @@ BEGIN_ENTITY "palm1"
     100.0, 10, "wood",
     100.0, 10, "exp"
  )
+ CLICK_TIME(15.0)
 END_ENTITY ()
 -- 1 : palm2
 BEGIN_ENTITY "palm2"
@@ -32,6 +33,7 @@ BEGIN_ENTITY "palm2"
     100.0, 10, "wood",
     100.0, 10, "exp"
  )
+ CLICK_TIME(15.0)
 END_ENTITY ()
 -- 2 : palm3
 BEGIN_ENTITY "palm3"
@@ -49,6 +51,7 @@ BEGIN_ENTITY "palm3"
     100.0, 10, "wood",
     100.0, 10, "exp"
  )
+ CLICK_TIME(15.0)
 END_ENTITY ()
 -- 3 : palm4
 BEGIN_ENTITY "palm4"
@@ -66,6 +69,7 @@ BEGIN_ENTITY "palm4"
     100.0, 10, "wood",
     100.0, 10, "exp"
  )
+ CLICK_TIME(15.0)
 END_ENTITY ()
 -- 4 : shrub1
 BEGIN_ENTITY "shrub1"
@@ -73,7 +77,7 @@ BEGIN_ENTITY "shrub1"
  WIDTH (39)
  HEIGHT (32)
  COLLISION_BOX (-1, 0, 0, 0) -- no collision
- MAX_CLICKS (15)
+ MAX_CLICKS (5)
  ON_INTERACT (
      100.0, 1, "grass",
      100.0, 1, "exp"
@@ -82,4 +86,22 @@ BEGIN_ENTITY "shrub1"
      100.0, 5, "grass",
      100.0, 5, "exp"
  )
+ CLICK_TIME(0.5)
+END_ENTITY()
+-- 5 : shrub2
+BEGIN_ENTITY "shrub2"
+ USE_TEXTURE "res/textures/objects/shrub2.png"
+ WIDTH (51)
+ HEIGHT (32)
+ COLLISION_BOX (-1, 0, 0, 0)
+ MAX_CLICKS (25)
+ ON_INTERACT (
+     100.0, 1, "grass",
+     100.0, 1, "exp"
+ )
+ ON_DESTROY (
+     100.0, 10, "grass",
+     100.0, 10, "exp"
+ )
+ CLICK_TIME(15.0)
 END_ENTITY()

@@ -40,6 +40,8 @@ public:
     void Update(float dtime);
     void Render(engine::GraphicsContext& gc);
     void WriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
+    void SetCastBarValue(float value);
+    void ToggleCastBar(bool show);
 private:
     // load a sprite and animations from lost guardian folder
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
@@ -53,10 +55,22 @@ private:
     bool EntityCollisionCheck(Sprite* sprite);
     bool CheckPoint(float x, float y, float left, float top, float right, float bottom);
     void InteractWithTarget();
+    void ClearTarget();
+    void RemoveEntityFromLoaded(Entity* ent);
+    // Core game configuration
     Configuration* configuration_ = nullptr;
-    TileMap* tileMap_ = nullptr;  
+    // The map currently loaded
+    TileMap* tileMap_ = nullptr;
+    // Represents the location and image of the player in the world  
     Sprite* playerSprite_ = nullptr;
+    // The entity being targeted (if any) by the user
     Entity* targetedEntity_ = nullptr;
+    // True if a casting sequence was started.
+    bool casting_ = false;
+    float maxCastTime_ = 0.f;
+    float currentCastTime_ = 0.f;
+
+    // Camera coordinates to determine where on screen objects are rendered
     glm::vec3 camera_ = {0.f,0.f,0.f};
     // list of all sprites to try to render including player. Does not own pointers
     std::vector<Sprite*> renderList_;

@@ -42,7 +42,7 @@ TileGame::~TileGame()
 bool TileGame::Initialize()
 {
     // TODO: place survivalist gender or current class choice in savegame.bin
-    // for now default boy sprite
+    // but for now default boy sprite
     playerSprite_ = LoadLGSpr(configuration_->GetBoySurvivalistSprite());
     int ix, iy;
     configuration_->GetTileSpawnPoint(ix, iy);
@@ -61,6 +61,12 @@ bool TileGame::Initialize()
         if(e.type == SDL_KEYDOWN)
         {
             glm::vec3 vel = playerSprite_->GetVelocity();
+            if(casting_)
+            {
+                casting_ = false;
+                ToggleCastBar(false);
+                WriteLineToConsole("Cast interrupted by player", 1.f, 0.f, 0.f, 0.9f);
+            }
             switch(e.keysym.sym)
             {
                 case SDLK_LEFT: 
@@ -83,6 +89,10 @@ bool TileGame::Initialize()
                         playerSprite_->SetCurrentAnim("front_walk", 0.2f); 
                     vel.y = 1.f; 
                     break;
+                default:
+                    // without this the entire screen except UI goes black......
+                    // TODO: fix weird velocity bug?
+                    return;
             }
             if(vel.length() != 0)
             {
@@ -126,18 +136,29 @@ bool TileGame::Initialize()
                 {
                     if((*found) == targetedEntity_)
                     {
-                        WriteLineToConsole("Attempting to interact with target");
-                        InteractWithTarget();
+                        if(!casting_)
+                        {
+                            WriteLineToConsole("Attempting to interact with target");
+                            InteractWithTarget();
+                        }
+                        else 
+                        {
+                            WriteLineToConsole("Already interacting with object...");
+                        }
                     }
                     else 
                     {
                         targetedEntity_ = (*found);
-                        WriteLineToConsole(std::string("Now targeting a ") + targetedEntity_->GetName());
+                        std::string rclicks = std::to_string(targetedEntity_->GetRemainingClicks());
+                        std::string mclicks = std::to_string(targetedEntity_->GetMaxClicks());
+                        WriteLineToConsole(std::string("Now targeting a ") 
+                            + targetedEntity_->GetName() + " (" + rclicks + "/" + mclicks + ")");
                     }
                 }
                 else 
                 {
-                    targetedEntity_ = nullptr;
+                    ClearTarget();
+                    casting_ = false; // how else to handle the resulting null pointer?
                     WriteLineToConsole(std::string("Now targeting nothing"));
                 }
             }
@@ -169,6 +190,29 @@ void TileGame::Update(float dtime)
     // tile collision detection.
     float left, top, right, bottom;
     playerSprite_->GetCollisionBox(left, top, right, bottom);
+
+    // check casting and update cast bar
+    if(casting_)
+    {
+        currentCastTime_ += dtime;
+        SetCastBarValue(currentCastTime_ / maxCastTime_);
+        if(currentCastTime_ >= maxCastTime_)
+        {
+            // the cast is completed so run ability, currently only harvest.
+            WriteLineToConsole("Cast complete");
+            targetedEntity_->DecRemainingClicks();
+            if(targetedEntity_->GetRemainingClicks() <= 0)
+            {
+                WriteLineToConsole("Removing...");
+                RemoveSpriteFromRenderList(targetedEntity_);
+                RemoveEntityFromLoaded(targetedEntity_);
+                ClearTarget();
+            }
+            casting_ = false;
+            ToggleCastBar(false);
+        }
+    }
+
     // check each corner
     // TODO: fix GameEngine update loop to prevent walking through tile hack
     bool collision = false;
@@ -248,6 +292,32 @@ void TileGame::WriteLineToConsole(const std::string& line, float r, float g, flo
     lua_pushnumber(uiScript_, b);
     lua_pushnumber(uiScript_, a);
     int ok = lua_pcall(uiScript_, 5, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
+}
+
+void TileGame::SetCastBarValue(float value)
+{
+    lua_getglobal(uiScript_, "SetCastBarValue");
+    lua_pushnumber(uiScript_, value);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
+}
+
+void TileGame::ToggleCastBar(bool show)
+{
+    lua_getglobal(uiScript_, "ToggleCastBar");
+    lua_pushboolean(uiScript_, show);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
     if(ok != LUA_OK)
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
@@ -412,6 +482,37 @@ void TileGame::InteractWithTarget()
     }
     else 
     {
+        maxCastTime_ = targetedEntity_->GetClickTime();
+        currentCastTime_ = 0.0f;
+        casting_ = true;
         WriteLineToConsole("Interacting with target...", 0.f, 1.f, 0.f, 1.f);
+        ToggleCastBar(true);
     }
+}
+
+void TileGame::ClearTarget()
+{   
+    targetedEntity_ = nullptr;
+    // TODO: when target circles are rendered, clear their state and visibility
+}
+
+void TileGame::RemoveEntityFromLoaded(Entity* ent)
+{
+    // first take it out of vector
+    auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
+        [this, ent](const Entity* enti){
+            return ent == enti;
+        }
+    );
+    if(found != loadedEntities_.end())
+    {
+        loadedEntities_.erase(found);
+    }
+    // clear target state in case it is being targeted
+    if(targetedEntity_ == ent)
+    {
+        ClearTarget();
+    }
+    // finally delete the object.
+    delete ent;
 }

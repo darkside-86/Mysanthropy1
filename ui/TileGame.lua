@@ -14,11 +14,13 @@ UpdateFPS()
 -- Create console output box
 consoleFrame = UIFrame.New(nil, GetScreenWidth() / 3, GetScreenHeight() / 4, 0, 0, TEXTURE_UIBLANK)
 consoleFrame:SetColor(0,0,0,0.5)
-consoleFrame:SetYPos(GetScreenHeight() - consoleFrame:GetHeight())
+consoleFrame:SetYPos(GetScreenHeight() - consoleFrame:GetHeight() - (consoleFrame:GetHeight()/5))
 consoleFrame.lines = {} -- array of UILabels
 consoleFrame.MAX_LINES = math.floor(consoleFrame:GetHeight() / 10)
+consoleFrame:SetHeight(consoleFrame:GetHeight() + 10)
 
 function WriteLineToConsole(text, r,g,b,a)
+    print("[CONSOLE] " .. text) -- for debugging
     local newLine = UILabel.New(consoleFrame, text, "mono10", r,g,b,a)
     -- do we need to move up existing lines?
     if #consoleFrame.lines >= consoleFrame.MAX_LINES then 
@@ -38,18 +40,36 @@ function WriteLineToConsole(text, r,g,b,a)
                 consoleFrame.lines[#consoleFrame.lines-1]:GetHeight())
         end
     end
+    -- fix line size distortion glitch by table.removing anything less than y=0
+    local n = #consoleFrame.lines
+    for j=1, n do 
+        if consoleFrame.lines[j] ~= nil and consoleFrame.lines[j]:GetYPos() < 0 then 
+            table.remove(consoleFrame.lines, j)
+        end
+    end
 end
 
+-- test console
 for i=1, consoleFrame.MAX_LINES * 2 do 
     WriteLineToConsole("Line " .. tostring(i), 1,1,1,1)
 end
+WriteLineToConsole("Hello console", 0,1,0,1)
 
 -- Create cast bar
 castbar = UIFrame.New(nil, 250, 25, 0, 0, TEXTURE_UIBLANK)
 castbar:SetXPos(GetScreenWidth() / 2 - castbar:GetWidth() / 2)
 castbar:SetYPos(GetScreenHeight() - castbar:GetHeight() * 5)
 castbar:SetColor(0,0,0.5,0.5)
+castbar.filler = UIFrame.New(castbar, castbar:GetWidth(), castbar:GetHeight(), 0, 0, TEXTURE_UIBLANK)
+castbar.filler:SetColor(1,1,0,0.5)
+function SetCastBarValue(value)
+    local w = value * castbar:GetWidth()
+    castbar.filler:SetWidth(w)
+end
+function ToggleCastBar(show)
+    castbar:SetVisible(show)
+end
+SetCastBarValue(0)
 castbar:SetVisible(false) -- hide until we use it
 
 
-WriteLineToConsole("Hello console", 0,1,0,1)

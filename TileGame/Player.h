@@ -23,8 +23,13 @@ class Player
 public:
     Player();
     virtual ~Player();
+
+    inline int GetLevel() const { return level_; }
+    void SetLevel(int level);
+    inline int GetHealth() const { return health_; }
+    void SetHealth(int health);
 private:
-    int level;
-    int health;
-    int maxHealth;
+    int level_;
+    int health_;
+    int maxHealth_;
 };

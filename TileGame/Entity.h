@@ -28,11 +28,12 @@ struct ENTITY_TYPE
     int width = 0, height = 0;
     BOX collision = {0,0,0,0};
     int maxClicks = 0;
+    float clickTime = 0.f; // in seconds!
     struct ITEM_DROP
     {
         float percentChance = 0.f;
         int amount = 0;
-        char* name = "";
+        char* name = nullptr;
     };
     int numDrops = 0;
     ITEM_DROP* drops = nullptr;
@@ -47,8 +48,13 @@ public:
     virtual ~Entity();
 
     std::string GetName() { return name_; }
+    int GetMaxClicks() { return maxClicks_; }
+    int GetRemainingClicks() { return remainingClicks_; }
+    void DecRemainingClicks() { remainingClicks_--; }
+    float GetClickTime() { return clickTime_; }
 private:
     std::string name_;
     int maxClicks_;
     int remainingClicks_;
+    float clickTime_;
 };
