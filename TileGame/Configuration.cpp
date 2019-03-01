@@ -25,6 +25,17 @@ Configuration::Configuration(const std::string configFilePath)
 {
     scripting_ = luaL_newstate();
     luaL_openlibs(scripting_);
+
+    // store "this" pointer in registry
+    lua_pushstring(scripting_, "Configuration");
+    lua_pushlightuserdata(scripting_, this);
+    lua_settable(scripting_, LUA_REGISTRYINDEX);
+
+    // global functions
+    lua_pushcfunction(scripting_, Configuration::lua_ItemEntry);
+    lua_setglobal(scripting_, "ITEM_ENTRY");
+
+    // run configuration file
     int ok = luaL_dofile(scripting_, configFilePath.c_str());
     if(ok != LUA_OK)
     {
@@ -37,6 +48,11 @@ Configuration::Configuration(const std::string configFilePath)
 Configuration::~Configuration()
 {
     lua_close(scripting_);
+    for (auto each : luaItemEntries_)
+    {
+        delete [] each.name;
+        delete [] each.texture;
+    }
 }
 
 float Configuration::GetBasePlayerSpeed()
@@ -74,4 +90,86 @@ std::string Configuration::GetGirlSurvivalistSprite()
     std::string sprite = lua_tostring(scripting_, -1);
     lua_pop(scripting_, 1);
     return sprite;   
+}
+
+float Configuration::GetExperienceScale()
+{
+    lua_getglobal(scripting_, "EXPERIENCE_SCALE");
+    float experienceScale = (float)lua_tonumber(scripting_, -1);
+    lua_pop(scripting_,1);
+    return experienceScale == 0 ? 1.33f : experienceScale;
+}
+
+int Configuration::GetBaseExperience()
+{
+    lua_getglobal(scripting_, "BASE_EXP");
+    int baseExp = (int)lua_tonumber(scripting_, -1);
+    lua_pop(scripting_,1);
+    return baseExp == 0 ? 250 : baseExp;
+}
+
+float Configuration::GetCoreStatScale()
+{
+    lua_getglobal(scripting_, "CORESTAT_SCALE");
+    float coreStatScale = (float)lua_tonumber(scripting_, -1);
+    lua_pop(scripting_, 1);
+    return coreStatScale == 0 ? 1.11f : coreStatScale;
+}
+
+float Configuration::GetOtherStatScale()
+{
+    lua_getglobal(scripting_, "OTHERSTAT_SCALE");
+    float coreStatScale = (float)lua_tonumber(scripting_, -1);
+    lua_pop(scripting_, 1);
+    return coreStatScale == 0 ? 1.11f : coreStatScale;
+}
+
+void Configuration::AddItemEntries(Inventory& inv)
+{
+    for(auto each : luaItemEntries_)
+    {
+        ogl::Texture* texture = engine::GameEngine::Get().GetTextureManager().GetTexture(each.texture);
+        inv.AddItemEntry(each.name, texture, each.hidden);
+    }
+}
+
+int Configuration::lua_ItemEntry(lua_State *L)
+{
+    // get "this" pointer
+    lua_pushstring(L, "Configuration");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    Configuration* config = (Configuration*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    LuaItemEntry luaItemEntry;
+
+    lua_pushstring(L, "name");
+    lua_gettable(L, 1);
+    const char* name = lua_tostring(L, -1);
+    luaItemEntry.name = new char [strlen(name)+1];
+    strcpy_s(luaItemEntry.name, strlen(name)+1, name);
+    lua_pop(L, 1);
+    
+    lua_pushstring(L, "hidden");
+    lua_gettable(L, 1);
+    if(lua_isnil(L, -1))
+    {
+        luaItemEntry.hidden = true; // default to true if no value listed
+    }
+    else
+    { 
+        luaItemEntry.hidden = lua_toboolean(L, -1);
+    }
+    lua_pop(L, 1);
+
+    lua_pushstring(L, "texture");
+    lua_gettable(L, 1);
+    const char* texture = lua_tostring(L, -1);
+    luaItemEntry.texture = new char [strlen(texture)+1];
+    strcpy_s(luaItemEntry.texture, strlen(texture)+1, texture);
+    lua_pop(L, 1);
+
+    config->luaItemEntries_.push_back(luaItemEntry);
+
+    return 0;
 }

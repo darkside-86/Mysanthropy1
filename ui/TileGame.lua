@@ -49,12 +49,6 @@ function WriteLineToConsole(text, r,g,b,a)
     end
 end
 
--- test console
-for i=1, consoleFrame.MAX_LINES * 2 do 
-    WriteLineToConsole("Line " .. tostring(i), 1,1,1,1)
-end
-WriteLineToConsole("Hello console", 0,1,0,1)
-
 -- Create cast bar
 castbar = UIFrame.New(nil, 250, 25, 0, 0, TEXTURE_UIBLANK)
 castbar:SetXPos(GetScreenWidth() / 2 - castbar:GetWidth() / 2)
@@ -72,4 +66,26 @@ end
 SetCastBarValue(0)
 castbar:SetVisible(false) -- hide until we use it
 
-
+-- Create experience bars (half of screen width)
+local halfScrW = GetScreenWidth() / 2
+experienceBar = UIFrame.New(nil, halfScrW, 15, 0, 0, TEXTURE_UIBLANK)
+experienceBar:SetColor(0.2,0.2,0.2,0.5)
+experienceBar:SetXPos(halfScrW - experienceBar:GetWidth() / 2)
+experienceBar:SetYPos(GetScreenHeight() - experienceBar:GetHeight())
+experienceBar.fill = UIFrame.New(experienceBar, experienceBar:GetWidth()-2, experienceBar:GetHeight(), 
+    0, 0, TEXTURE_UIBLANK)
+experienceBar.fill:SetColor(0.5,0,0.5,0.8)
+experienceBar.fill:SetWidth(0)
+experienceBar.segments = {}
+local NUM_EXP_SEGMENTS = 10
+for i=1, NUM_EXP_SEGMENTS do 
+    local w = experienceBar:GetWidth() / NUM_EXP_SEGMENTS
+    local x = w * (i-1)
+    experienceBar.segments[i] = UIFrame.New(experienceBar, w, experienceBar:GetHeight(), x, 0, TEXTURE_UIBLANK)
+    experienceBar.segments[i]:SetBorderSize(1)
+    experienceBar.segments[i]:SetBorderColor(0.8,0.8,0.8,1)
+    experienceBar.segments[i]:SetColor(0.2,0.2,0.2,0.0)
+end
+function SetExperienceBar(value)
+    experienceBar.fill:SetWidth( value * (experienceBar:GetWidth()))
+end

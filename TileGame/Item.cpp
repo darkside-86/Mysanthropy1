@@ -1,4 +1,4 @@
-// Configuration.h
+// Item.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -16,40 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#pragma once
 
-#include <string>
-#include <vector>
+#include "Item.h"
 
-#include <lua/lua.hpp>
-
-#include "Inventory.h"
-
-struct LuaItemEntry
+Item::Item(const std::string& name, ogl::Texture* icon, bool hidden) 
+    : name_(name), icon_(icon), hiddenFromInventory_(hidden)
 {
-    char* name = nullptr;
-    bool hidden = false;
-    char* texture = nullptr;
-};
 
-// handles configuration of game rule data
-class Configuration
+}
+
+Item::~Item()
 {
-public:
-    Configuration(const std::string configFilePath="TileGame/gameconfig.lua");
-    virtual ~Configuration();
 
-    float GetBasePlayerSpeed();
-    void GetTileSpawnPoint(int &x, int &y);
-    std::string GetBoySurvivalistSprite();
-    std::string GetGirlSurvivalistSprite();
-    float GetExperienceScale();
-    int GetBaseExperience();
-    float GetCoreStatScale();
-    float GetOtherStatScale();
-    void AddItemEntries(Inventory& inv);
-private:
-    static int lua_ItemEntry(lua_State *L);
-    std::vector<LuaItemEntry> luaItemEntries_;
-    lua_State* scripting_ = nullptr;
-};
+}

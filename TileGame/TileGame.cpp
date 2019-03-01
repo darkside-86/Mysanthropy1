@@ -25,8 +25,8 @@
 #include "engine/GameEngine.h"
 #include "engine/ui/Root.h"
 
-TileGame::TileGame()
-{
+TileGame::TileGame() : saveData_(player_.GetInventory(), player_)
+{ 
     tileMap_ = new TileMap("res/tilemaps/island.bin");
     loadedEntities_ = tileMap_->GenerateEntities();
     configuration_ = new Configuration("TileGame/gameconfig.lua");
@@ -34,6 +34,7 @@ TileGame::TileGame()
 
 TileGame::~TileGame()
 {
+    tileMap_->SaveToFile("res/tilemaps/island.bin");
     delete tileMap_;
     delete configuration_;
     CleanupLoadedEntities();
@@ -44,13 +45,6 @@ bool TileGame::Initialize()
     // TODO: place survivalist gender or current class choice in savegame.bin
     // but for now default boy sprite
     playerSprite_ = LoadLGSpr(configuration_->GetBoySurvivalistSprite());
-    int ix, iy;
-    configuration_->GetTileSpawnPoint(ix, iy);
-    playerSprite_->SetPosition({
-        (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
-        (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight(),
-        0.f
-    });
     playerSprite_->SetCollisionBox(5.f, (float)playerSprite_->GetWidth() / 2.f, 
             (float)playerSprite_->GetWidth()-5.f, (float)playerSprite_->GetHeight());
 
@@ -144,10 +138,16 @@ bool TileGame::Initialize()
                         else 
                         {
                             WriteLineToConsole("Already interacting with object...");
+                            // ToggleCastBar(true);
+                            InteractWithTarget();
                         }
                     }
                     else 
                     {
+                        ClearTarget();
+                        casting_ = false;
+                        if(targetedEntity_ != *found)
+                            ToggleCastBar(false);
                         targetedEntity_ = (*found);
                         std::string rclicks = std::to_string(targetedEntity_->GetRemainingClicks());
                         std::string mclicks = std::to_string(targetedEntity_->GetMaxClicks());
@@ -170,18 +170,66 @@ bool TileGame::Initialize()
     engine::ui::Root::Get()->Initialize();
     SetupUIScript();
 
-    WriteLineToConsole("Hello from C++", 1.f, 0.f, 1.f, 1.f);
+    // set up player configuration data and inventory.
+    configuration_->AddItemEntries(player_.GetInventory());
+    player_.SetExperienceScale(configuration_->GetExperienceScale());
+    player_.SetBaseMaxExp(configuration_->GetBaseExperience());
+
+    // load save game slot0
+    bool loaded = saveData_.ReadFromFile("slot0");
+    if(!loaded)
+    {
+        // use spawn point configuration if save file isn't present.
+        int ix, iy;
+        configuration_->GetTileSpawnPoint(ix, iy);
+        playerSprite_->SetPosition({
+            (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
+            (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight(),
+            0.f
+        });
+    }
+    else
+    {
+        // process move and harvest commands.
+        playerSprite_->SetPosition({(float)saveData_.GetMoveCommand().locationX,
+            (float)saveData_.GetMoveCommand().locationY,0.f});
+    }
+    saveData_.ForEachHarvestCommand([this](const HarvestCommand& cmd){
+        Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
+        if(ent == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Unable to locate entity at %d, %d", __FUNCTION__, cmd.targetX, cmd.targetY);
+        }
+        else
+        {
+            ent->SetRemainingClicks(ent->GetMaxClicks() - cmd.count);
+            if(ent->GetRemainingClicks() <= 0)
+            {
+                RemoveSpriteFromRenderList(ent);
+                RemoveEntityFromLoaded(ent);
+            }
+        }
+    });
+    UpdatePlayerExperience(); // update on data screen to reflect xp from file load
 
     return true;
 }
 
 void TileGame::Cleanup()
 {
-    // TODO: unloaded sprite choice reflected by what was loaded in savegame.lua
+    auto pos = playerSprite_->GetPosition();
     UnloadLGSpr(playerSprite_, configuration_->GetBoySurvivalistSprite());
     RemoveSpriteFromRenderList(playerSprite_);
     delete luaBindings_;
     lua_close(uiScript_);
+    saveData_.SetMoveCommand(MoveCommand((int)pos.x, (int)pos.y));
+    auto harvestCmds = GetHarvestCommands();
+    for(auto each : harvestCmds)
+    {
+        saveData_.AddHarvestCommand(each);
+    }
+    saveData_.WriteToFile("slot0");
 }
 
 void TileGame::Update(float dtime)
@@ -201,9 +249,28 @@ void TileGame::Update(float dtime)
             // the cast is completed so run ability, currently only harvest.
             WriteLineToConsole("Cast complete");
             targetedEntity_->DecRemainingClicks();
+            SetHarvestCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
+                targetedEntity_->GetMaxClicks() - targetedEntity_->GetRemainingClicks());
+            // get the item(s) to add.
+            auto itemsToAdd = targetedEntity_->OnInteract();
+            for(auto each : itemsToAdd)
+            {
+                WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
+                    + " " + each.name + "(s)");
+                player_.GetInventory().AddItemByName(each.name, each.num);
+                UpdatePlayerExperience();
+            }
             if(targetedEntity_->GetRemainingClicks() <= 0)
             {
                 WriteLineToConsole("Removing...");
+                auto items = targetedEntity_->OnDestroy();
+                for(auto each : items)
+                {
+                    WriteLineToConsole(std::string("You received ") + std::to_string(each.num)
+                        + " " + each.name + "(s)");
+                    player_.GetInventory().AddItemByName(each.name, each.num);
+                    UpdatePlayerExperience();
+                }
                 RemoveSpriteFromRenderList(targetedEntity_);
                 RemoveEntityFromLoaded(targetedEntity_);
                 ClearTarget();
@@ -294,7 +361,7 @@ void TileGame::WriteLineToConsole(const std::string& line, float r, float g, flo
     int ok = lua_pcall(uiScript_, 5, 0, 0);
     if(ok != LUA_OK)
     {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
             "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
         lua_pop(uiScript_, 1);
     }
@@ -307,7 +374,7 @@ void TileGame::SetCastBarValue(float value)
     int ok = lua_pcall(uiScript_, 1, 0, 0);
     if(ok != LUA_OK)
     {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
             "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
         lua_pop(uiScript_, 1);
     }
@@ -320,7 +387,20 @@ void TileGame::ToggleCastBar(bool show)
     int ok = lua_pcall(uiScript_, 1, 0, 0);
     if(ok != LUA_OK)
     {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
+}
+
+void TileGame::SetExperienceBar(float value)
+{
+    lua_getglobal(uiScript_, "SetExperienceBar");
+    lua_pushnumber(uiScript_, value);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
             "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
         lua_pop(uiScript_, 1);
     }
@@ -405,6 +485,17 @@ void TileGame::RemoveSpriteFromRenderList(const Sprite* sprite)
     });
     if(it != renderList_.end())
         renderList_.erase(it);
+}
+
+Entity* TileGame::FindEntityByLocation(int x, int y)
+{
+    for(auto ent : loadedEntities_)
+    {
+        auto pos = ent->GetPosition();
+        if((int)pos.x == x && (int)pos.y == y)
+            return ent;
+    }
+    return nullptr;
 }
 
 void TileGame::SetupUIScript()
@@ -515,4 +606,38 @@ void TileGame::RemoveEntityFromLoaded(Entity* ent)
     }
     // finally delete the object.
     delete ent;
+}
+
+void TileGame::UpdatePlayerExperience()
+{
+    // experience is internally stored in inventory.
+    auto entry = player_.GetInventory().GetItemEntryByName("exp");
+    player_.SetExperience(entry.count);
+    int experience = player_.GetExperience();
+    int maxExperience = player_.GetMaxExperience();
+    float value = (float)experience / (float)maxExperience;
+    SetExperienceBar(value);
+}
+
+void TileGame::SetHarvestCommand(int x, int y, int clicks)
+{
+    auto found = harvestCommands_.find({x,y});
+    if(found != harvestCommands_.end())
+    {
+        found->second = clicks;
+    }
+    else 
+    {
+        harvestCommands_[{x,y}] = clicks;
+    }
+}
+    
+std::vector<HarvestCommand> TileGame::GetHarvestCommands()
+{
+    std::vector<HarvestCommand> hc;
+    for(auto it = harvestCommands_.begin(); it != harvestCommands_.end(); ++it)
+    {
+        hc.push_back(HarvestCommand(it->first.x, it->first.y, it->second));
+    }
+    return hc;
 }

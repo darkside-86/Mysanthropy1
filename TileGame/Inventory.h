@@ -1,4 +1,4 @@
-// Configuration.h
+// Inventory.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,38 +18,29 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <string>
-#include <vector>
+#include <functional>
+#include <unordered_map>
 
-#include <lua/lua.hpp>
+#include "Item.h"
 
-#include "Inventory.h"
-
-struct LuaItemEntry
+struct ITEM_ENTRY
 {
-    char* name = nullptr;
-    bool hidden = false;
-    char* texture = nullptr;
+    Item* item=nullptr;
+    int count=0;
 };
 
-// handles configuration of game rule data
-class Configuration
+class Inventory
 {
 public:
-    Configuration(const std::string configFilePath="TileGame/gameconfig.lua");
-    virtual ~Configuration();
-
-    float GetBasePlayerSpeed();
-    void GetTileSpawnPoint(int &x, int &y);
-    std::string GetBoySurvivalistSprite();
-    std::string GetGirlSurvivalistSprite();
-    float GetExperienceScale();
-    int GetBaseExperience();
-    float GetCoreStatScale();
-    float GetOtherStatScale();
-    void AddItemEntries(Inventory& inv);
+    Inventory();
+    virtual ~Inventory();
+    void AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden=false);
+    void AddItemByName(const std::string &name, int count);
+    ITEM_ENTRY GetItemEntryByName(const std::string &name) const;
+    void ForEachItemEntry(std::function<void(const std::string&,const ITEM_ENTRY&)> expr) const;
+    inline size_t GetNumEntries() const { return items_.size(); }
+    void ClearItems();
 private:
-    static int lua_ItemEntry(lua_State *L);
-    std::vector<LuaItemEntry> luaItemEntries_;
-    lua_State* scripting_ = nullptr;
+    // owns ITEM_ENTRY::item pointer
+    std::unordered_map<std::string,ITEM_ENTRY> items_;
 };

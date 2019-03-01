@@ -19,6 +19,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 
 #include <lua/lua.hpp>
 
@@ -26,8 +27,24 @@
 #include "engine/Game.h"
 #include "engine/ui/LuaBindings.h"
 #include "ogl/Texture.h"
+#include "Player.h"
+#include "PlayerCommand.h"
 #include "TileMap.h"
+#include "SaveData.h"
 #include "Sprite.h"
+
+struct ENT_COORDS
+{
+    int x=0, y=0;
+    bool operator==(const ENT_COORDS& ec) const 
+        { return x==ec.x && y == ec.y; }
+};
+
+namespace std { template <> struct hash<ENT_COORDS> {
+    size_t operator() (const ENT_COORDS& ec) const {
+        return ((size_t)ec.x<<32)|ec.y;
+    }
+}; }
 
 // TileGame class. See docs/* and README.md for details.
 class TileGame : public engine::Game 
@@ -39,9 +56,11 @@ public:
     void Cleanup();
     void Update(float dtime);
     void Render(engine::GraphicsContext& gc);
+    // UI functions
     void WriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
     void SetCastBarValue(float value);
     void ToggleCastBar(bool show);
+    void SetExperienceBar(float value);
 private:
     // load a sprite and animations from lost guardian folder
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
@@ -57,6 +76,11 @@ private:
     void InteractWithTarget();
     void ClearTarget();
     void RemoveEntityFromLoaded(Entity* ent);
+    Entity* FindEntityByLocation(int x, int y);
+    void UpdatePlayerExperience();
+    void SetHarvestCommand(int x, int y, int clicks);
+    // convert harvestCommands_ to a vector of HarvestCommand and return the result
+    std::vector<HarvestCommand> GetHarvestCommands();
     // Core game configuration
     Configuration* configuration_ = nullptr;
     // The map currently loaded
@@ -69,6 +93,12 @@ private:
     bool casting_ = false;
     float maxCastTime_ = 0.f;
     float currentCastTime_ = 0.f;
+    // Player data
+    Player player_;
+    // harvest commands. value is number of clicks
+    std::unordered_map<ENT_COORDS, int> harvestCommands_;
+    // Save game data.
+    SaveData saveData_;
 
     // Camera coordinates to determine where on screen objects are rendered
     glm::vec3 camera_ = {0.f,0.f,0.f};

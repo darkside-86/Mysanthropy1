@@ -27,9 +27,55 @@ Entity::Entity(const ENTITY_TYPE& etype)
       remainingClicks_(etype.maxClicks), clickTime_(etype.clickTime)
 {
     SetCollisionBox(etype.collision.left, etype.collision.top, etype.collision.right, etype.collision.bottom);
+    for(int i=0; i < etype.numDrops; ++i)
+    {
+        onInteract_.push_back({etype.drops[i].percentChance,
+            etype.drops[i].amount, etype.drops[i].name});
+    }
+    for(int i=0; i < etype.numOnDestroy; ++i)
+    {
+        onDestroy_.push_back({etype.onDestroy[i].percentChance,
+            etype.onDestroy[i].amount, etype.onDestroy[i].name});
+    }
 }
 
 Entity::~Entity()
 {
-    // todo: retain path to texture for unloading
+
+}
+
+std::vector<ItemDropInfo> Entity::OnInteract()
+{
+    std::vector<ItemDropInfo> infos;
+    auto rng = engine::GameEngine::Get().GetRNG();
+    for(auto each : onInteract_)
+    {
+        float chance = (float)rng() / (float)rng.max();
+        if(chance <= each.percentChance)
+        {
+            ItemDropInfo info;
+            info.name = each.name;
+            info.num = each.amount;
+            infos.push_back(info);
+        }
+    }
+    return infos;
+}
+
+std::vector<ItemDropInfo> Entity::OnDestroy()
+{
+    std::vector<ItemDropInfo> infos;
+    auto rng = engine::GameEngine::Get().GetRNG();
+    for(auto each : onDestroy_)
+    {
+        float chance = (float)rng() / (float)rng.max();
+        if(chance <= each.percentChance)
+        {
+            ItemDropInfo info;
+            info.name = each.name;
+            info.num = each.amount;
+            infos.push_back(info);
+        }
+    }
+    return infos;
 }

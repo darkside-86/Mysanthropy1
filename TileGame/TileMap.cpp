@@ -206,12 +206,9 @@ void TileMap::LoadFromFile(const std::string& path)
     scriptPath_ = szScriptPath;
     delete [] szScriptPath;
     // read map entity locations
-    if(minorV >= 5)
-    {
-        in.read((char*)&size, sizeof(size));
-        mapEntities_.resize(size);
-        in.read((char*)&mapEntities_[0], size * sizeof(ENTITY_LOCATION));
-    }
+    in.read((char*)&size, sizeof(size));
+    mapEntities_.resize(size);
+    in.read((char*)&mapEntities_[0], size * sizeof(ENTITY_LOCATION));
 
     in.close();
 
@@ -365,6 +362,7 @@ std::vector<Entity*> TileMap::GenerateEntities()
         e->SetPosition({(float)(it->x), (float)(it->y), 0.f});
         entities.push_back(e);
     }
+    // CleanupEntities(); keep these entries so that map can be modified
     return entities;
 }
 
@@ -480,6 +478,16 @@ void TileMap::CleanupEntities()
     {
         delete [] it->name;
         delete [] it->texturePath;
+        for(int i=0; i < it->numDrops; ++i)
+        {
+            delete [] it->drops[i].name;
+        }
+        delete [] it->drops;
+        for(int i=0; i < it->numOnDestroy; ++i)
+        {
+            delete [] it->onDestroy[i].name;
+        }
+        delete [] it->onDestroy;
     }
     entityTypes_.clear();
 }
@@ -593,8 +601,20 @@ int TileMap::lua_OnInteract(lua_State* L)
     TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    // todo: process args (% 3 == 0) as percent(0-100) chance of drop,
-    //  number to drop, and item ID (a string)
+    ENTITY_TYPE& et = tileMap->currentEntityType_;
+    et.numDrops = lua_gettop(L) / 3;
+    et.drops = new ENTITY_TYPE::ITEM_DROP [et.numDrops];
+    int itemDropCounter = 0;
+    for(int i = 1; i <= lua_gettop(L); i += 3)
+    {
+        // percent chance, number, then name
+        et.drops[itemDropCounter].percentChance = (float)lua_tonumber(L, i);
+        et.drops[itemDropCounter].amount = (int)lua_tointeger(L, i+1);
+        const char* itemName = lua_tostring(L, i+2);
+        et.drops[itemDropCounter].name = new char [strlen(itemName)+1];
+        strcpy_s(et.drops[itemDropCounter].name, strlen(itemName)+1, itemName);
+        ++itemDropCounter;
+    }
 
     return 0;
 }
@@ -620,8 +640,20 @@ int TileMap::lua_OnDestroy(lua_State* L)
     TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    // todo: process args (%  3 == 0) as percent(0-100) chance of drop,
-    //  number to drop, and item ID (a string)
+    ENTITY_TYPE& et = tileMap->currentEntityType_;
+    et.numOnDestroy = lua_gettop(L) / 3;
+    et.onDestroy = new ENTITY_TYPE::ITEM_DROP [et.numOnDestroy];
+    int itemDropCounter = 0;
+    for(int i = 1; i <= lua_gettop(L); i += 3)
+    {
+        // percent chance, number, then name
+        et.onDestroy[itemDropCounter].percentChance = (float)lua_tonumber(L, i);
+        et.onDestroy[itemDropCounter].amount = (int)lua_tointeger(L, i+1);
+        const char* itemName = lua_tostring(L, i+2);
+        et.onDestroy[itemDropCounter].name = new char [strlen(itemName)+1];
+        strcpy_s(et.onDestroy[itemDropCounter].name, strlen(itemName)+1, itemName);
+        ++itemDropCounter;
+    }
 
     return 0;
 }

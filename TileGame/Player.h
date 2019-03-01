@@ -16,6 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
+#pragma once
+
+#include "Inventory.h"
 
 // encapsulates player data such as stats and level
 class Player
@@ -27,9 +30,25 @@ public:
     inline int GetLevel() const { return level_; }
     void SetLevel(int level);
     inline int GetHealth() const { return health_; }
-    void SetHealth(int health);
+    inline int GetMaxHealth() const { return maxHealth_; }
+    int ReduceHealth(int amount);
+    int AddHealth(int amount);
+    void SetExperience(int exp);
+    inline int GetExperience() { return experience_; }
+    inline int GetMaxExperience() { return maxExperience_; }
+    inline Inventory& GetInventory() { return inventory_; }
+    inline void SetStatScale(float v) { statScale_ = v; }
+    inline void SetExperienceScale(float v) { experienceScale_ = v; }
+    void SetBaseMaxExp(int max); // required experience from level 1 to 2
+    void CalculateStats();
 private:
-    int level_;
-    int health_;
-    int maxHealth_;
+    int level_ = 1;
+    int health_ = 1;
+    int maxHealth_ = 1;
+    int experience_ = 0; // experience for current level
+    int maxExperience_ = 500; // TODO: set level 1-2 experience from configuration
+    float statScale_; // logarithmic multiplier for base stats
+    int constitutionStat_ = 10;
+    float experienceScale_; // logarithmic multipler for experience levels
+    Inventory inventory_;
 };

@@ -63,7 +63,8 @@ public:
     unsigned char GetCollisionData(int ix, int iy);
     void SetCollisionData(int ix, int iy, unsigned char value);
     void RenderCollisionData(float x, float y, ogl::Program& program, float scaleX, float scaleY);
-    // Generate the entity list for the caller, which will own the pointers
+    // Generate the entity list for the caller, which will own the pointers. The ENTITY_TYPE table
+    //  is destroyed so this should be called only once per map load.
     std::vector<Entity*> GenerateEntities();
     // Get an entity type from the list. tilemap retains pointer ownership
     ENTITY_TYPE GetEntityType(int index);

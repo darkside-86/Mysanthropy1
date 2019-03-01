@@ -1,4 +1,4 @@
-// Configuration.h
+// Item.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -19,37 +19,20 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
-#include <lua/lua.hpp>
+#include "ogl/Texture.h"
 
-#include "Inventory.h"
-
-struct LuaItemEntry
-{
-    char* name = nullptr;
-    bool hidden = false;
-    char* texture = nullptr;
-};
-
-// handles configuration of game rule data
-class Configuration
+class Item
 {
 public:
-    Configuration(const std::string configFilePath="TileGame/gameconfig.lua");
-    virtual ~Configuration();
-
-    float GetBasePlayerSpeed();
-    void GetTileSpawnPoint(int &x, int &y);
-    std::string GetBoySurvivalistSprite();
-    std::string GetGirlSurvivalistSprite();
-    float GetExperienceScale();
-    int GetBaseExperience();
-    float GetCoreStatScale();
-    float GetOtherStatScale();
-    void AddItemEntries(Inventory& inv);
+    Item(const std::string& name, ogl::Texture* icon, bool hidden=false);
+    virtual ~Item();
+    inline std::string GetName() { return name_; }
+    inline ogl::Texture* GetIcon() { return icon_; }
+    // TODO: Render?
+    inline bool IsHiddenFromInventory() { return hiddenFromInventory_; }
 private:
-    static int lua_ItemEntry(lua_State *L);
-    std::vector<LuaItemEntry> luaItemEntries_;
-    lua_State* scripting_ = nullptr;
+    std::string name_;
+    ogl::Texture* icon_;
+    bool hiddenFromInventory_ = false;
 };

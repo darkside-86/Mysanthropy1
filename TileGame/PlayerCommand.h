@@ -1,4 +1,4 @@
-// Configuration.h
+// PlayerCommand.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,38 +18,32 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <string>
-#include <vector>
-
-#include <lua/lua.hpp>
-
-#include "Inventory.h"
-
-struct LuaItemEntry
-{
-    char* name = nullptr;
-    bool hidden = false;
-    char* texture = nullptr;
-};
-
-// handles configuration of game rule data
-class Configuration
+class PlayerCommand
 {
 public:
-    Configuration(const std::string configFilePath="TileGame/gameconfig.lua");
-    virtual ~Configuration();
+    enum ACTION { HARVEST, MOVE };
 
-    float GetBasePlayerSpeed();
-    void GetTileSpawnPoint(int &x, int &y);
-    std::string GetBoySurvivalistSprite();
-    std::string GetGirlSurvivalistSprite();
-    float GetExperienceScale();
-    int GetBaseExperience();
-    float GetCoreStatScale();
-    float GetOtherStatScale();
-    void AddItemEntries(Inventory& inv);
-private:
-    static int lua_ItemEntry(lua_State *L);
-    std::vector<LuaItemEntry> luaItemEntries_;
-    lua_State* scripting_ = nullptr;
+    PlayerCommand(ACTION a) : action(a) {}
+    virtual ~PlayerCommand() {}
+    ACTION action;
+};
+
+class HarvestCommand : public PlayerCommand 
+{
+public:
+    HarvestCommand(int tx, int ty, int c) : PlayerCommand(ACTION::HARVEST),
+        targetX(tx), targetY(ty), count(c) {}
+    virtual ~HarvestCommand() {}
+
+    int targetX, targetY, count;
+};
+
+class MoveCommand : public PlayerCommand
+{
+public:
+    MoveCommand(int x, int y) : PlayerCommand(ACTION::MOVE), 
+        locationX(x), locationY(y) {}
+    virtual ~MoveCommand() {}
+    
+    int locationX, locationY;
 };

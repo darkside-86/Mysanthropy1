@@ -18,6 +18,8 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <vector>
+
 #include "ogl/Texture.h"
 #include "Sprite.h"
 
@@ -37,8 +39,11 @@ struct ENTITY_TYPE
     };
     int numDrops = 0;
     ITEM_DROP* drops = nullptr;
-    ITEM_DROP onDestroy;
+    int numOnDestroy = 0;
+    ITEM_DROP* onDestroy;
 };
+
+class ItemDropInfo { public: std::string name; int num; };
 
 // static possibly interactive objects in the map
 class Entity : public Sprite 
@@ -47,14 +52,24 @@ public:
     Entity(const ENTITY_TYPE& etype);
     virtual ~Entity();
 
-    std::string GetName() { return name_; }
-    int GetMaxClicks() { return maxClicks_; }
-    int GetRemainingClicks() { return remainingClicks_; }
-    void DecRemainingClicks() { remainingClicks_--; }
-    float GetClickTime() { return clickTime_; }
+    inline std::string GetName() const { return name_; }
+    inline int GetMaxClicks() const { return maxClicks_; }
+    inline int GetRemainingClicks() const { return remainingClicks_; }
+    inline void SetRemainingClicks(int r) { remainingClicks_ = r; }
+    inline void DecRemainingClicks() { remainingClicks_--; }
+    inline float GetClickTime() const { return clickTime_; }
+    std::vector<ItemDropInfo> OnInteract();
+    std::vector<ItemDropInfo> OnDestroy();
 private:
     std::string name_;
     int maxClicks_;
     int remainingClicks_;
     float clickTime_;
+    class ItemDrop { public:
+        float percentChance;
+        int amount;
+        std::string name;
+    };
+    std::vector<ItemDrop> onInteract_;
+    std::vector<ItemDrop> onDestroy_;
 };
