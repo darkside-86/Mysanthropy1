@@ -62,7 +62,6 @@ bool TileGame::Initialize()
     SetupRenderList();
 
     engine::ui::Root::Get()->Initialize();
-    SetupUIScript();
 
     // set up player configuration data and inventory.
     configuration_->AddItemEntries(player_.GetInventory());
@@ -128,6 +127,8 @@ bool TileGame::Initialize()
                     break;
                 case SDLK_i:
                     PrintInventory();
+                    showingInventory_ = !showingInventory_;
+                    ShowInventory(showingInventory_);
                     return;
                 default:
                     // without this the entire screen except UI goes black......
@@ -164,6 +165,7 @@ bool TileGame::Initialize()
                     gameState_ = GAME_STATE::PLAYING;
                     splashScreen_->Cleanup();
                     LoadGame(saveSlot_);
+                    SetupUIScript();
                     UpdatePlayerExperience();
                     engine::GameEngine::Get().GetSoundManager().PlayMusic("res/music/island1.ogg", -1);
                     return;
@@ -243,10 +245,10 @@ bool TileGame::Initialize()
 
 void TileGame::Cleanup()
 {
-    delete luaBindings_;
-    lua_close(uiScript_);
     if(gameState_ != GAME_STATE::SPLASH)
     {
+        delete luaBindings_;
+        lua_close(uiScript_);
         SaveGame(saveSlot_);
         UnloadLGSpr(playerSprite_, configuration_->GetBoySurvivalistSprite());
         RemoveSpriteFromRenderList(playerSprite_);
@@ -410,6 +412,31 @@ void TileGame::SetExperienceBar(float value)
     }
 }
 
+void TileGame::ShowInventory(bool show)
+{
+    lua_getglobal(uiScript_, "ShowInventory");
+    lua_pushboolean(uiScript_, show);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);    
+    }
+}
+
+void TileGame::BuildInventory()
+{
+    lua_getglobal(uiScript_, "BuildInventory");
+    int ok = lua_pcall(uiScript_, 0, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);    
+    }
+}
+
 Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
@@ -507,6 +534,15 @@ void TileGame::SetupUIScript()
     uiScript_ = luaL_newstate();
     luaL_openlibs(uiScript_);
     luaBindings_ = new engine::ui::LuaBindings(uiScript_);
+
+    // set TileGame instance in registry
+    lua_pushstring(uiScript_, "TileGame");
+    lua_pushlightuserdata(uiScript_, this);
+    lua_settable(uiScript_, LUA_REGISTRYINDEX);
+    // set globals
+    lua_pushcfunction(uiScript_, TileGame::lua_GetInventory);
+    lua_setglobal(uiScript_, "TileGame_GetInventory");
+
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", 
         "ui/lib/keycodes.lua", 
@@ -657,6 +693,7 @@ void TileGame::CheckHarvestCast(float dtime)
                     + " " + itemToAdd.name + "(s)");
                 player_.GetInventory().AddItemByName("exp", itemToAdd.num);
                 WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp");
+                BuildInventory();
                 UpdatePlayerExperience();
                 ClearTarget(); // to prevent accidentally harvesting instead of farming item
             }
@@ -672,6 +709,7 @@ void TileGame::CheckHarvestCast(float dtime)
                     WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
                         + " " + each.name + "(s)");
                     player_.GetInventory().AddItemByName(each.name, each.num);
+                    BuildInventory();
                     UpdatePlayerExperience();
                 }
                 if(targetedEntity_->GetRemainingClicks() <= 0)
@@ -683,6 +721,7 @@ void TileGame::CheckHarvestCast(float dtime)
                         WriteLineToConsole(std::string("You received ") + std::to_string(each.num)
                             + " " + each.name + "(s)");
                         player_.GetInventory().AddItemByName(each.name, each.num);
+                        BuildInventory();
                         UpdatePlayerExperience();
                     }
                     RemoveSpriteFromRenderList(targetedEntity_);
@@ -855,4 +894,37 @@ void TileGame::SaveGame(const std::string &slot)
 void TileGame::NewGame(const std::string &slot)
 {
 
+}
+
+int TileGame::lua_GetInventory(lua_State* L)
+{
+    // get TileGame
+    lua_pushstring(L, "TileGame");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    // build a table as array of table={name=...,texture=...,count=...}
+    // but ignore item entry if count is 0
+    lua_newtable(L);
+    tg->player_.GetInventory().ForEachItemEntry([L](const std::string& name, const ITEM_ENTRY& ie){
+        if(ie.count > 0 && !ie.item->IsHiddenFromInventory())
+        {
+            int nextIndex = (int)lua_rawlen(L, -1);
+            nextIndex++;
+            lua_newtable(L);
+            lua_pushstring(L, "name");
+            lua_pushstring(L, name.c_str());
+            lua_rawset(L, -3);
+            lua_pushstring(L, "texture");
+             const std::string tpath = ie.item->GetIcon()->GetPath();
+            lua_pushstring(L, tpath.c_str());
+            lua_rawset(L, -3);
+            lua_pushstring(L, "count");
+            lua_pushinteger(L, ie.count);
+            lua_rawset(L, -3);
+            lua_rawseti(L, -2, nextIndex);
+        }
+    });
+    return 1;
 }

@@ -71,7 +71,8 @@ namespace engine { namespace ui {
         for(auto eachChild : children_)
         {
             if(eachChild->GetXPos() >= 0 && eachChild->GetXPos() <= GetWidth()
-               && eachChild->GetYPos() >= 0 && eachChild->GetYPos() <= GetHeight())
+               && eachChild->GetYPos() >= 0 && eachChild->GetYPos() <= GetHeight()
+               && eachChild->IsVisible())
                 eachChild->Render(gc);
         }
         gc.PopModel();

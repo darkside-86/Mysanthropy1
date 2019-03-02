@@ -63,6 +63,8 @@ public:
     void SetCastBarValue(float value);
     void ToggleCastBar(bool show);
     void SetExperienceBar(float value);
+    void ShowInventory(bool show);
+    void BuildInventory();
 private:
     enum GAME_STATE { SPLASH, PLAYING };
     // load a sprite and animations from lost guardian folder
@@ -89,6 +91,8 @@ private:
     void LoadGame(const std::string &slot);
     void SaveGame(const std::string &slot);
     void NewGame(const std::string &slot);
+    // C++ functions exposed to lua
+    static int lua_GetInventory(lua_State* L);
 
     // convert harvestCommands_ to a vector of HarvestCommand and return the result
     std::vector<HarvestCommand> GetHarvestCommands();
@@ -123,7 +127,8 @@ private:
     SplashScreen* splashScreen_ = nullptr;
     // which slot to use for current game
     std::string saveSlot_ = "slot0"; // by default
-
+    // toggles the inventory window
+    bool showingInventory_ = false;
     // Camera coordinates to determine where on screen objects are rendered
     glm::vec3 camera_ = {0.f,0.f,0.f};
     // list of all sprites to try to render including player. Does not own pointers

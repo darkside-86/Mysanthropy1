@@ -1464,6 +1464,9 @@ namespace engine { namespace ui {
         lua_pushstring(L, IS_OBJECT);
         lua_pushboolean(L, 1);
         lua_settable(L, -3);
+        lua_pushstring(L, IS_TEXTURE);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
         lua_settable(L, -3);
         lua_pushstring(L, "__gc");
         lua_pushcfunction(L, lua_UITexture_mtGC);

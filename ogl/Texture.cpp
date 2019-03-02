@@ -30,7 +30,8 @@
 namespace ogl
 {
 
-	Texture::Texture(const std::string& filePath, bool linear, bool repeat, Texture::TYPE type) : type_(type)
+	Texture::Texture(const std::string& filePath, bool linear, bool repeat, Texture::TYPE type) 
+		: type_(type), path_(filePath)
 	{
 		// load and convert SDL surface to RGBA (32-bits)
 		//

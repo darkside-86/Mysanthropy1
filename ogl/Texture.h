@@ -42,6 +42,8 @@ namespace ogl
 		inline unsigned int GetHeight() const { return height_; }
 		// get type
 		inline TYPE GetType () { return type_; }
+		// get path. Note: this will be "" if not loaded from file
+		inline std::string GetPath() const { return path_; }
 		// set clamp vs repeat
 		void SetRepeat(bool repeat);
 		// SubImage - accepts RGBA data with an unsigned byte per component.
@@ -52,6 +54,7 @@ namespace ogl
 		unsigned int id_ = 0;
 		unsigned int width_ = 0;
 		unsigned int height_ = 0;
+		std::string path_ = ""; // remains "" unless texture is created with constructor using path
 		TYPE type_;
 	};
 }

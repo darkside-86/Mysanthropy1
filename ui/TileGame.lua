@@ -1,4 +1,6 @@
 print("TileGame UI 0.1")
+local screenWidth = GetScreenWidth()
+local screenHeight = GetScreenHeight()
 
 -- Create yellow FPS counter in bottom right corner
 function UpdateFPS()
@@ -91,5 +93,46 @@ function SetExperienceBar(value)
 end
 
 -- Test out the new UITexture class in the top left corner
-foodStuffIcon = UITexture.New(nil, "res/textures/items/foodstuff.png", 45, 45)
+inventoryFrame = UIFrame.New(nil, screenWidth / 2.5, screenHeight / 2.5, 0, 0, TEXTURE_UIBLANK)
+inventoryFrame:SetXPos(screenWidth - inventoryFrame:GetWidth())
+inventoryFrame:SetYPos(screenHeight - inventoryFrame:GetHeight())
+inventoryFrame:SetColor(0.1, 0.1, 0.1, 0.7)
+inventoryFrame:SetVisible(false)
+function ShowInventory(show)
+    inventoryFrame:SetVisible(show)
+end
+function BuildInventory()
+    local inventoryData = TileGame_GetInventory()
+    if inventoryFrame.elements ~= nil then 
+        for k,v in pairs(inventoryFrame.elements) do 
+            v:SetVisible(false)
+        end
+    end
+    inventoryFrame.elements = {}
+    local x = 0
+    local y = 0
+    for i,item in ipairs(inventoryData) do 
+        inventoryFrame.elements[item.name] = UITexture.New(inventoryFrame, item.texture, 64, 64)
+        inventoryFrame.elements[item.name]:SetXPos(x)
+        inventoryFrame.elements[item.name]:SetYPos(y)
+        inventoryFrame.elements[item.name].countLbl = UILabel.New(inventoryFrame.elements[item.name],
+            tostring(item.count), "sans14", 1,0.5,0,1)
+        x = x + 65
+        if x > inventoryFrame:GetWidth() - 32 then 
+            x = 0
+            y = y + 65
+        end
+    end
+end
+BuildInventory() -- initial call
+
+-- "scroll effect"
+inventoryFrame:AddOnDragged(function(x,y,dx,dy) 
+    for k,v in pairs(inventoryFrame.elements) do 
+        v:SetYPos(v:GetYPos() + dy)
+    end
+end)
+
+
+
 
