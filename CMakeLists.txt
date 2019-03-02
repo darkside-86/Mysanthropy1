@@ -109,6 +109,7 @@ add_executable (
         TileGame/Item.cpp
         TileGame/Player.cpp
         TileGame/SaveData.cpp
+        TileGame/SplashScreen.cpp
         TileGame/Sprite.cpp
         TileGame/Target.cpp
         TileGame/TileGame.cpp

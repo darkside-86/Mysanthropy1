@@ -25,7 +25,7 @@
 
 #include "Inventory.h"
 
-struct LuaItemEntry
+struct LUA_ITEM_ENTRY
 {
     char* name = nullptr;
     bool hidden = false;
@@ -44,12 +44,13 @@ public:
     std::string GetBoySurvivalistSprite();
     std::string GetGirlSurvivalistSprite();
     float GetExperienceScale();
-    int GetBaseExperience();
     float GetCoreStatScale();
     float GetOtherStatScale();
+    float GetMobStatScale();
+    int GetBaseExperience();
     void AddItemEntries(Inventory& inv);
 private:
     static int lua_ItemEntry(lua_State *L);
-    std::vector<LuaItemEntry> luaItemEntries_;
+    std::vector<LUA_ITEM_ENTRY> luaItemEntries_;
     lua_State* scripting_ = nullptr;
 };

@@ -39,6 +39,9 @@ namespace engine
         void PlayMusic(const std::string& path, int loops);
         void StopMusic();
     private:
+        // one game engine means one sound manager. this setup is required because
+        //  C++ doesn't support delegates as function pointers.
+        static SoundManager& singleton_;
         std::unordered_map<std::string, Mix_Chunk*> sounds_;
         Mix_Music* music_ = nullptr;
     };

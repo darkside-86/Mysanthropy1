@@ -256,7 +256,7 @@ BEGIN_ENTITY "spring"
  COLLISION_BOX (5, 9, 55, 26)
  MAX_CLICKS( -1 )
  CLICK_TIME(defaultClickTime)
- FARMABLE ( 100.0, 4, "water", 4 * hours, "res/textures/objects/spring_dry.png")
+ FARMABLE ( 100.0, 5, "water", 4 * hours, "res/textures/objects/spring_dry.png")
 END_ENTITY ()
 -- 14 : stone2
 BEGIN_ENTITY "stone2"

@@ -23,10 +23,11 @@
 
 namespace engine
 {
+    SoundManager& SoundManager::singleton_ = GameEngine::Get().GetSoundManager();
 
     SoundManager::SoundManager()
     {
-
+        // singleton_ = *this;
     }
 
     SoundManager::~SoundManager()

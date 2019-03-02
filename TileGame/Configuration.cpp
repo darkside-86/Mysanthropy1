@@ -124,6 +124,14 @@ float Configuration::GetOtherStatScale()
     return coreStatScale == 0 ? 1.11f : coreStatScale;
 }
 
+float Configuration::GetMobStatScale()
+{
+    lua_getglobal(scripting_, "MOB_STAT_SCALE");
+    float mobStatScale = (float)lua_tonumber(scripting_, -1);
+    lua_pop(scripting_, 1);
+    return mobStatScale == 0 ? 1.13f : mobStatScale;
+}
+
 void Configuration::AddItemEntries(Inventory& inv)
 {
     for(auto each : luaItemEntries_)
@@ -141,7 +149,7 @@ int Configuration::lua_ItemEntry(lua_State *L)
     Configuration* config = (Configuration*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    LuaItemEntry luaItemEntry;
+    LUA_ITEM_ENTRY luaItemEntry;
 
     lua_pushstring(L, "name");
     lua_gettable(L, 1);

@@ -30,20 +30,42 @@
 class Target
 {
 public:
+    enum TARGET_TYPE { FRIENDLY, NEUTRAL, HOSTILE };
+    // light RTTI data for what exactly to render above the sprite for the "healthbar"
+    enum SPRITE_TYPE { MOBSPR, ENTSPR, NONE };
     Target();
     virtual ~Target();
-    inline bool IsVisible() { return visible_; }
-    inline void SetVisible(bool v) { visible_ = v; }
-    void SetTargetSprite(const Sprite* sprite = nullptr);
+    void SetTargetSprite(const Sprite* sprite, const TARGET_TYPE tt, const SPRITE_TYPE st);
     void Render(const glm::vec3 camera, ogl::Program& prog);
 private:
-    bool visible_ = false;
+    // vertex data of the baseVbo_. Changes often enough to keep it in RAM
     ogl::Vertex vertices_[6];
-    ogl::VertexArray vao_;
-    ogl::VertexBuffer vbo_;
-    ogl::Texture* currentTexture_;
-    ogl::Texture* redTexture_;
-    ogl::Texture* yellowTexture_;
-    ogl::Texture* greenTexture_;
-    glm::vec3 currentLocation_; 
+    // ogl objects for rendering the base on the ground
+    ogl::VertexArray baseVao_;
+    ogl::VertexBuffer baseVbo_;
+    // one of: (red/yellow/green)BaseTexture_
+    ogl::Texture* currentBaseTexture_;
+    // for coloring target base on hostile mob sprites
+    ogl::Texture* redBaseTexture_;
+    // for coloring target base on neutral mob sprites
+    ogl::Texture* yellowBaseTexture_;
+    // for coloring target base on friendly/static sprites
+    ogl::Texture* greenBaseTexture_;
+    // used to determine location of target on ground
+    const Sprite* target_;
+    // if a sprite is an "Entity" the health bar is clicks / max clicks
+    //  or if it is a mob then the health bar above represents health / max health
+    SPRITE_TYPE targetSpriteType_;
+    // ogl objects for rendering the health bar above the object
+    ogl::Vertex fullHealthVerts_[6];
+    ogl::VertexArray fullHealthVao_;
+    ogl::VertexBuffer fullHealthVbo_;
+    ogl::Vertex blankHealthVerts_[6];
+    ogl::VertexArray blankHealthVao_;
+    ogl::VertexBuffer blankHealthVbo_;
+    ogl::Texture* blankHealthTexture_;
+    ogl::Texture* redHealthTexture_;
+    ogl::Texture* yellowHealthTexture_;
+    ogl::Texture* greenHealthTexture_;
+    ogl::Texture* colorHealthTexture_; // one of the above 3
 };

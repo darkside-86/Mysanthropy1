@@ -31,7 +31,9 @@
 #include "PlayerCommand.h"
 #include "TileMap.h"
 #include "SaveData.h"
+#include "SplashScreen.h"
 #include "Sprite.h"
+#include "Target.h"
 
 struct ENT_COORDS
 {
@@ -62,6 +64,7 @@ public:
     void ToggleCastBar(bool show);
     void SetExperienceBar(float value);
 private:
+    enum GAME_STATE { SPLASH, PLAYING };
     // load a sprite and animations from lost guardian folder
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
     // unload textures associated with lost guardian sprite and destroy sprite
@@ -78,9 +81,15 @@ private:
     void RemoveEntityFromLoaded(Entity* ent);
     Entity* FindEntityByLocation(int x, int y);
     void UpdatePlayerExperience();
+    void CheckHarvestCast(float dtime);
     void SetHarvestCommand(int x, int y, int clicks);
     void SetFarmCommand(int x, int y, const FarmCommand& fc);
     void PrintInventory();
+    // Menu functions
+    void LoadGame(const std::string &slot);
+    void SaveGame(const std::string &slot);
+    void NewGame(const std::string &slot);
+
     // convert harvestCommands_ to a vector of HarvestCommand and return the result
     std::vector<HarvestCommand> GetHarvestCommands();
     // convert farmCommands_ to a vector of FarmCommand and return the result
@@ -93,8 +102,10 @@ private:
     Sprite* playerSprite_ = nullptr;
     // The entity being targeted (if any) by the user
     Entity* targetedEntity_ = nullptr;
+    // The visual target info
+    Target* target_ = nullptr;
     // True if a casting sequence was started.
-    bool casting_ = false;
+    bool harvesting_ = false;
     float maxCastTime_ = 0.f;
     float currentCastTime_ = 0.f;
     int harvestSoundChannel_ = -1;
@@ -106,6 +117,12 @@ private:
     std::unordered_map<ENT_COORDS, FarmCommand> farmCommands_;
     // Save game data.
     SaveData saveData_;
+    // State of game
+    GAME_STATE gameState_ = GAME_STATE::SPLASH;
+    // Splash screen
+    SplashScreen* splashScreen_ = nullptr;
+    // which slot to use for current game
+    std::string saveSlot_ = "slot0"; // by default
 
     // Camera coordinates to determine where on screen objects are rendered
     glm::vec3 camera_ = {0.f,0.f,0.f};
