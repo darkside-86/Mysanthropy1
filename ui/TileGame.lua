@@ -89,3 +89,7 @@ end
 function SetExperienceBar(value)
     experienceBar.fill:SetWidth( value * (experienceBar:GetWidth()))
 end
+
+-- Test out the new UITexture class in the top left corner
+foodStuffIcon = UITexture.New(nil, "res/textures/items/foodstuff.png", 45, 45)
+

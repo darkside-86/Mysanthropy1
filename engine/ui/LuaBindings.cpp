@@ -30,6 +30,7 @@
 #include "Root.h"
 #include "Slider.h"
 #include "TextField.h"
+#include "Texture.h"
 
 namespace engine { namespace ui {
 
@@ -41,6 +42,7 @@ namespace engine { namespace ui {
     static const char* IS_OBJECT = "UIObject"; 
     static const char* IS_SLIDER = "UISlider";
     static const char* IS_TEXTFIELD = "UITextField";
+    static const char* IS_TEXTURE = "UITexture";
 
     // general functions
     static int lua_ErrorHandler(lua_State* L);
@@ -52,6 +54,7 @@ namespace engine { namespace ui {
     Frame* CheckFrame(lua_State* L, int index);
     Slider* CheckSlider(lua_State* L, int index);
     TextField* CheckTextField(lua_State* L, int index);
+    Texture* CheckTexture(lua_State* L, int index);
 
     // error handling function for running event callbacks
     static int lua_ErrorHandler(lua_State* L)
@@ -956,6 +959,78 @@ namespace engine { namespace ui {
         return 0;
     }
 
+// UITexture //////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+    static int lua_UITexture_New(lua_State* L)
+    {
+        Object* parent;
+        if(lua_isnil(L, 1))
+            parent = Root::Get();
+        else
+            parent = CheckObject(L, 1);
+        
+        const char* textureAlias = luaL_checkstring(L, 2);
+        int width = (int)luaL_checkinteger(L, 3);
+        int height = (int)luaL_checkinteger(L, 4);
+
+        Texture* t = (Texture*)lua_newuserdata(L, sizeof(Texture));
+        luaL_setmetatable(L, IS_TEXTURE);
+        t = new (t) Texture(parent, textureAlias, width, height);
+        lua_newtable(L);
+        lua_pushstring(L, "parent");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
+        lua_setuservalue(L, -2);
+        return 1;
+    }
+
+    static int lua_UITexture_mtGC(lua_State* L)
+    {
+        Texture* self = CheckTexture(L, 1);
+        self->~Texture();
+        return 0;
+    }
+
+    static int lua_UITexture_mtIndex(lua_State* L)
+    {
+        Texture* self = CheckTexture(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_gettable(L, -2);
+        lua_remove(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            // check UITexture global table
+            lua_pop(L, 1);
+            lua_getglobal(L, "UITexture");
+            lua_pushvalue(L, 2);
+            lua_gettable(L, -2);
+            lua_remove(L, -2);
+            if(lua_isnil(L, -1))
+            {
+                // still nil so check UIObject
+                lua_pop(L, 1);
+                lua_getglobal(L, "UIObject");
+                lua_pushvalue(L, 2);
+                lua_gettable(L, -2);
+                lua_remove(L, -2);
+            }
+        }
+        return 1;
+    }
+
+    static int lua_UITexture_mtNewIndex(lua_State* L)
+    {
+        Texture* self = CheckTexture(L, 1);
+        lua_getuservalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_pushvalue(L, 3);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        return 0;
+    }
+
 // check functions ////////////////////////////////////////////////////////////
 
     Button* CheckButton(lua_State* L, int index)
@@ -1083,6 +1158,28 @@ namespace engine { namespace ui {
         }
         return tf;        
     }
+
+    Texture* CheckTexture(lua_State* L, int index)
+    {
+        if(!lua_isuserdata(L, index))
+        {
+            luaL_error(L, "%s: Not a userdata", __FUNCTION__);
+            return nullptr;
+        }
+
+        Texture* t = (Texture*)lua_touserdata(L, index);
+
+        GetRTTI(L, index); // rtti{}
+        bool isTexture = CheckRTTI(L, IS_TEXTURE);
+        lua_pop(L, 1); // pop RTTI table
+        if(!isTexture)
+        {
+            luaL_error(L, "%s: Not instance of %s", __FUNCTION__, IS_TEXTURE);
+            return nullptr;
+        }
+        return t;
+    }
+
 
 // global functions ///////////////////////////////////////////////////////////
 
@@ -1236,6 +1333,10 @@ namespace engine { namespace ui {
         BIND_METHOD(UITextField, IsEditable);
         BIND_METHOD(UITextField, SetEditable);
         lua_setglobal(L, "UITextField");
+        // UITexture
+        lua_newtable(L);
+        BIND_METHOD(UITexture, New);
+        lua_setglobal(L, "UITexture");
         // create UIFrame's metatable
         luaL_newmetatable(L, IS_FRAME);
         lua_pushstring(L, "classes");
@@ -1354,6 +1455,24 @@ namespace engine { namespace ui {
         lua_settable(L, -3);
         lua_pushstring(L, "__newindex");
         lua_pushcfunction(L, lua_UITextField_mtNewIndex);
+        lua_settable(L, -3);
+        lua_pop(L, 1);
+        // create UITexture's metatable
+        luaL_newmetatable(L, IS_TEXTURE);
+        lua_pushstring(L, "classes");
+        lua_newtable(L);
+        lua_pushstring(L, IS_OBJECT);
+        lua_pushboolean(L, 1);
+        lua_settable(L, -3);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__gc");
+        lua_pushcfunction(L, lua_UITexture_mtGC);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__index");
+        lua_pushcfunction(L, lua_UITexture_mtIndex);
+        lua_settable(L, -3);
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, lua_UITexture_mtNewIndex);
         lua_settable(L, -3);
         lua_pop(L, 1);
     }

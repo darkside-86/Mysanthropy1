@@ -65,9 +65,11 @@ namespace engine
         //  fovy - Field of view angle in degrees
         //  ratio - The aspect ratio
         void SetPerspectiveProjection(float fovy, float ratio, float near, float far);
-        // performs a translate operation on the model matrix
+        // performs a translate operation on the current model matrix
         void TranslateModel(float x, float y, float z);
-        // rotate
+        // scales the current model
+        void ScaleModel(float x, float y, float z);
+        // rotate the current model
         void RotateModel(float angle, float x, float y, float z);
         // resets the model matrix
         inline void ResetModel() { model_ = glm::mat4(1.0f); }

@@ -84,6 +84,7 @@ set (
         engine/ui/Root.cpp
         engine/ui/Slider.cpp
         engine/ui/TextField.cpp
+        engine/ui/Texture.cpp
 )
 
 add_executable ( 
