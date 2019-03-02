@@ -97,6 +97,7 @@ private:
     bool casting_ = false;
     float maxCastTime_ = 0.f;
     float currentCastTime_ = 0.f;
+    int harvestSoundChannel_ = -1;
     // Player data
     Player player_;
     // harvest commands. value is number of clicks

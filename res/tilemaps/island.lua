@@ -1,5 +1,9 @@
-print("Loading island.lua")
-defaultClickTime = 10.0
+-- number of seconds required to get one harvest out of item
+local defaultClickTime = 8.0
+-- time values are in seconds so use these for conversion
+local minutes = 60.0
+local hours = 60.0 * minutes
+
 -- 0 : palm1
 BEGIN_ENTITY "palm1"
  USE_TEXTURE "res/textures/objects/palm1.png"
@@ -142,7 +146,7 @@ BEGIN_ENTITY "coconut_palm"
  )
  CLICK_TIME(defaultClickTime)
  FARMABLE (
-    100.0, 2, "coconut", 6000, "res/textures/objects/palm1.png"
+    100.0, 2, "coconut", 8 * hours, "res/textures/objects/palm1.png"
  )
 END_ENTITY()
 -- 8 : banana_tree
@@ -162,7 +166,7 @@ BEGIN_ENTITY "banana_tree"
  )
  CLICK_TIME(defaultClickTime)
  FARMABLE (
-    100.0, 2, "banana", 4000, "res/textures/objects/banana_tree_pending.png"
+    100.0, 2, "banana", 6 * hours, "res/textures/objects/banana_tree_pending.png"
  )
 END_ENTITY()
 -- 9 : palm_with_vine1
@@ -184,7 +188,7 @@ BEGIN_ENTITY "palm_with_vine1"
  )
  CLICK_TIME(defaultClickTime)
  FARMABLE (
-    100.0, 2, "vine", 3000, "res/textures/objects/palm2.png"
+    100.0, 2, "vine", 4 * hours, "res/textures/objects/palm2.png"
  )
 END_ENTITY()
 -- 10 : palm_with_vine2
@@ -206,7 +210,7 @@ BEGIN_ENTITY "palm_with_vine2"
  )
  CLICK_TIME(defaultClickTime)
  FARMABLE (
-    100.0, 2, "vine", 3000, "res/textures/objects/palm3.png"
+    100.0, 2, "vine", 4 * hours, "res/textures/objects/palm3.png"
  )
 END_ENTITY()
 -- 11 : starfish
@@ -249,8 +253,44 @@ BEGIN_ENTITY "spring"
  USE_TEXTURE "res/textures/objects/spring.png"
  WIDTH (64)
  HEIGHT (39)
- COLLISION_BOX (4, 9, 63, 35)
+ COLLISION_BOX (5, 9, 55, 26)
  MAX_CLICKS( -1 )
  CLICK_TIME(defaultClickTime)
- FARMABLE ( 100.0, 4, "water", 10000, "res/textures/objects/spring_dry.png")
+ FARMABLE ( 100.0, 4, "water", 4 * hours, "res/textures/objects/spring_dry.png")
 END_ENTITY ()
+-- 14 : stone2
+BEGIN_ENTITY "stone2"
+ USE_TEXTURE "res/textures/objects/stone2.png"
+ WIDTH (64)
+ HEIGHT (42)
+ COLLISION_BOX (9, 20, 58, 32)
+ MAX_CLICKS (120)
+ ON_INTERACT (
+    100.0, 1, "stone",
+    100.0, 1, "exp"
+ )
+ ON_DESTROY (
+    100.0, 20, "stone",
+    100.0, 20, "exp"
+ )
+ CLICK_TIME(defaultClickTime)
+END_ENTITY()
+-- 15 : stone3
+BEGIN_ENTITY "stone3"
+ USE_TEXTURE "res/textures/objects/stone3.png"
+ WIDTH (59)
+ HEIGHT (49)
+ COLLISION_BOX(7, 12, 52, 38)
+ MAX_CLICKS (140)
+ ON_INTERACT (
+   100.0, 1, "stone",
+   100.0, 1, "exp",
+   3.0, 1, "shellfish"
+ )
+ ON_DESTROY (
+    100.0, 20, "stone",
+    100.0, 20, "exp",
+    3.0, 5, "shellfish"
+ )
+ CLICK_TIME(defaultClickTime)
+END_ENTITY()

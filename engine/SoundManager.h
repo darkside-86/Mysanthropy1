@@ -19,6 +19,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include <SDL/SDL_mixer.h>
 
@@ -29,10 +30,16 @@ namespace engine
     public:
         SoundManager();
         ~SoundManager();
-        void PlaySound(const std::string& path);
-        void PlayMusic(const std::string& path);
+        void LoadSound(const std::string& path);
+        // returns what channel the sound will be played on
+        int PlaySound(const std::string& path);
+        void UnloadSound(const std::string& path);
+        // stop a channel as returned by PlaySound
+        void HaltSound(int channel);
+        void PlayMusic(const std::string& path, int loops);
         void StopMusic();
     private:
+        std::unordered_map<std::string, Mix_Chunk*> sounds_;
         Mix_Music* music_ = nullptr;
     };
 }

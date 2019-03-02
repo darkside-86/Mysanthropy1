@@ -19,6 +19,8 @@
 
 #include "SoundManager.h"
 
+#include "GameEngine.h"
+
 namespace engine
 {
 
@@ -29,15 +31,80 @@ namespace engine
 
     SoundManager::~SoundManager()
     {
-    
+        /*if(music_)
+        {
+            Mix_HaltMusic();
+            Mix_FreeMusic(music_);
+        }
+
+        for(auto it = sounds_.begin(); it != sounds_.end(); ++it)
+        {
+            Mix_FreeChunk(it->second);
+        }*/
     }
 
-    void SoundManager::PlaySound(const std::string& path)
+    void SoundManager::LoadSound(const std::string& path)
     {
-
+        auto found = sounds_.find(path);
+        if(found == sounds_.end())
+        {
+            // not found so load and store
+            Mix_Chunk* chunk = Mix_LoadWAV(path.c_str());
+            if(chunk == nullptr)
+            {
+                GameEngine::Get().GetLogger().Logf(Logger::Severity::ERROR, "%s: %s",
+                    __FUNCTION__, Mix_GetError());
+                return;
+            }
+            else 
+            {
+                sounds_[path] = chunk;
+            }
+        }
+        else 
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "%s: `%s' already loaded.",
+                __FUNCTION__, path.c_str());
+        }
     }
 
-    void SoundManager::PlayMusic(const std::string& path)
+    int SoundManager::PlaySound(const std::string& path)
+    {
+        auto found = sounds_.find(path);
+        if(found == sounds_.end())
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::ERROR, "%s: `%s' not loaded.",
+                __FUNCTION__, path.c_str());
+            return -1;
+        }
+        else 
+        {
+            return Mix_PlayChannel(-1, found->second, 0);
+        }
+    }
+
+    void SoundManager::HaltSound(int channel)
+    {
+        Mix_HaltChannel(channel);
+    }
+
+    void SoundManager::UnloadSound(const std::string& path)
+    {
+        auto found = sounds_.find(path);
+        if(found != sounds_.end())
+        {
+            Mix_FreeChunk(found->second);
+            sounds_.erase(found);
+            return;
+        }
+        else 
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "%s: `%s' was not loaded",
+                __FUNCTION__, path.c_str());
+        }
+    }
+
+    void SoundManager::PlayMusic(const std::string& path, int loops)
     {
         if(music_)
         {
@@ -46,7 +113,7 @@ namespace engine
             music_ = nullptr;
         }
         music_ = Mix_LoadMUS(path.c_str());
-        Mix_PlayMusic(music_, -1);
+        Mix_PlayMusic(music_, loops);
     }
 
     void SoundManager::StopMusic()

@@ -62,6 +62,11 @@ bool TileGame::Initialize()
                 casting_ = false;
                 ToggleCastBar(false);
                 WriteLineToConsole("Cast interrupted by player", 1.f, 0.f, 0.f, 0.9f);
+                if(harvestSoundChannel_ != -1)
+                {
+                    engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+                    harvestSoundChannel_ = -1;
+                }
             }
             switch(e.keysym.sym)
             {
@@ -257,6 +262,11 @@ bool TileGame::Initialize()
         "%ld seconds since last file save", (long)secondsElapsed);
     UpdatePlayerExperience(); // update on data screen to reflect xp from file load
 
+    // load sounds
+    auto& sm = engine::GameEngine::Get().GetSoundManager();
+    sm.LoadSound("res/sounds/chopping.wav");
+    sm.PlayMusic("res/music/island1.ogg", -1);
+
     return true;
 }
 
@@ -303,6 +313,11 @@ void TileGame::Update(float dtime)
         {
             // the cast is completed so run ability, currently only harvest.
             WriteLineToConsole("Cast complete");
+            if(harvestSoundChannel_ != -1)
+            {
+                engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+                harvestSoundChannel_ = -1;
+            }
             if(targetedEntity_->IsFarmable() && targetedEntity_->IsReadyForPickup())
             {
                 auto itemToAdd = targetedEntity_->Farm();
@@ -628,8 +643,16 @@ bool TileGame::CheckPoint(float x, float y, float left, float top, float right, 
 
 void TileGame::InteractWithTarget()
 {
-    if(targetedEntity_->IsFarmable() && !targetedEntity_->IsReadyForPickup())
-        return; // the target is not interactive except when farmable
+    if(targetedEntity_->IsFarmable() && !targetedEntity_->IsReadyForPickup() 
+      && targetedEntity_->GetMaxClicks() == -1)
+    {
+        if(harvestSoundChannel_ != -1)
+        {
+            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+            harvestSoundChannel_ = -1;
+        }
+        return; // the target is not interactive except when farmable or clickable
+    }
 
     // check to see if we are in 32.f units of bottom center of targeted entity.
     glm::vec3 bottomCenter = targetedEntity_->GetPosition();
@@ -643,6 +666,11 @@ void TileGame::InteractWithTarget()
     if(dist > maxDistance)
     {
         WriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
+        if(harvestSoundChannel_ != -1)
+        {
+            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+            harvestSoundChannel_ = -1;
+        }
     }
     else 
     {
@@ -650,6 +678,8 @@ void TileGame::InteractWithTarget()
         currentCastTime_ = 0.0f;
         casting_ = true;
         WriteLineToConsole("Interacting with target...", 0.f, 1.f, 0.f, 1.f);
+        auto& sm = engine::GameEngine::Get().GetSoundManager();
+        harvestSoundChannel_ = sm.PlaySound("res/sounds/chopping.wav");
         ToggleCastBar(true);
     }
 }

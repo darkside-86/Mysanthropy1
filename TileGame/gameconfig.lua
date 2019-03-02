@@ -11,7 +11,7 @@ MOB_DIFFICULTY_SCALE = 1.12 -- increase in mob difficulty per level
 CORE_STATS = 10 -- level 1 stats (varies with class)
 OTHERSTAT_STATS = 5 -- level 1 non-core stats (varies with class)
 -- level 1 experience max
-BASE_EXP = 500
+BASE_EXP = 250
 BASE_MOB_EXP = 25
 BASE_MOB_EXP_SCALE = 1.30
 
