@@ -30,8 +30,10 @@ Player::~Player()
 
 void Player::SetLevel(int level)
 {
-    // todo: calculate all the base stats based on logarithmic scale
-
+    level_ = level;
+    float mult = pow(experienceScale_, (level_-1));
+    maxExperience_ = (int)(mult * (float)baseExp_);
+    CalculateStats();
 }
 
 int Player::ReduceHealth(int amount)
@@ -65,19 +67,28 @@ int Player::AddHealth(int amount)
     }
 }
 
-void Player::SetExperience(int exp)
+bool Player::SetExperience(int exp)
 {
     experience_ = exp;
-    // TODO: handle when amount goes over max (Level up)
+    if(experience_ >= maxExperience_)
+    {
+        experience_ -= maxExperience_;
+        inventory_.SetItemAmount("exp", experience_);
+        SetLevel(level_ + 1);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void Player::SetBaseMaxExp(int max)
 {
-    maxExperience_ = max;
-    // TODO: calculate based on logarithm scale and current level
+    baseExp_ = max;
 }
 
 void Player::CalculateStats()
 {
-
+    // TODO:
 }

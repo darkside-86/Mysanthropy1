@@ -79,8 +79,12 @@ private:
     Entity* FindEntityByLocation(int x, int y);
     void UpdatePlayerExperience();
     void SetHarvestCommand(int x, int y, int clicks);
+    void SetFarmCommand(int x, int y, const FarmCommand& fc);
+    void PrintInventory();
     // convert harvestCommands_ to a vector of HarvestCommand and return the result
     std::vector<HarvestCommand> GetHarvestCommands();
+    // convert farmCommands_ to a vector of FarmCommand and return the result
+    std::vector<FarmCommand> GetFarmCommands();
     // Core game configuration
     Configuration* configuration_ = nullptr;
     // The map currently loaded
@@ -97,6 +101,8 @@ private:
     Player player_;
     // harvest commands. value is number of clicks
     std::unordered_map<ENT_COORDS, int> harvestCommands_;
+    // farm commands
+    std::unordered_map<ENT_COORDS, FarmCommand> farmCommands_;
     // Save game data.
     SaveData saveData_;
 

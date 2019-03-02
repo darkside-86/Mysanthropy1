@@ -37,9 +37,22 @@ void SaveData::AddHarvestCommand(const HarvestCommand& command)
     harvestCommands_.push_back(command);
 }
 
+void SaveData::AddFarmCommand(const FarmCommand& command)
+{
+    farmCommands_.push_back(command);
+}
+
 void SaveData::ForEachHarvestCommand(const std::function<void(const HarvestCommand&)>& fn)
 {
     for(auto each : harvestCommands_)
+    {
+        fn(each);
+    }
+}
+
+void SaveData::ForEachFarmCommand(const std::function<void(const FarmCommand&)>& fn)
+{
+    for(auto each : farmCommands_)
     {
         fn(each);
     }
@@ -87,11 +100,25 @@ void SaveData::WriteToFile(const std::string& fileName)
         out.write((char*)&command.targetY, sizeof(command.targetY));
         out.write((char*)&command.count, sizeof(command.count));
     }
+    // write each farm command starting with the number of farm commands
+    size_t numFarmCommands = farmCommands_.size();
+    out.write((char*)&numFarmCommands, sizeof(numFarmCommands));
+    for(auto command : farmCommands_)
+    {
+        // x, y, (char)readyToFarm, (time_t)farmTime
+        out.write((char*)&command.targetX, sizeof(command.targetX));
+        out.write((char*)&command.targetY, sizeof(command.targetY));
+        out.write((char*)&command.readyToFarm, sizeof(command.readyToFarm));
+        out.write((char*)&command.farmedTime, sizeof(command.farmedTime));
+    }
     // write player experience and current level.
     int exp = player_.GetExperience();
     int level = player_.GetLevel();
     out.write((char*)&exp, sizeof(exp));
     out.write((char*)&level, sizeof(level));
+    // finally write the current system time.
+    time_t currentTime = time(nullptr);
+    out.write((char*)&currentTime, sizeof(currentTime));
     out.close();
 }
 
@@ -105,7 +132,7 @@ bool SaveData::ReadFromFile(const std::string& fileName)
     in.open(path, std::ios::binary);
     if(!in.is_open())
     {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
             "%s: Unable to open `%s' for reading", __FUNCTION__, path.c_str());
         return false;
     }
@@ -150,12 +177,28 @@ bool SaveData::ReadFromFile(const std::string& fileName)
         in.read((char*)&cmd.count, sizeof(cmd.count));
         harvestCommands_.push_back(cmd);
     }
+    // read number of farm commands
+    size_t numFarmCommands;
+    in.read((char*)&numFarmCommands, sizeof(numFarmCommands));
+    // read each farm command.
+    for(size_t i=0; i < numFarmCommands; ++i)
+    {
+        FarmCommand fc(0,0,false,0);
+        in.read((char*)&fc.targetX, sizeof(fc.targetX));
+        in.read((char*)&fc.targetY, sizeof(fc.targetY));
+        in.read((char*)&fc.readyToFarm, sizeof(fc.readyToFarm));
+        in.read((char*)&fc.farmedTime, sizeof(fc.farmedTime));
+        farmCommands_.push_back(fc);
+    }
+
     // read player experience and then current level.
     int exp, level;
     in.read((char*)&exp, sizeof(exp));
     in.read((char*)&level, sizeof(level));
     player_.SetLevel(level);
     player_.SetExperience(exp);
+    // read timestamp
+    in.read((char*)&timeStamp_, sizeof(timeStamp_));
     in.close();
     return true;
 }
@@ -165,5 +208,6 @@ void SaveData::Cleanup()
     moveCommand_.locationX = 0;
     moveCommand_.locationY = 0;
     harvestCommands_.clear();
+    farmCommands_.clear();
     inventory_.ClearItems();
 }

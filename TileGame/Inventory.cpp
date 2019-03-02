@@ -99,3 +99,33 @@ void Inventory::ClearItems()
         each.second.count = 0;
     }
 }
+
+void Inventory::SetItemAmount(const std::string& name, int amount)
+{
+    auto found = items_.find(name);
+    if(found != items_.end())
+    {
+        found->second.count = amount;
+    }
+    else
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+            "%s: Entry not found: `%s'", __FUNCTION__, name.c_str());
+    }
+    
+}
+
+int Inventory::GetItemAmount(const std::string& name)
+{
+    auto found = items_.find(name);
+    if(found != items_.end())
+    {
+        return found->second.count;
+    }
+    else
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+            "%s: Entry not found: `%s'", __FUNCTION__, name.c_str());
+        return 0;      
+    }
+}

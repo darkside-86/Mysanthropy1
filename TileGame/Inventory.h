@@ -40,6 +40,8 @@ public:
     void ForEachItemEntry(std::function<void(const std::string&,const ITEM_ENTRY&)> expr) const;
     inline size_t GetNumEntries() const { return items_.size(); }
     void ClearItems();
+    void SetItemAmount(const std::string& name, int amount);
+    int GetItemAmount(const std::string& name);
 private:
     // owns ITEM_ENTRY::item pointer
     std::unordered_map<std::string,ITEM_ENTRY> items_;

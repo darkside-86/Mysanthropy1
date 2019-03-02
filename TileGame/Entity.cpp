@@ -24,7 +24,7 @@
 Entity::Entity(const ENTITY_TYPE& etype)
     : Sprite(engine::GameEngine::Get().GetTextureManager().GetTexture(etype.texturePath), 
       etype.width, etype.height), name_(etype.name), maxClicks_(etype.maxClicks), 
-      remainingClicks_(etype.maxClicks), clickTime_(etype.clickTime)
+      remainingClicks_(etype.maxClicks), clickTime_(etype.clickTime), farmable_(etype.farmable)
 {
     SetCollisionBox(etype.collision.left, etype.collision.top, etype.collision.right, etype.collision.bottom);
     for(int i=0; i < etype.numDrops; ++i)
@@ -37,6 +37,19 @@ Entity::Entity(const ENTITY_TYPE& etype)
         onDestroy_.push_back({etype.onDestroy[i].percentChance,
             etype.onDestroy[i].amount, etype.onDestroy[i].name});
     }
+    if(farmable_)
+    {
+        farmInfo_.itemDrop.amount = etype.farmInfo.drop.amount;
+        farmInfo_.itemDrop.name = etype.farmInfo.drop.name;
+        farmInfo_.itemDrop.percentChance = etype.farmInfo.drop.percentChance;
+        farmInfo_.respawnTimer = etype.farmInfo.respawnTime;   
+        farmInfo_.farmTimeStamp = 0;
+        farmInfo_.pendingTexture = engine::GameEngine::Get().GetTextureManager().GetTexture(
+            etype.farmInfo.pendingTexture);
+        farmInfo_.readyForPickup = true;
+        farmInfo_.respawnTimer = etype.farmInfo.respawnTime; 
+        swapTexture_ = anim0_;
+    }
 }
 
 Entity::~Entity()
@@ -44,13 +57,32 @@ Entity::~Entity()
 
 }
 
+void Entity::Update(float dtime)
+{
+    Sprite::Update(dtime);
+    if(farmable_)
+    {
+        if(!farmInfo_.readyForPickup)
+        {
+            time_t remaining = FarmTimeRemaining();
+            if(remaining <= 0)
+            {
+                farmInfo_.readyForPickup = true;
+                anim0_ = swapTexture_;
+            }
+        }
+    }
+}
+
 std::vector<ItemDropInfo> Entity::OnInteract()
 {
     std::vector<ItemDropInfo> infos;
-    auto rng = engine::GameEngine::Get().GetRNG();
+    auto& rng = engine::GameEngine::Get().GetRNG();
     for(auto each : onInteract_)
     {
-        float chance = (float)rng() / (float)rng.max();
+        float chance = 100.0f * (float)rng() / (float)rng.max();
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+            "%s: chance = %f", __FUNCTION__, chance);
         if(chance <= each.percentChance)
         {
             ItemDropInfo info;
@@ -65,10 +97,12 @@ std::vector<ItemDropInfo> Entity::OnInteract()
 std::vector<ItemDropInfo> Entity::OnDestroy()
 {
     std::vector<ItemDropInfo> infos;
-    auto rng = engine::GameEngine::Get().GetRNG();
+    auto& rng = engine::GameEngine::Get().GetRNG();
     for(auto each : onDestroy_)
     {
-        float chance = (float)rng() / (float)rng.max();
+        float chance = 100.f * (float)rng() / (float)rng.max();
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+            "%s: chance = %f", __FUNCTION__, chance);
         if(chance <= each.percentChance)
         {
             ItemDropInfo info;
@@ -78,4 +112,39 @@ std::vector<ItemDropInfo> Entity::OnDestroy()
         }
     }
     return infos;
+}
+
+time_t Entity::FarmTimeRemaining() const
+{
+    time_t currentTime = time(nullptr);
+    time_t elapsed = currentTime - farmInfo_.farmTimeStamp;
+    time_t remaining = farmInfo_.respawnTimer - elapsed;
+    return remaining;
+}
+
+void Entity::SetFarmData(const FarmCommand& fc)
+{
+    farmInfo_.readyForPickup = fc.readyToFarm;
+    if(farmInfo_.readyForPickup)
+    {
+        anim0_ = swapTexture_;
+    }
+    else
+    {
+        anim0_ = farmInfo_.pendingTexture;
+    }
+    farmInfo_.farmTimeStamp = fc.farmedTime;
+}
+
+ItemDropInfo Entity::Farm()
+{
+    ItemDropInfo info = { "null", 0 };
+    if(!farmable_)
+        return info;
+    farmInfo_.readyForPickup = false;
+    anim0_ = farmInfo_.pendingTexture;
+    info.name = farmInfo_.itemDrop.name;
+    info.num = farmInfo_.itemDrop.amount;
+    farmInfo_.farmTimeStamp = time(nullptr);
+    return info;
 }

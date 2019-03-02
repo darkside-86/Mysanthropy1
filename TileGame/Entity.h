@@ -18,9 +18,11 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <ctime>
 #include <vector>
 
 #include "ogl/Texture.h"
+#include "PlayerCommand.h"
 #include "Sprite.h"
 
 struct ENTITY_TYPE 
@@ -40,7 +42,15 @@ struct ENTITY_TYPE
     int numDrops = 0;
     ITEM_DROP* drops = nullptr;
     int numOnDestroy = 0;
-    ITEM_DROP* onDestroy;
+    ITEM_DROP* onDestroy = nullptr;
+    struct FARM_INFO
+    {
+        ITEM_DROP drop;
+        unsigned int respawnTime = 1;
+        char* pendingTexture = nullptr;
+    };
+    char farmable = 0;
+    FARM_INFO farmInfo;
 };
 
 class ItemDropInfo { public: std::string name; int num; };
@@ -60,6 +70,13 @@ public:
     inline float GetClickTime() const { return clickTime_; }
     std::vector<ItemDropInfo> OnInteract();
     std::vector<ItemDropInfo> OnDestroy();
+    inline bool IsFarmable() const { return farmable_; }
+    inline bool IsReadyForPickup() const { return farmInfo_.readyForPickup; }
+    time_t FarmTimeRemaining() const;
+    ItemDropInfo Farm();
+    void SetFarmData(const FarmCommand& fc);
+
+    void Update(float dtime) override;
 private:
     std::string name_;
     int maxClicks_;
@@ -72,4 +89,14 @@ private:
     };
     std::vector<ItemDrop> onInteract_;
     std::vector<ItemDrop> onDestroy_;
+    class FarmInfo { public:
+        ItemDrop itemDrop;
+        unsigned int respawnTimer;
+        bool readyForPickup = true;
+        time_t farmTimeStamp = 0;
+        ogl::Texture* pendingTexture;
+    };
+    bool farmable_;
+    FarmInfo farmInfo_;
+    ogl::Texture* swapTexture_ = nullptr; // store other anim0_ texture
 };

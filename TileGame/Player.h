@@ -33,7 +33,8 @@ public:
     inline int GetMaxHealth() const { return maxHealth_; }
     int ReduceHealth(int amount);
     int AddHealth(int amount);
-    void SetExperience(int exp);
+    // returns true if user gets a level increase
+    bool SetExperience(int exp);
     inline int GetExperience() { return experience_; }
     inline int GetMaxExperience() { return maxExperience_; }
     inline Inventory& GetInventory() { return inventory_; }
@@ -45,10 +46,19 @@ private:
     int level_ = 1;
     int health_ = 1;
     int maxHealth_ = 1;
-    int experience_ = 0; // experience for current level
-    int maxExperience_ = 500; // TODO: set level 1-2 experience from configuration
-    float statScale_; // logarithmic multiplier for base stats
-    int constitutionStat_ = 10;
-    float experienceScale_; // logarithmic multipler for experience levels
+    // experience for current level
+    int experience_ = 0; 
+    // TODO: set level 1-2 experience from configuration
+    int maxExperience_ = 500; 
+    int baseExp_ = 500;
+    // logarithmic multiplier for base stats
+    float statScale_;
+    int strengthStat_ = 10;
+    int agilityStat_ = 10;
+    int intellectStat_ = 10;
+    int enduranceStat_ = 10;
+    int spiritStat_ = 10;
+    // logarithmic multipler for experience levels
+    float experienceScale_; 
     Inventory inventory_;
 };

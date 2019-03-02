@@ -19,6 +19,8 @@
 
 #include "TileGame.h"
 
+#include <ctime>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -83,6 +85,9 @@ bool TileGame::Initialize()
                         playerSprite_->SetCurrentAnim("front_walk", 0.2f); 
                     vel.y = 1.f; 
                     break;
+                case SDLK_i:
+                    PrintInventory();
+                    return;
                 default:
                     // without this the entire screen except UI goes black......
                     // TODO: fix weird velocity bug?
@@ -151,8 +156,22 @@ bool TileGame::Initialize()
                         targetedEntity_ = (*found);
                         std::string rclicks = std::to_string(targetedEntity_->GetRemainingClicks());
                         std::string mclicks = std::to_string(targetedEntity_->GetMaxClicks());
-                        WriteLineToConsole(std::string("Now targeting a ") 
-                            + targetedEntity_->GetName() + " (" + rclicks + "/" + mclicks + ")");
+                        std::string message = std::string("Now targeting a ") + targetedEntity_->GetName();
+                        if(targetedEntity_->GetMaxClicks() != -1)
+                        {
+                            message += " (" + rclicks + "/" + mclicks + ")";
+                        }
+                        WriteLineToConsole(message);
+                        if(targetedEntity_->IsFarmable())
+                        {
+                            std::string output = " Farmable";
+                            if(targetedEntity_->IsReadyForPickup())
+                                output += " now.";
+                            else 
+                                output += " in " + std::to_string(targetedEntity_->FarmTimeRemaining())
+                                    + " seconds.";
+                            WriteLineToConsole(output);
+                        }
                     }
                 }
                 else 
@@ -160,6 +179,7 @@ bool TileGame::Initialize()
                     ClearTarget();
                     casting_ = false; // how else to handle the resulting null pointer?
                     WriteLineToConsole(std::string("Now targeting nothing"));
+                    ToggleCastBar(false);
                 }
             }
         }
@@ -198,19 +218,43 @@ bool TileGame::Initialize()
         Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
         if(ent == nullptr)
         {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-                "%s: Unable to locate entity at %d, %d", __FUNCTION__, cmd.targetX, cmd.targetY);
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "%s: Unable to locate entity for harvest command at %d, %d", __FUNCTION__, 
+                cmd.targetX, cmd.targetY);
         }
         else
         {
-            ent->SetRemainingClicks(ent->GetMaxClicks() - cmd.count);
-            if(ent->GetRemainingClicks() <= 0)
+            if(ent->GetMaxClicks() != -1)
             {
-                RemoveSpriteFromRenderList(ent);
-                RemoveEntityFromLoaded(ent);
+                ent->SetRemainingClicks(ent->GetMaxClicks() - cmd.count);
+                if(ent->GetRemainingClicks() <= 0)
+                {
+                    RemoveSpriteFromRenderList(ent);
+                    RemoveEntityFromLoaded(ent);
+                }
             }
         }
     });
+
+    saveData_.ForEachFarmCommand([this](const FarmCommand& cmd){
+        Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
+        if(ent == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                "%s: Unable to locate entity for farm command at %d, %d", __FUNCTION__,
+                cmd.targetX, cmd.targetY);
+        }
+        else
+        {
+            ent->SetFarmData(cmd);
+        }
+    });
+
+    time_t currentTime = time(nullptr);
+    time_t timeStamp = saveData_.GetTimeStamp();
+    time_t secondsElapsed = currentTime - timeStamp;
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+        "%ld seconds since last file save", (long)secondsElapsed);
     UpdatePlayerExperience(); // update on data screen to reflect xp from file load
 
     return true;
@@ -229,6 +273,11 @@ void TileGame::Cleanup()
     {
         saveData_.AddHarvestCommand(each);
     }
+    auto farmCmds = GetFarmCommands();
+    for(auto each : farmCmds)
+    {
+        saveData_.AddFarmCommand(each);
+    }
     saveData_.WriteToFile("slot0");
 }
 
@@ -239,6 +288,12 @@ void TileGame::Update(float dtime)
     float left, top, right, bottom;
     playerSprite_->GetCollisionBox(left, top, right, bottom);
 
+    // update entities.
+    for(auto each : loadedEntities_)
+    {
+        each->Update(dtime);
+    }
+
     // check casting and update cast bar
     if(casting_)
     {
@@ -248,32 +303,47 @@ void TileGame::Update(float dtime)
         {
             // the cast is completed so run ability, currently only harvest.
             WriteLineToConsole("Cast complete");
-            targetedEntity_->DecRemainingClicks();
-            SetHarvestCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
-                targetedEntity_->GetMaxClicks() - targetedEntity_->GetRemainingClicks());
-            // get the item(s) to add.
-            auto itemsToAdd = targetedEntity_->OnInteract();
-            for(auto each : itemsToAdd)
+            if(targetedEntity_->IsFarmable() && targetedEntity_->IsReadyForPickup())
             {
-                WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
-                    + " " + each.name + "(s)");
-                player_.GetInventory().AddItemByName(each.name, each.num);
-                UpdatePlayerExperience();
+                auto itemToAdd = targetedEntity_->Farm();
+                SetFarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
+                    FarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y,
+                        false, time(nullptr)));
+                player_.GetInventory().AddItemByName(itemToAdd.name, itemToAdd.num);
+                WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
+                    + " " + itemToAdd.name + "(s)");
+                UpdatePlayerExperience(); // in case multi-items are supported in future
+                ClearTarget(); // to prevent accidentally harvesting instead of farming item
             }
-            if(targetedEntity_->GetRemainingClicks() <= 0)
+            else 
             {
-                WriteLineToConsole("Removing...");
-                auto items = targetedEntity_->OnDestroy();
-                for(auto each : items)
+                targetedEntity_->DecRemainingClicks();
+                SetHarvestCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
+                    targetedEntity_->GetMaxClicks() - targetedEntity_->GetRemainingClicks());
+                // get the item(s) to add.
+                auto itemsToAdd = targetedEntity_->OnInteract();
+                for(auto each : itemsToAdd)
                 {
-                    WriteLineToConsole(std::string("You received ") + std::to_string(each.num)
+                    WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
                         + " " + each.name + "(s)");
                     player_.GetInventory().AddItemByName(each.name, each.num);
                     UpdatePlayerExperience();
                 }
-                RemoveSpriteFromRenderList(targetedEntity_);
-                RemoveEntityFromLoaded(targetedEntity_);
-                ClearTarget();
+                if(targetedEntity_->GetRemainingClicks() <= 0)
+                {
+                    WriteLineToConsole("Removing...");
+                    auto items = targetedEntity_->OnDestroy();
+                    for(auto each : items)
+                    {
+                        WriteLineToConsole(std::string("You received ") + std::to_string(each.num)
+                            + " " + each.name + "(s)");
+                        player_.GetInventory().AddItemByName(each.name, each.num);
+                        UpdatePlayerExperience();
+                    }
+                    RemoveSpriteFromRenderList(targetedEntity_);
+                    RemoveEntityFromLoaded(targetedEntity_);
+                    ClearTarget();
+                }
             }
             casting_ = false;
             ToggleCastBar(false);
@@ -558,6 +628,9 @@ bool TileGame::CheckPoint(float x, float y, float left, float top, float right, 
 
 void TileGame::InteractWithTarget()
 {
+    if(targetedEntity_->IsFarmable() && !targetedEntity_->IsReadyForPickup())
+        return; // the target is not interactive except when farmable
+
     // check to see if we are in 32.f units of bottom center of targeted entity.
     glm::vec3 bottomCenter = targetedEntity_->GetPosition();
     bottomCenter.x += (float)targetedEntity_->GetWidth() / 2.f;
@@ -612,11 +685,19 @@ void TileGame::UpdatePlayerExperience()
 {
     // experience is internally stored in inventory.
     auto entry = player_.GetInventory().GetItemEntryByName("exp");
-    player_.SetExperience(entry.count);
+    bool dinged = player_.SetExperience(entry.count);
     int experience = player_.GetExperience();
     int maxExperience = player_.GetMaxExperience();
     float value = (float)experience / (float)maxExperience;
     SetExperienceBar(value);
+    if(dinged)
+    {
+        WriteLineToConsole(std::string("You have reached level ") + std::to_string(player_.GetLevel())
+            + "!", 1.f, 1.f, 0.f, 1.f);
+    }
+    // print information for debugging purposes.
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+        "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);
 }
 
 void TileGame::SetHarvestCommand(int x, int y, int clicks)
@@ -631,6 +712,19 @@ void TileGame::SetHarvestCommand(int x, int y, int clicks)
         harvestCommands_[{x,y}] = clicks;
     }
 }
+
+void TileGame::SetFarmCommand(int x, int y, const FarmCommand& fc)
+{
+    auto found = farmCommands_.find({x,y});
+    if(found != farmCommands_.end())
+    {
+        found->second = fc;
+    }
+    else
+    {
+        farmCommands_[{x,y}] = fc;
+    }
+}
     
 std::vector<HarvestCommand> TileGame::GetHarvestCommands()
 {
@@ -640,4 +734,25 @@ std::vector<HarvestCommand> TileGame::GetHarvestCommands()
         hc.push_back(HarvestCommand(it->first.x, it->first.y, it->second));
     }
     return hc;
+}
+
+std::vector<FarmCommand> TileGame::GetFarmCommands()
+{
+    std::vector<FarmCommand> commands;
+    for(auto it = farmCommands_.begin(); it != farmCommands_.end(); ++it)
+    {
+        commands.push_back(it->second);
+    }
+    return commands;
+}
+
+void TileGame::PrintInventory()
+{
+    player_.GetInventory().ForEachItemEntry([this](const std::string& k, const ITEM_ENTRY& ie){
+        if(ie.count > 0)
+        {
+            if(!ie.item->IsHiddenFromInventory())
+                WriteLineToConsole(std::to_string(ie.count) + " " + k + "(s)");
+        }
+    });
 }

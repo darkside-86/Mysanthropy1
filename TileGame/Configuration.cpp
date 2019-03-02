@@ -154,7 +154,7 @@ int Configuration::lua_ItemEntry(lua_State *L)
     lua_gettable(L, 1);
     if(lua_isnil(L, -1))
     {
-        luaItemEntry.hidden = true; // default to true if no value listed
+        luaItemEntry.hidden = false; // default to false if no value listed
     }
     else
     { 

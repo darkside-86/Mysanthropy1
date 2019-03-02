@@ -85,6 +85,7 @@ private:
     static int lua_OnInteract(lua_State* L);
     static int lua_OnDestroy(lua_State* L);
     static int lua_ClickTime(lua_State* L);
+    static int lua_Farmable(lua_State* L);
     static int lua_EndEntity(lua_State* L);
     TileSet* tileSet_ = nullptr;
     std::string scriptPath_ = "";

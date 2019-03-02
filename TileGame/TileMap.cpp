@@ -468,6 +468,8 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "CLICK_TIME");
     lua_pushcfunction(scripting_, TileMap::lua_OnInteract);
     lua_setglobal(scripting_, "ON_INTERACT");
+    lua_pushcfunction(scripting_, TileMap::lua_Farmable);
+    lua_setglobal(scripting_, "FARMABLE");
     lua_pushcfunction(scripting_, TileMap::lua_OnDestroy);
     lua_setglobal(scripting_, "ON_DESTROY");
 }
@@ -488,6 +490,8 @@ void TileMap::CleanupEntities()
             delete [] it->onDestroy[i].name;
         }
         delete [] it->onDestroy;
+        delete [] it->farmInfo.drop.name;
+        delete [] it->farmInfo.pendingTexture;
     }
     entityTypes_.clear();
 }
@@ -628,6 +632,29 @@ int TileMap::lua_ClickTime(lua_State* L)
     lua_pop(L, 1);
 
     tileMap->currentEntityType_.clickTime = (float)lua_tonumber(L, 1);
+
+    return 0;
+}
+
+// FARMABLE ( chance, amount, name, timer, pendingTexture )
+int TileMap::lua_Farmable(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tileMap->currentEntityType_.farmable = 1;
+    tileMap->currentEntityType_.farmInfo.drop.percentChance = (float)lua_tonumber(L, 1);
+    tileMap->currentEntityType_.farmInfo.drop.amount = (int)lua_tonumber(L, 2);
+    const char* name = lua_tostring(L, 3);
+    tileMap->currentEntityType_.farmInfo.drop.name = new char[strlen(name)+1];
+    strcpy_s(tileMap->currentEntityType_.farmInfo.drop.name, strlen(name)+1, name);
+    tileMap->currentEntityType_.farmInfo.respawnTime = (int)lua_tonumber(L, 4);
+    const char* texture = lua_tostring(L, 5);
+    tileMap->currentEntityType_.farmInfo.pendingTexture = new char[strlen(texture)+1];
+    strcpy_s(tileMap->currentEntityType_.farmInfo.pendingTexture, strlen(texture)+1, texture);
 
     return 0;
 }
