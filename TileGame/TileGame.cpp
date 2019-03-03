@@ -437,6 +437,18 @@ void TileGame::BuildInventory()
     }
 }
 
+void TileGame::SetFoodstuffBarData(int amount)
+{
+    lua_getglobal(uiScript_, "SetFoodstuffBarData");
+    lua_pushinteger(uiScript_, amount);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);    
+    }
+}
+
 Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
@@ -542,6 +554,10 @@ void TileGame::SetupUIScript()
     // set globals
     lua_pushcfunction(uiScript_, TileGame::lua_GetInventory);
     lua_setglobal(uiScript_, "TileGame_GetInventory");
+    lua_pushcfunction(uiScript_, TileGame::lua_ConvertItemToFoodstuff);
+    lua_setglobal(uiScript_, "TileGame_ConvertItemToFoodstuff");
+    lua_pushcfunction(uiScript_, TileGame::lua_GetFoodstuffCount);
+    lua_setglobal(uiScript_, "TileGame_GetFoodstuffCount");
 
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", 
@@ -926,5 +942,36 @@ int TileGame::lua_GetInventory(lua_State* L)
             lua_rawseti(L, -2, nextIndex);
         }
     });
+    return 1;
+}
+
+// name, amount
+int TileGame::lua_ConvertItemToFoodstuff(lua_State* L)
+{
+    // get TileGame
+    lua_pushstring(L, "TileGame");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* name = lua_tostring(L, 1);
+    int amount = (int)lua_tointeger(L, 2);
+    bool result = tg->player_.GetInventory().ConvertItemToFoodstuff(name, amount);
+
+    lua_pushboolean(L, result);
+    return 1;
+}
+
+int TileGame::lua_GetFoodstuffCount(lua_State* L)
+{
+    // get TileGame
+    lua_pushstring(L, "TileGame");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int count = tg->player_.GetInventory().GetItemAmount("foodstuff");
+
+    lua_pushinteger(L, count);
     return 1;
 }

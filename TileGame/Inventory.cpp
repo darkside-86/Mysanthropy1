@@ -34,7 +34,7 @@ Inventory::~Inventory()
     }
 }
 
-void Inventory::AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden)
+void Inventory::AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden, int foodstuffValue)
 {
     // make sure item entry is not already in the list
     auto found = items_.find(name);
@@ -45,6 +45,7 @@ void Inventory::AddItemEntry(const std::string& name, ogl::Texture* texture, boo
         ITEM_ENTRY ie;
         ie.item = new Item(name, texture, hidden);
         ie.count = 0;
+        ie.foodstuffValue = foodstuffValue;
         items_[name] = ie;
     }
     else 
@@ -79,6 +80,8 @@ ITEM_ENTRY Inventory::GetItemEntryByName(const std::string &name) const
     }
     else 
     {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+            "%s: Item `%s' does not have an entry!", __FUNCTION__, name.c_str());
         ITEM_ENTRY blank = { nullptr, 0 };
         return blank;
     }
@@ -128,4 +131,32 @@ int Inventory::GetItemAmount(const std::string& name)
             "%s: Entry not found: `%s'", __FUNCTION__, name.c_str());
         return 0;      
     }
+}
+
+bool Inventory::ConvertItemToFoodstuff(const std::string& name, int amount)
+{
+    if(GetItemAmount(name) < amount)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "%s: Not enough %s to convert to foodstuff. Wanted: %d. Have: %d", __FUNCTION__, name.c_str(),
+            amount, GetItemAmount(name));
+        return false;
+    }
+
+    ITEM_ENTRY ie = GetItemEntryByName(name);
+
+    if(ie.foodstuffValue <= 0)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "%s: Item %s is not worth any foodstuff. No trade.", __FUNCTION__, name.c_str());
+        return false;
+    }
+
+    int foodstuffPerItem = ie.foodstuffValue;
+    int totalFoodstuff = ie.foodstuffValue * amount;
+    // first decrease the requested number of items to trade
+    SetItemAmount(name, GetItemAmount(name) - amount);
+    // then add the corresponding foodstuff value
+    SetItemAmount("foodstuff", GetItemAmount("foodstuff") + totalFoodstuff);
+    return true;
 }

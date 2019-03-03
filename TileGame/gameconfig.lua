@@ -35,7 +35,7 @@ ITEM_ENTRY {
 
 ITEM_ENTRY {
     name = "foodstuff",
-    hidden = false, -- for now
+    hidden = true,
     texture = "res/textures/items/foodstuff.png"
 }
 
@@ -56,12 +56,14 @@ ITEM_ENTRY {
 
 ITEM_ENTRY {
     name = "coconut",
-    texture = "res/textures/items/coconut.png"
+    texture = "res/textures/items/coconut.png",
+    foodstuff = 5
 }
 
 ITEM_ENTRY {
     name = "banana",
-    texture = "res/textures/items/banana.png"
+    texture = "res/textures/items/banana.png",
+    foodstuff = 5
 }
 
 ITEM_ENTRY {
@@ -71,7 +73,8 @@ ITEM_ENTRY {
 
 ITEM_ENTRY {
     name = "shellfish",
-    texture = "res/textures/items/shellfish.png"
+    texture = "res/textures/items/shellfish.png",
+    foodstuff = 5
 }
 
 ITEM_ENTRY {

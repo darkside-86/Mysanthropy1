@@ -65,6 +65,7 @@ namespace engine { namespace ui {
                 {
                     if(mouseOver_ != over->GetParent())
                     {
+                        // TODO: this probably should be mouseOver_->GetParent()
                         GetNodePosition(mouseOver_, x, y);
                         mouseOver_->OnHover(HoverEvent(x,y,dx,dy,false));
                     }

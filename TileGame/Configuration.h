@@ -30,6 +30,7 @@ struct LUA_ITEM_ENTRY
     char* name = nullptr;
     bool hidden = false;
     char* texture = nullptr;
+    int foodstuff = 0;
 };
 
 // handles configuration of game rule data

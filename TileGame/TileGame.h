@@ -65,6 +65,7 @@ public:
     void SetExperienceBar(float value);
     void ShowInventory(bool show);
     void BuildInventory();
+    void SetFoodstuffBarData(int amount);
 private:
     enum GAME_STATE { SPLASH, PLAYING };
     // load a sprite and animations from lost guardian folder
@@ -93,6 +94,8 @@ private:
     void NewGame(const std::string &slot);
     // C++ functions exposed to lua
     static int lua_GetInventory(lua_State* L);
+    static int lua_ConvertItemToFoodstuff(lua_State* L);
+    static int lua_GetFoodstuffCount(lua_State* L);
 
     // convert harvestCommands_ to a vector of HarvestCommand and return the result
     std::vector<HarvestCommand> GetHarvestCommands();

@@ -92,46 +92,125 @@ function SetExperienceBar(value)
     experienceBar.fill:SetWidth( value * (experienceBar:GetWidth()))
 end
 
--- Test out the new UITexture class in the top left corner
-inventoryFrame = UIFrame.New(nil, screenWidth / 2.5, screenHeight / 2.5, 0, 0, TEXTURE_UIBLANK)
+-- Inventory backpack frame ---------------------------------------------------
+-------------------------------------------------------------------------------
+inventoryFrame = UIFrame.New(nil, screenWidth / 2.4, screenHeight / 2.0, 0, 0, TEXTURE_UIBLANK)
 inventoryFrame:SetXPos(screenWidth - inventoryFrame:GetWidth())
 inventoryFrame:SetYPos(screenHeight - inventoryFrame:GetHeight())
 inventoryFrame:SetColor(0.1, 0.1, 0.1, 0.7)
+inventoryFrame:SetBorderColor(0.5,0.5,0.5,0.7)
+inventoryFrame:SetBorderSize(2)
 inventoryFrame:SetVisible(false)
 function ShowInventory(show)
     inventoryFrame:SetVisible(show)
 end
+
+inventoryFrame.convertBtn = UIButton.New(inventoryFrame, TEXTURE_UIBLANK, 
+    "Convert food to foodstuff", "sans14", 2)
+inventoryFrame.convertBtn:SetColor(0.2,0.2,1,0.7)
+inventoryFrame.convertBtn:SetBorderSize(1)
+inventoryFrame.convertBtn:SetBorderColor(1,1,1,0.7)
+inventoryFrame.convertingFood = false
+inventoryFrame.convertBtn:AddOnClicked(function() 
+    if inventoryFrame.convertingFood == false then 
+        inventoryFrame.convertingFood = true 
+        inventoryFrame.convertBtn:SetColor(1,0.2,0.2,0.7)
+    else
+        inventoryFrame.convertingFood = false 
+        inventoryFrame.convertBtn:SetColor(0.2,0.2,1,0.7)
+    end
+end)
+
+inventoryFrame.panel = UIFrame.New(inventoryFrame, inventoryFrame:GetWidth(), 
+    inventoryFrame:GetHeight() - inventoryFrame.convertBtn:GetHeight(), 0,
+    inventoryFrame.convertBtn:GetHeight() + inventoryFrame.convertBtn:GetYPos(), TEXTURE_UIBLANK)
+inventoryFrame.panel:SetColor(0,0,0,0)
+inventoryFrame.panel:AddOnClicked(function(x,y) 
+    local clicked = nil
+    if inventoryFrame.convertingFood == false then 
+        return 
+    end 
+    print("x=", x, "y=", y)
+    for k,v in pairs(inventoryFrame.panel.elements) do
+        -- determine which item was clicked
+        if x >= v:GetXPos() and x <= v:GetXPos() + v:GetWidth() and 
+          y >= v:GetYPos() and y <= v:GetYPos() + v:GetHeight() then 
+            clicked = v
+            local rect = { v:GetXPos(), v:GetYPos(),
+                v:GetXPos() + v:GetWidth(),
+                v:GetYPos() + v:GetHeight() }
+            print(rect[1], rect[2], rect[3], rect[4])
+            break
+        end
+    end
+    if clicked ~= nil then 
+        local keepGoing = TileGame_ConvertItemToFoodstuff(clicked.name, 1)
+        if keepGoing == false then 
+            inventoryFrame.convertingFood = false 
+            inventoryFrame.convertBtn:SetColor(0.2,0.2,1,0.7)
+        end
+        SetFoodstuffBarData(TileGame_GetFoodstuffCount())
+    else 
+        print("Note: clicked == nil")
+    end
+    BuildInventory()
+end)
+-- build the inventory item list
 function BuildInventory()
     local inventoryData = TileGame_GetInventory()
-    if inventoryFrame.elements ~= nil then 
-        for k,v in pairs(inventoryFrame.elements) do 
+    if inventoryFrame.panel.elements ~= nil then 
+        for k,v in pairs(inventoryFrame.panel.elements) do 
             v:SetVisible(false)
         end
     end
-    inventoryFrame.elements = {}
+    inventoryFrame.panel.elements = {}
     local x = 0
     local y = 0
     for i,item in ipairs(inventoryData) do 
-        inventoryFrame.elements[item.name] = UITexture.New(inventoryFrame, item.texture, 64, 64)
-        inventoryFrame.elements[item.name]:SetXPos(x)
-        inventoryFrame.elements[item.name]:SetYPos(y)
-        inventoryFrame.elements[item.name].countLbl = UILabel.New(inventoryFrame.elements[item.name],
-            tostring(item.count), "sans14", 1,0.5,0,1)
-        x = x + 65
-        if x > inventoryFrame:GetWidth() - 32 then 
+        inventoryFrame.panel.elements[item.name] = UITexture.New(
+            inventoryFrame.panel, item.texture, 64, 64)
+        inventoryFrame.panel.elements[item.name]:SetXPos(x)
+        inventoryFrame.panel.elements[item.name]:SetYPos(y)
+        inventoryFrame.panel.elements[item.name].name = item.name
+        inventoryFrame.panel.elements[item.name].count = item.count
+        inventoryFrame.panel.elements[item.name].countLbl = UILabel.New(
+            inventoryFrame.panel.elements[item.name], tostring(item.count), "sans14", 1,0.5,0,1)
+        x = x + 64
+        if x > inventoryFrame.panel:GetWidth() - 64 then 
             x = 0
-            y = y + 65
+            y = y + 64
         end
     end
 end
-BuildInventory() -- initial call
-
 -- "scroll effect"
-inventoryFrame:AddOnDragged(function(x,y,dx,dy) 
-    for k,v in pairs(inventoryFrame.elements) do 
+inventoryFrame.panel:AddOnDragged(function(x,y,dx,dy) 
+    for k,v in pairs(inventoryFrame.panel.elements) do 
         v:SetYPos(v:GetYPos() + dy)
     end
 end)
+BuildInventory() -- initial call
+
+-- food stuff bar at bottom left ----------------------------------------------
+-------------------------------------------------------------------------------
+foodstuffBar = UIFrame.New(nil, experienceBar:GetXPos() - 1, screenHeight 
+    - (consoleFrame:GetHeight() + consoleFrame:GetYPos()), 0, 0, TEXTURE_UIBLANK)
+foodstuffBar:SetYPos(consoleFrame:GetYPos() + consoleFrame:GetHeight())
+foodstuffBar:SetColor(0.09,0.09,0.09,0.9)
+foodstuffBar.fsIcon = UITexture.New(foodstuffBar, "res/textures/items/foodstuff.png", 16, 16)
+foodstuffBar.label1 = UILabel.New(foodstuffBar, "Foodstuff: ", "sans14", 1,1,1,1)
+foodstuffBar.label1:SetXPos( foodstuffBar.fsIcon:GetXPos() + foodstuffBar.fsIcon:GetWidth() )
+foodstuffBar.label2 = UILabel.New(foodstuffBar, "0", "sans14", 1,1,0,1)
+foodstuffBar.label2:SetXPos( foodstuffBar.label1:GetXPos() + foodstuffBar.label1:GetWidth() )
+function SetFoodstuffBarData(num)
+    foodstuffBar.label2:SetText(tostring(num))
+end
+-- Initial data
+SetFoodstuffBarData(TileGame_GetFoodstuffCount())
+
+
+
+
+
 
 
 

@@ -137,7 +137,7 @@ void Configuration::AddItemEntries(Inventory& inv)
     for(auto each : luaItemEntries_)
     {
         ogl::Texture* texture = engine::GameEngine::Get().GetTextureManager().GetTexture(each.texture);
-        inv.AddItemEntry(each.name, texture, each.hidden);
+        inv.AddItemEntry(each.name, texture, each.hidden, each.foodstuff);
     }
 }
 
@@ -151,13 +151,14 @@ int Configuration::lua_ItemEntry(lua_State *L)
 
     LUA_ITEM_ENTRY luaItemEntry;
 
+    // read name field
     lua_pushstring(L, "name");
     lua_gettable(L, 1);
     const char* name = lua_tostring(L, -1);
     luaItemEntry.name = new char [strlen(name)+1];
     strcpy_s(luaItemEntry.name, strlen(name)+1, name);
     lua_pop(L, 1);
-    
+    // read hidden field
     lua_pushstring(L, "hidden");
     lua_gettable(L, 1);
     if(lua_isnil(L, -1))
@@ -169,12 +170,17 @@ int Configuration::lua_ItemEntry(lua_State *L)
         luaItemEntry.hidden = lua_toboolean(L, -1);
     }
     lua_pop(L, 1);
-
+    // read texture field
     lua_pushstring(L, "texture");
     lua_gettable(L, 1);
     const char* texture = lua_tostring(L, -1);
     luaItemEntry.texture = new char [strlen(texture)+1];
     strcpy_s(luaItemEntry.texture, strlen(texture)+1, texture);
+    lua_pop(L, 1);
+    // read foodstuff field
+    lua_pushstring(L, "foodstuff");
+    lua_gettable(L, 1);
+    luaItemEntry.foodstuff = (int)lua_tointeger(L, -1); // nil as 0 is fine and expected
     lua_pop(L, 1);
 
     config->luaItemEntries_.push_back(luaItemEntry);

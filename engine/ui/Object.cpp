@@ -93,7 +93,11 @@ namespace engine { namespace ui {
         {
             if(parent_ != nullptr)
             {
-                parent_->OnClicked(e);
+                // parent_->OnClicked(e);
+                parent_->OnClicked(ClickedEvent(
+                    e.x + this->GetXPos(), 
+                    e.y + this->GetYPos(), 
+                    e.button));
             }
         }
         else

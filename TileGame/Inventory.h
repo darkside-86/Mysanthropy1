@@ -27,6 +27,7 @@ struct ITEM_ENTRY
 {
     Item* item=nullptr;
     int count=0;
+    int foodstuffValue=0;
 };
 
 class Inventory
@@ -34,7 +35,7 @@ class Inventory
 public:
     Inventory();
     virtual ~Inventory();
-    void AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden=false);
+    void AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden=false, int foodstuffValue=0);
     void AddItemByName(const std::string &name, int count);
     ITEM_ENTRY GetItemEntryByName(const std::string &name) const;
     void ForEachItemEntry(std::function<void(const std::string&,const ITEM_ENTRY&)> expr) const;
@@ -42,6 +43,7 @@ public:
     void ClearItems();
     void SetItemAmount(const std::string& name, int amount);
     int GetItemAmount(const std::string& name);
+    bool ConvertItemToFoodstuff(const std::string& name, int amount);
 private:
     // owns ITEM_ENTRY::item pointer
     std::unordered_map<std::string,ITEM_ENTRY> items_;
