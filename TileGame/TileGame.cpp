@@ -115,8 +115,13 @@ bool TileGame::Initialize()
                 if(vel.x != 0)
                     vel.x /= glm::abs(vel.x); // set to 1 or -1
                 vel = glm::normalize(vel) * baseSpeed;
+                // determine if player sprite is swimming and cut speed in half if so
             }
             playerSprite_->SetVelocity(vel);
+            if(SpriteIsSwimming(playerSprite_))
+            {
+                playerSprite_->SetVelocity(playerSprite_->GetVelocity() / 2.0f);
+            }
         }
         else 
         {
@@ -228,7 +233,10 @@ void TileGame::Update(float dtime)
             UIWriteLineToConsole("Autosaving...", 0.6f, 0.6f, 0.6f, 1.0f);
             SaveGame();
         }
+
+        // update player movement
         playerSprite_->Update(dtime);
+
         // tile collision detection.
         float left, top, right, bottom;
         playerSprite_->GetCollisionBox(left, top, right, bottom);
@@ -320,6 +328,11 @@ void TileGame::Render(engine::GraphicsContext& gc)
         for(auto it=renderList_.begin(); it != renderList_.end(); ++it)
         {
             (*it)->Render(-camera_, program);
+            if(SpriteIsSwimming(*it))
+            {
+                swimFilter_->SetSpriteData(*it);
+                swimFilter_->Render(-camera_, program);
+            }
         }
     }
     engine::ui::Root::Get()->Render(gc);
@@ -364,6 +377,8 @@ void TileGame::StartGame()
         (float)playerSprite_->GetWidth()-5.f, (float)playerSprite_->GetHeight());
     playerSprite_->SetCurrentAnim("front_stand", 0.2f);
     playerSprite_->StartAnimation();
+    // Setup swim filter
+    swimFilter_ = new SwimFilter();
     // Setup render list
     SetupRenderList();
     // Setup lua UI
@@ -491,6 +506,8 @@ void TileGame::EndGame()
     target_ = nullptr;
     delete player_;
     player_ = nullptr;
+    delete swimFilter_;
+    swimFilter_ = nullptr;
     delete saveData_;
     saveData_ = nullptr;
 }
@@ -631,6 +648,22 @@ void TileGame::UnloadLGSpr(Sprite*& sprite, const std::string& name)
     RemoveSpriteFromRenderList(sprite);
     delete sprite;
     sprite = nullptr;
+}
+
+bool TileGame::SpriteIsSwimming(Sprite* sprite)
+{
+    // calculate the bottom center of sprite in world coordinates.
+    auto pos = sprite->GetPosition();
+    pos.x += (float)sprite->GetWidth() / 2.f;
+    pos.y += (float)sprite->GetHeight();
+
+    // determine tile x and y index.
+    int tileX = (int)pos.x / tileMap_->GetTileSet()->GetTileWidth();
+    int tileY = (int)pos.y / tileMap_->GetTileSet()->GetTileHeight();
+
+    bool isSwimming = tileMap_->TileIsLiquid(tileX, tileY, false);
+    isSwimming = isSwimming || tileMap_->TileIsLiquid(tileX, tileY, true);
+    return isSwimming;
 }
 
 void TileGame::CleanupLoadedEntities()

@@ -112,6 +112,7 @@ add_executable (
         TileGame/SaveData.cpp
         TileGame/SplashScreen.cpp
         TileGame/Sprite.cpp
+        TileGame/SwimFilter.cpp
         TileGame/Target.cpp
         TileGame/TileGame.cpp
         TileGame/TileMap.cpp

@@ -78,6 +78,18 @@ void TileMap::SetTile(int ix, int iy, const Tile& tile, bool layer1)
     SetupRender();
 }
 
+bool TileMap::TileIsLiquid(int x, int y, bool layer1)
+{
+    Tile t = GetTile(x, y, layer1);
+    // check to see if t's ID value is in list of liquids
+    for(auto each : liquids_)
+    {
+        if(each.ix == t.ix && each.iy == t.iy)
+            return true;
+    }
+    return false;
+}
+
 void TileMap::SaveToFile(const std::string& path)
 {
     std::ofstream out;
@@ -450,6 +462,8 @@ void TileMap::SetupScripting()
     lua_pushlightuserdata(scripting_, this);
     lua_settable(scripting_, LUA_REGISTRYINDEX);
 
+    lua_pushcfunction(scripting_, TileMap::lua_Liquids);
+    lua_setglobal(scripting_, "LIQUIDS");
     lua_pushcfunction(scripting_, TileMap::lua_BeginEntity);
     lua_setglobal(scripting_, "BEGIN_ENTITY");
     lua_pushcfunction(scripting_, TileMap::lua_UseTexture);
@@ -494,6 +508,30 @@ void TileMap::CleanupEntities()
         delete [] it->farmInfo.pendingTexture;
     }
     entityTypes_.clear();
+}
+
+// lua : LIQUIDS ( {ix,iy}... )
+int TileMap::lua_Liquids(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int nargs = lua_gettop(L);
+    for(int i = 1; i <= nargs; ++i)
+    {
+        lua_rawgeti(L, i, 1);
+        int ix = (int)lua_tointeger(L, -1);
+        lua_pop(L, 1);
+        lua_rawgeti(L, i, 2);
+        int iy = (int)lua_tointeger(L, -1);
+        lua_pop(L, 1);
+        tileMap->liquids_.push_back({(unsigned short)ix,(unsigned short)iy});
+    }
+
+    return 0;
 }
 
 // lua : BEGIN_ENTITY(nameOfEnt)

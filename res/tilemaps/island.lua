@@ -1,10 +1,22 @@
+-- USEFUL CONSTANTS -----------------------------------------------------------
+-------------------------------------------------------------------------------
+
 -- number of seconds required to get one harvest out of item
 local defaultClickTime = 8.0
 -- time values are in seconds so use these for conversion
 local minutes = 60.0
 local hours = 60.0 * minutes
 
--- 0 : palm1
+-- TILE ID CONFIGURATION ------------------------------------------------------
+-------------------------------------------------------------------------------
+LIQUIDS ( 
+   {2,0} -- the full water tile
+) 
+
+-- ENTITY LIST ----------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+-- 0 : palm1 ------------------------------------------------------------------
 BEGIN_ENTITY "palm1"
  USE_TEXTURE "res/textures/objects/palm1.png"
  WIDTH (91)
@@ -22,7 +34,7 @@ BEGIN_ENTITY "palm1"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY ()
--- 1 : palm2
+-- 1 : palm2 ------------------------------------------------------------------
 BEGIN_ENTITY "palm2"
  USE_TEXTURE "res/textures/objects/palm2.png"
  WIDTH (114)
@@ -40,7 +52,7 @@ BEGIN_ENTITY "palm2"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY ()
--- 2 : palm3
+-- 2 : palm3 ------------------------------------------------------------------
 BEGIN_ENTITY "palm3"
  USE_TEXTURE "res/textures/objects/palm3.png"
  WIDTH (95)
@@ -58,7 +70,7 @@ BEGIN_ENTITY "palm3"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY ()
--- 3 : palm4
+-- 3 : palm4 ------------------------------------------------------------------
 BEGIN_ENTITY "palm4"
  USE_TEXTURE "res/textures/objects/palm4.png"
  WIDTH (99)
@@ -76,7 +88,7 @@ BEGIN_ENTITY "palm4"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY ()
--- 4 : shrub1
+-- 4 : shrub1 -----------------------------------------------------------------
 BEGIN_ENTITY "shrub1"
  USE_TEXTURE "res/textures/objects/shrub1.png"
  WIDTH (39)
@@ -94,7 +106,7 @@ BEGIN_ENTITY "shrub1"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY()
--- 5 : shrub2
+-- 5 : shrub2 -----------------------------------------------------------------
 BEGIN_ENTITY "shrub2"
  USE_TEXTURE "res/textures/objects/shrub2.png"
  WIDTH (51)
@@ -112,7 +124,7 @@ BEGIN_ENTITY "shrub2"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY()
--- 6 : grass1
+-- 6 : grass1 -----------------------------------------------------------------
 BEGIN_ENTITY "grass1"
  USE_TEXTURE "res/textures/objects/grass1.png"
  WIDTH (32)
@@ -129,7 +141,7 @@ BEGIN_ENTITY "grass1"
  )
  CLICK_TIME(defaultClickTime/2)
 END_ENTITY()
--- 7 : coconut_palm
+-- 7 : coconut_palm -----------------------------------------------------------
 BEGIN_ENTITY "coconut_palm"
  USE_TEXTURE "res/textures/objects/coconut_palm.png"
  WIDTH (91)
@@ -149,7 +161,7 @@ BEGIN_ENTITY "coconut_palm"
     100.0, 2, "coconut", 8 * hours, "res/textures/objects/palm1.png"
  )
 END_ENTITY()
--- 8 : banana_tree
+-- 8 : banana_tree ------------------------------------------------------------
 BEGIN_ENTITY "banana_tree"
  USE_TEXTURE "res/textures/objects/banana_tree.png"
  WIDTH (59)
@@ -169,7 +181,7 @@ BEGIN_ENTITY "banana_tree"
     100.0, 2, "banana", 6 * hours, "res/textures/objects/banana_tree_pending.png"
  )
 END_ENTITY()
--- 9 : palm_with_vine1
+-- 9 : palm_with_vine1 --------------------------------------------------------
 BEGIN_ENTITY "palm_with_vine1"
  USE_TEXTURE "res/textures/objects/palm_with_vine1.png"
  WIDTH (114)
@@ -191,7 +203,7 @@ BEGIN_ENTITY "palm_with_vine1"
     100.0, 2, "vine", 4 * hours, "res/textures/objects/palm2.png"
  )
 END_ENTITY()
--- 10 : palm_with_vine2
+-- 10 : palm_with_vine2 -------------------------------------------------------
 BEGIN_ENTITY "palm_with_vine2"
  USE_TEXTURE "res/textures/objects/palm_with_vine2.png"
  WIDTH (95)
@@ -213,7 +225,7 @@ BEGIN_ENTITY "palm_with_vine2"
     100.0, 2, "vine", 4 * hours, "res/textures/objects/palm3.png"
  )
 END_ENTITY()
--- 11 : starfish
+-- 11 : starfish --------------------------------------------------------------
 BEGIN_ENTITY "starfish"
  USE_TEXTURE "res/textures/objects/starfish.png"
  WIDTH (16)
@@ -229,7 +241,7 @@ BEGIN_ENTITY "starfish"
  )
  CLICK_TIME(defaultClickTime / 2)
 END_ENTITY()
--- 12 : stone1
+-- 12 : stone1 ----------------------------------------------------------------
 BEGIN_ENTITY "stone1"
  USE_TEXTURE "res/textures/objects/stone1.png"
  WIDTH (66)
@@ -248,7 +260,7 @@ BEGIN_ENTITY "stone1"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY()
--- 13 : spring
+-- 13 : spring ----------------------------------------------------------------
 BEGIN_ENTITY "spring"
  USE_TEXTURE "res/textures/objects/spring.png"
  WIDTH (64)
@@ -258,7 +270,7 @@ BEGIN_ENTITY "spring"
  CLICK_TIME(defaultClickTime)
  FARMABLE ( 100.0, 5, "water", 4 * hours, "res/textures/objects/spring_dry.png")
 END_ENTITY ()
--- 14 : stone2
+-- 14 : stone2 ----------------------------------------------------------------
 BEGIN_ENTITY "stone2"
  USE_TEXTURE "res/textures/objects/stone2.png"
  WIDTH (64)
@@ -275,7 +287,7 @@ BEGIN_ENTITY "stone2"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY()
--- 15 : stone3
+-- 15 : stone3 ----------------------------------------------------------------
 BEGIN_ENTITY "stone3"
  USE_TEXTURE "res/textures/objects/stone3.png"
  WIDTH (59)

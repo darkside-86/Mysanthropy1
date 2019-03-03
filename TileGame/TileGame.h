@@ -33,6 +33,7 @@
 #include "SaveData.h"
 #include "SplashScreen.h"
 #include "Sprite.h"
+#include "SwimFilter.h"
 #include "Target.h"
 
 struct ENT_COORDS
@@ -104,6 +105,8 @@ private:
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
     // unload textures associated with lost guardian sprite and destroy sprite
     void UnloadLGSpr(Sprite*& sprite, const std::string& name);
+    // Checks if a given sprite is "Swimming" that is, its base is on a "liquid" tile
+    bool SpriteIsSwimming(Sprite* sprite);
     // Destroy all entities
     void CleanupLoadedEntities();
     // Sets up the renderList_ vector by filling it with entities and the player
@@ -157,6 +160,8 @@ private:
     TileMap* tileMap_ = nullptr;
     // Represents the location and image of the player in the world  
     Sprite* playerSprite_ = nullptr;
+    // Places a swim filter over sprites that are swimming
+    SwimFilter* swimFilter_ = nullptr;
     // The entity being targeted (if any) by the user
     Entity* targetedEntity_ = nullptr;
     // The visual target info

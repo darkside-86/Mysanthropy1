@@ -59,6 +59,8 @@ public:
     int GetHeight() { return height_; }
     Tile GetTile(int ix, int iy, bool layer1 = false);
     void SetTile(int ix, int iy, const Tile& tile, bool layer1=false);
+    // return true if tile at x,y is configured as "liquid"
+    bool TileIsLiquid(int x, int y, bool layer1=false);
     void FillWithTile(const Tile& tile, bool layer1=false);
     unsigned char GetCollisionData(int ix, int iy);
     void SetCollisionData(int ix, int iy, unsigned char value);
@@ -75,7 +77,7 @@ private:
     void SetupRender();
     void SetupScripting();
     void CleanupEntities();
-    // start processing the next entity
+    static int lua_Liquids(lua_State* L);
     static int lua_BeginEntity(lua_State* L);
     static int lua_UseTexture(lua_State* L);
     static int lua_Width(lua_State* L);
@@ -106,6 +108,8 @@ private:
     ogl::VertexBuffer collisionVbo_;
     // for running entity scripting and map loading
     lua_State* scripting_ = nullptr;
+    // tile ID configurations
+    std::vector<Tile> liquids_;
     // entity index
     std::vector<ENTITY_TYPE> entityTypes_;
     ENTITY_TYPE currentEntityType_;
