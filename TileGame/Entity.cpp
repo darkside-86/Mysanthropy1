@@ -81,8 +81,8 @@ std::vector<ItemDropInfo> Entity::OnInteract()
     for(auto each : onInteract_)
     {
         float chance = 100.0f * (float)rng() / (float)rng.max();
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-            "%s: chance = %f", __FUNCTION__, chance);
+        // engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+        //    "%s: chance = %f", __FUNCTION__, chance);
         if(chance <= each.percentChance)
         {
             ItemDropInfo info;
@@ -101,8 +101,8 @@ std::vector<ItemDropInfo> Entity::OnDestroy()
     for(auto each : onDestroy_)
     {
         float chance = 100.f * (float)rng() / (float)rng.max();
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-            "%s: chance = %f", __FUNCTION__, chance);
+        // engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+        //    "%s: chance = %f", __FUNCTION__, chance);
         if(chance <= each.percentChance)
         {
             ItemDropInfo info;

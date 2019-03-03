@@ -65,7 +65,6 @@ namespace engine { namespace ui {
                 {
                     if(mouseOver_ != over->GetParent())
                     {
-                        // TODO: this probably should be mouseOver_->GetParent()
                         GetNodePosition(mouseOver_, x, y);
                         mouseOver_->OnHover(HoverEvent(x,y,dx,dy,false));
                     }
@@ -135,6 +134,14 @@ namespace engine { namespace ui {
         GameEngine::Get().AddKeyboardListener([this](const SDL_KeyboardEvent& e) {
             this->ProcessKeyboardEvent(e);
         });
+    }
+
+    void Root::RegisterObjectDeletion(Object* obj)
+    {
+        if(mousePressed_ == obj)
+            mousePressed_ = nullptr;
+        if(mouseOver_ == obj)
+            mouseOver_ = nullptr;
     }
 
 }}

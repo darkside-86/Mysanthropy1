@@ -116,9 +116,12 @@ void SaveData::WriteToFile(const std::string& fileName)
     int level = player_.GetLevel();
     out.write((char*)&exp, sizeof(exp));
     out.write((char*)&level, sizeof(level));
-    // finally write the current system time.
+    // write the current system time.
     time_t currentTime = time(nullptr);
     out.write((char*)&currentTime, sizeof(currentTime));
+    // write the player gender as char. bool size is not well-defined across platforms
+    char isB = isBoy_;
+    out.write((char*)&isB, sizeof(isB));
     out.close();
 }
 
@@ -199,6 +202,10 @@ bool SaveData::ReadFromFile(const std::string& fileName)
     player_.SetExperience(exp);
     // read timestamp
     in.read((char*)&timeStamp_, sizeof(timeStamp_));
+    // read player gender
+    char isB;
+    in.read((char*)&isB, sizeof(isB));
+    isBoy_ = isB;
     in.close();
     return true;
 }

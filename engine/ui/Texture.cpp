@@ -32,6 +32,11 @@ namespace engine { namespace ui {
 
         texture_ = new ogl::Texture(pathToTexture);
 
+        if(width_ <= 0)
+            width_ = texture_->GetWidth();
+        if(height_ <= 0)
+            height_ = texture_->GetHeight();
+
         ogl::Vertex verts[6] = {
             {{0.0f, 0.0f, 0.0f}, {255,255,255,255}, {0.0f, 0.0f}, {0.0f, 0.f, 1.f}},
             {{0.0f, 1.0f, 0.0f}, {255,255,255,255}, {0.0f, 1.0f}, {0.0f, 0.f, 1.f}},

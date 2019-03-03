@@ -59,15 +59,20 @@ public:
     void Update(float dtime);
     void Render(engine::GraphicsContext& gc);
     // UI functions
-    void WriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
-    void SetCastBarValue(float value);
-    void ToggleCastBar(bool show);
-    void SetExperienceBar(float value);
-    void ShowInventory(bool show);
-    void BuildInventory();
-    void SetFoodstuffBarData(int amount);
+    void UIWriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
+    void UISetCastBarValue(float value);
+    void UIToggleCastBar(bool show);
+    void UISetExperienceBar(float value);
+    void UIShowInventory(bool show);
+    void UIBuildInventory();
+    void UISetFoodstuffBarData(int amount);
 private:
     enum GAME_STATE { SPLASH, PLAYING };
+    // menu handling and starting
+    void StartGame();
+    void LoadGame();
+    void SaveGame();
+    void NewGame();
     // load a sprite and animations from lost guardian folder
     Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
     // unload textures associated with lost guardian sprite and destroy sprite
@@ -88,10 +93,6 @@ private:
     void SetHarvestCommand(int x, int y, int clicks);
     void SetFarmCommand(int x, int y, const FarmCommand& fc);
     void PrintInventory();
-    // Menu functions
-    void LoadGame(const std::string &slot);
-    void SaveGame(const std::string &slot);
-    void NewGame(const std::string &slot);
     // C++ functions exposed to lua
     static int lua_GetInventory(lua_State* L);
     static int lua_ConvertItemToFoodstuff(lua_State* L);

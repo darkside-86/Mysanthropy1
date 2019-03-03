@@ -32,7 +32,7 @@ namespace engine { namespace ui {
     class Texture: public Object
     {
     public:
-        Texture(Object* parent, const std::string& pathToTexture, int w, int h);
+        Texture(Object* parent, const std::string& pathToTexture, int w=0, int h=0);
         virtual ~Texture();
         virtual void Render(GraphicsContext& gc) override;
     private:

@@ -53,8 +53,8 @@ namespace engine
 		TTF_Font* font = TTF_OpenFont(path.c_str(), size);
 		if (font == nullptr)
 		{
-			GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,
-                    "%s: %s", __FUNCTION__, TTF_GetError());
+			GameEngine::Get().GetLogger().Logf(Logger::Severity::ERROR,
+                "%s: %s", __FUNCTION__, TTF_GetError());
 			return false;
 		}
 
@@ -62,6 +62,21 @@ namespace engine
 
 		return true;
     }
+
+	void TextRenderer::UnloadFont(const std::string& name)
+	{
+		auto found = fonts_.find(name);
+		if(found != fonts_.end())
+		{
+			TTF_CloseFont( found->second );
+			fonts_.erase(found);
+		}
+		else 
+		{
+			GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
+				"%s: Font `%s' is not loaded", __FUNCTION__, name.c_str());
+		}
+	}
 
 	ogl::Texture* TextRenderer::RenderText(const std::string& fontName, const std::string& text, bool solid)
     {

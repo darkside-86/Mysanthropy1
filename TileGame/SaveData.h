@@ -43,12 +43,14 @@ public:
     void WriteToFile(const std::string& fileName);
     bool ReadFromFile(const std::string& fileName);
     inline time_t GetTimeStamp() const { return timeStamp_; }
+    inline bool GetPlayerGender() const { return isBoy_; }
+    inline void SetPlayerGender(const bool isB) { isBoy_ = isB; }
 private:
     void Cleanup();
     // major version of savegame file
     static constexpr unsigned char MAJOR_VERSION = 0;
     // minor version of savegame file
-    static constexpr unsigned char MINOR_VERSION = 3;
+    static constexpr unsigned char MINOR_VERSION = 4;
     // file extension of savegame file
     static constexpr char* FILE_EXT = ".sav";
     // location of savegame files
@@ -66,4 +68,6 @@ private:
     Player& player_;
     // timestamp of last save
     time_t timeStamp_;
+    // determines avatar of survivalist character
+    bool isBoy_ = true;
 };

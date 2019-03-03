@@ -71,8 +71,8 @@ namespace engine
         else
         {
             // load the file first then return it
-            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
-                    "Texture `%s' not preloaded... Attempting to load.", fileName.c_str());
+            // GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, 
+            //        "Texture `%s' not preloaded... Attempting to load.", fileName.c_str());
             LoadTexture(fileName);
             found = textures_.find(fileName);
             if(found != textures_.end())

@@ -18,25 +18,73 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <vector>
+
+#include "engine/ui/Button.h"
+#include "engine/ui/Frame.h"
+#include "engine/ui/Label.h"
+#include "engine/ui/TextField.h"
+#include "engine/ui/Texture.h"
 #include "ogl/Program.h"
 #include "ogl/Texture.h"
 #include "ogl/VertexArray.h"
 #include "ogl/VertexBuffer.h"
 
+class GameLoadState 
+{ public:
+    std::string saveName;
+    bool newGame;
+    bool boyCharacter;
+};
+
 // handles starting menu UI and intro screen before game starts
 class SplashScreen
 {
 public:
+    enum SCREEN_STATE { MENU, ENDSPLASH };
     SplashScreen();
     virtual ~SplashScreen();
     void Initialize();
     void Update(float dtime);
     void Render(ogl::Program& program);
     void Cleanup();
+    inline SCREEN_STATE GetScreenState() const { return screenState_; }
+    inline GameLoadState GetGameLoadState() const { return gameLoadState_; }
 private:
+    // replaces any characters invalid in Windows filenames with '_'
+    std::string ReplaceInvalidChars(const std::string& str);
     // the ogl objects for rendering the fullscreen background
     ogl::VertexArray bgVao_; 
     ogl::VertexBuffer bgVbo_;
     // The texture of the background
     ogl::Texture* bgTexture_;
+
+    // the main screen UI
+    SCREEN_STATE screenState_ = SCREEN_STATE::MENU;
+    
+    engine::ui::Frame* mainScreenPanel_;
+     engine::ui::Texture* titleIcon_;
+     engine::ui::Texture* newGameIcon_;
+     engine::ui::Texture* loadGameIcon_;
+    
+    engine::ui::Frame* newScreenPanel_;
+     engine::ui::Texture* newGoBackIcon_;
+     engine::ui::Frame* newOptionsPanel_;
+      engine::ui::Label* newOptionsLabel1_;
+      engine::ui::Button* newOptionsBoyBtn_;
+      engine::ui::Button* newOptionsGirlBtn_;
+      engine::ui::Label* newOptionsLabel2_;
+      engine::ui::TextField* newOptionsNameTf_;
+      engine::ui::Button* newOptionsStartBtn_;
+      engine::ui::Label* newOptionsErrorLbl_;
+
+    engine::ui::Frame* loadScreenPanel_;
+     engine::ui::Texture* loadGoBackIcon_;
+     engine::ui::Frame* loadOptionsPanel_;
+      engine::ui::Button* loadOptionsLoadBtn_;
+      engine::ui::Frame* loadOptionsFileListPanel_;
+      std::vector<engine::ui::Label*> loadOptionsFileList_;
+
+    // What to do when menu is exited and game begins to load
+    GameLoadState gameLoadState_;
 };

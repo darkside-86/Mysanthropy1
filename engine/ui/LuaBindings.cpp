@@ -971,8 +971,12 @@ namespace engine { namespace ui {
             parent = CheckObject(L, 1);
         
         const char* textureAlias = luaL_checkstring(L, 2);
-        int width = (int)luaL_checkinteger(L, 3);
-        int height = (int)luaL_checkinteger(L, 4);
+        int width = 0;
+        int height = 0;
+        if(!lua_isnil(L, 3))
+            width = (int)luaL_checkinteger(L, 3);
+        if(!lua_isnil(L, 4))
+            height = (int)luaL_checkinteger(L, 4);
 
         Texture* t = (Texture*)lua_newuserdata(L, sizeof(Texture));
         luaL_setmetatable(L, IS_TEXTURE);

@@ -45,6 +45,8 @@ namespace engine { namespace ui {
         void GetNodePosition(Object* node, int& x, int &y);
         // Set up SDL_Event handlers to start the Proces...Event functions
         void Initialize();
+        // Register object deletion (in case we need to clear mouse data pointers)
+        void RegisterObjectDeletion(Object* obj);
         // Returns the singleton instance
         static Root* Get() 
         {

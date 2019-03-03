@@ -1,8 +1,9 @@
-print("TileGame UI 0.1")
+print("TileGame.lua: Welcome to Despacito Island user interface 0.1")
 local screenWidth = GetScreenWidth()
 local screenHeight = GetScreenHeight()
 
--- Create yellow FPS counter in bottom right corner
+-- Create yellow FPS counter in bottom right corner ---------------------------
+-------------------------------------------------------------------------------
 function UpdateFPS()
     fpsLbl:SetText("FPS: " .. tostring(GetFramesPerSecond()))
     fpsLbl:SetXPos(GetScreenWidth() - fpsLbl:GetWidth())
@@ -13,7 +14,8 @@ end
 fpsLbl = UILabel.New(nil, "FPS: ", "sans14", 1,1,0,1)
 UpdateFPS()
 
--- Create console output box
+-- Create console output box --------------------------------------------------
+-------------------------------------------------------------------------------
 consoleFrame = UIFrame.New(nil, GetScreenWidth() / 3, GetScreenHeight() / 4, 0, 0, TEXTURE_UIBLANK)
 consoleFrame:SetColor(0,0,0,0.5)
 consoleFrame:SetYPos(GetScreenHeight() - consoleFrame:GetHeight() - (consoleFrame:GetHeight()/5))
@@ -51,7 +53,8 @@ function WriteLineToConsole(text, r,g,b,a)
     end
 end
 
--- Create cast bar
+-- Create cast bar ------------------------------------------------------------
+-------------------------------------------------------------------------------
 castbar = UIFrame.New(nil, 250, 25, 0, 0, TEXTURE_UIBLANK)
 castbar:SetXPos(GetScreenWidth() / 2 - castbar:GetWidth() / 2)
 castbar:SetYPos(GetScreenHeight() - castbar:GetHeight() * 5)
@@ -68,7 +71,8 @@ end
 SetCastBarValue(0)
 castbar:SetVisible(false) -- hide until we use it
 
--- Create experience bars (half of screen width)
+-- Create experience bars (half of screen width) ------------------------------
+-------------------------------------------------------------------------------
 local halfScrW = GetScreenWidth() / 2
 experienceBar = UIFrame.New(nil, halfScrW, 15, 0, 0, TEXTURE_UIBLANK)
 experienceBar:SetColor(0.2,0.2,0.2,0.5)
@@ -130,16 +134,11 @@ inventoryFrame.panel:AddOnClicked(function(x,y)
     if inventoryFrame.convertingFood == false then 
         return 
     end 
-    print("x=", x, "y=", y)
     for k,v in pairs(inventoryFrame.panel.elements) do
         -- determine which item was clicked
         if x >= v:GetXPos() and x <= v:GetXPos() + v:GetWidth() and 
           y >= v:GetYPos() and y <= v:GetYPos() + v:GetHeight() then 
             clicked = v
-            local rect = { v:GetXPos(), v:GetYPos(),
-                v:GetXPos() + v:GetWidth(),
-                v:GetYPos() + v:GetHeight() }
-            print(rect[1], rect[2], rect[3], rect[4])
             break
         end
     end
@@ -148,12 +147,13 @@ inventoryFrame.panel:AddOnClicked(function(x,y)
         if keepGoing == false then 
             inventoryFrame.convertingFood = false 
             inventoryFrame.convertBtn:SetColor(0.2,0.2,1,0.7)
+        else 
+            -- update the number on success
+            clicked.count = clicked.count - 1
+            clicked.countLbl:SetText(clicked.count)
         end
         SetFoodstuffBarData(TileGame_GetFoodstuffCount())
-    else 
-        print("Note: clicked == nil")
     end
-    BuildInventory()
 end)
 -- build the inventory item list
 function BuildInventory()

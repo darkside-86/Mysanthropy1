@@ -32,6 +32,7 @@ namespace engine
 		TextRenderer();
 		virtual ~TextRenderer();
 		bool LoadFont(const std::string &path, const std::string& name, int size);
+		void UnloadFont(const std::string& name);
 		ogl::Texture* RenderText(const std::string& fontName, const std::string& text, bool solid);
 		ogl::Texture* RenderTextShaded(const std::string& fontName, const std::string& text);
         void SetFGColor(float r, float g, float b, float a);

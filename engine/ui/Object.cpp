@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include "Root.h"
+
 namespace engine { namespace ui {
 
     Object::Object(Object* parent) : parent_(parent), visible_(true)
@@ -33,6 +35,7 @@ namespace engine { namespace ui {
 
     Object::~Object()
     {
+        // clear out the children and parent hierarchy references
 		for (auto it = children_.begin(); it != children_.end(); ++it)
 		{
 			(*it)->parent_ = nullptr;
@@ -48,6 +51,8 @@ namespace engine { namespace ui {
                 }
             }
         }
+        // register deletion with Root object
+        Root::Get()->RegisterObjectDeletion(this);
     }
 
     void Object::Update(float dtime)
@@ -93,7 +98,9 @@ namespace engine { namespace ui {
         {
             if(parent_ != nullptr)
             {
-                // parent_->OnClicked(e);
+                // IMPORTANT: For the x,y to be meaningful in even propagation, we need the
+                // x,y to be relative to the object that ultimately receives the event.
+                //
                 parent_->OnClicked(ClickedEvent(
                     e.x + this->GetXPos(), 
                     e.y + this->GetYPos(), 
@@ -118,6 +125,7 @@ namespace engine { namespace ui {
         //  to the parent
         if(onHover_.size() == 0)
         {
+            // TODO: send an event with modified x,y as in OnClicked possibly!
             if(parent_ != nullptr)
                 parent_->OnHover(e);
         }

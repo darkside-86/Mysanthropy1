@@ -53,11 +53,6 @@ private:
     int baseExp_ = 500;
     // logarithmic multiplier for base stats
     float statScale_;
-    int strengthStat_ = 10;
-    int agilityStat_ = 10;
-    int intellectStat_ = 10;
-    int enduranceStat_ = 10;
-    int spiritStat_ = 10;
     // logarithmic multipler for experience levels
     float experienceScale_; 
     Inventory inventory_;
