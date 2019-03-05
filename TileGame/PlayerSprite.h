@@ -1,4 +1,4 @@
-// Inventory.h
+// PlayerSprite.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -18,33 +18,19 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <functional>
-#include <unordered_map>
+#include "CombatUnit.h"
+#include "Sprite.h"
+#include "PlayerData.h"
 
-#include "Item.h"
-
-class ItemEntry
-{ public:
-    Item *item=nullptr;
-    int count=0;
-    int foodstuffValue=0;
-};
-
-class Inventory
+class PlayerSprite : public Sprite 
 {
 public:
-    Inventory();
-    virtual ~Inventory();
-    void AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden=false, int foodstuffValue=0);
-    void AddItemByName(const std::string &name, int count);
-    ItemEntry GetItemEntryByName(const std::string &name) const;
-    void ForEachItemEntry(std::function<void(const std::string&,const ItemEntry&)> expr) const;
-    inline size_t GetNumEntries() const { return items_.size(); }
-    void ClearItems();
-    void SetItemAmount(const std::string& name, int amount);
-    int GetItemAmount(const std::string& name);
-    bool ConvertItemToFoodstuff(const std::string& name, int amount);
+    PlayerSprite(ogl::Texture* texture, int w, int h);
+    virtual ~PlayerSprite();
+    void Update(float dtime) override;
+    inline CombatUnit& GetCombatUnit() { return *combatUnit_; }
+    inline PlayerData& GetPlayerData() { return playerData_; }
 private:
-    // owns ITEM_ENTRY::item pointer
-    std::unordered_map<std::string,ItemEntry> items_;
+    CombatUnit* combatUnit_;
+    PlayerData  playerData_;
 };

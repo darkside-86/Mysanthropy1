@@ -207,7 +207,39 @@ end
 -- Initial data
 SetFoodstuffBarData(TileGame_GetFoodstuffCount())
 
-
+-- Return to main menu popup --------------------------------------------------
+-------------------------------------------------------------------------------
+returnMM = UIFrame.New(nil, screenWidth / 5, screenHeight / 5, 0, 0, TEXTURE_UIBLANK )
+returnMM:SetXPos( screenWidth / 2 - returnMM:GetWidth() / 2)
+returnMM:SetYPos( screenHeight / 2 - returnMM:GetHeight() / 2)
+returnMM:SetColor(0.2, 0.2, 0.8, 0.8)
+returnMM:SetVisible(false)
+returnMM.label1 = UILabel.New(returnMM, "Return to main menu?", "sans14", 1, 1, 1, 1)
+returnMM.confirmBtn = UIButton.New(returnMM, TEXTURE_UIBLANK, "Confirm", "sans14", 10)
+returnMM.confirmBtn:SetXPos(0)
+returnMM.confirmBtn:SetYPos(returnMM.label1:GetYPos() + returnMM.label1:GetHeight())
+returnMM.confirmBtn:SetColor(0,0,0,0)
+returnMM.confirmBtn:SetBorderColor(1,1,1,1)
+returnMM.confirmBtn:SetBorderSize(1)
+returnMM.confirmBtn:AddOnClicked(function() 
+    TileGame_ReturnToMainMenu()
+    returnMM:SetVisible(false)
+end)
+returnMM.cancelBtn = UIButton.New(returnMM, TEXTURE_UIBLANK, "Cancel", "sans14", 10)
+returnMM.cancelBtn:SetXPos(returnMM:GetWidth() - returnMM.cancelBtn:GetWidth())
+returnMM.cancelBtn:SetYPos(returnMM.confirmBtn:GetYPos())
+returnMM.cancelBtn:SetColor(0, 0, 0, 0)
+returnMM.cancelBtn:SetBorderColor(1, 1, 1, 1)
+returnMM.cancelBtn:SetBorderSize(1)
+returnMM.cancelBtn:AddOnClicked(function() 
+    returnMM:SetVisible(false)
+end)
+function ShowMMPopup()
+    returnMM:SetVisible(true)
+end
+function ToggleMMPopup(show)
+    returnMM:SetVisible(show)
+end
 
 
 

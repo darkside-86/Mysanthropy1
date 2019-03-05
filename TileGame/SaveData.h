@@ -24,50 +24,70 @@
 #include <vector>
 
 #include "Inventory.h"
-#include "Player.h"
+#include "PlayerData.h"
 #include "PlayerCommand.h"
+
+// file structs
+struct ITEM_DATA
+{
+    char* name;
+    int count;
+};
+
+struct PLAYER_DATA
+{
+    int experience;
+    int level;
+    int boy; // 1 for boy, 0 for girl
+};
 
 // encapsulates writing and reading a persistent state of the game to files
 class SaveData
 {
 public:
-    SaveData(Inventory& inv, Player& player);
+    SaveData();
     virtual ~SaveData();
     void AddHarvestCommand(const HarvestCommand& command);
     void AddFarmCommand(const FarmCommand& command);
     void ForEachHarvestCommand(const std::function<void(const HarvestCommand&)>& fn);
     void ForEachFarmCommand(const std::function<void(const FarmCommand&)>& fn);
-    inline MoveCommand GetMoveCommand() { return moveCommand_; }
-    inline void SetMoveCommand(const MoveCommand& command) 
-        { moveCommand_ = command; }
+    inline LocationCommand GetLocationCommand() { return locationCommand_; }
+    inline void SetLocationCommand(const LocationCommand& command) 
+        { locationCommand_ = command; }
     void WriteToFile(const std::string& fileName);
     bool ReadFromFile(const std::string& fileName);
     inline time_t GetTimeStamp() const { return timeStamp_; }
-    inline bool GetPlayerGender() const { return isBoy_; }
-    inline void SetPlayerGender(const bool isB) { isBoy_ = isB; }
+    // writes the player data object info to the Save File internal object. To use before calling WriteToFile
+    void SavePlayerData(const PlayerData& data);
+    // writes the inventory data to the internal save file. To be used before calling WriteToFile
+    void SaveInventoryData(const Inventory& inv);
+    // Loads data read from file into PlayerData. To be called after ReadFromFile
+    void LoadPlayerData(PlayerData& data);
+    // Fills in inventory information. To be called after ReadFromFile
+    void LoadInventoryData(Inventory& inv);
+    // Discards all information read from file. Automatically called between writing and reading files
+    void ClearData();
+    // Returns the gender (true=boy, false=girl) of the player
+    inline bool PlayerIsBoy() const { return playerData_.boy; }
 private:
-    void Cleanup();
     // major version of savegame file
     static constexpr unsigned char MAJOR_VERSION = 0;
     // minor version of savegame file
-    static constexpr unsigned char MINOR_VERSION = 4;
+    static constexpr unsigned char MINOR_VERSION = 1;
     // file extension of savegame file
     static constexpr char* FILE_EXT = ".sav";
-    // location of savegame files
+    // location of savegame files. TODO: change this
     static constexpr char* FILE_DIR = "TileGame/saves/";
-
     // list of entity harvests
     std::vector<HarvestCommand> harvestCommands_;
     // list of farming occurences
     std::vector<FarmCommand> farmCommands_;
     // only one move command so far for main character location to be saved
-    MoveCommand moveCommand_; 
-    // Inventory data
-    Inventory& inventory_;
-    // Player data (just the main character for now)
-    Player& player_;
+    LocationCommand locationCommand_; 
+    // items
+    std::vector<ITEM_DATA> items_;
+    // player info
+    PLAYER_DATA playerData_;
     // timestamp of last save
     time_t timeStamp_;
-    // determines avatar of survivalist character
-    bool isBoy_ = true;
 };

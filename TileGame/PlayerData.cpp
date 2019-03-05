@@ -1,4 +1,4 @@
-// Player.cpp
+// PlayerData.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -17,63 +17,31 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "Player.h"
+#include "PlayerData.h"
 
-Player::Player() 
+PlayerData::PlayerData() 
 {
 }
 
-Player::~Player()
+PlayerData::~PlayerData()
 {
 
 }
 
-void Player::SetLevel(int level)
+void PlayerData::SetLevel(int level)
 {
     level_ = level;
     float mult = pow(experienceScale_, (level_-1));
-    maxExperience_ = (int)(mult * (float)baseExp_);
+    maxExperience_ = (int)(mult * (float)baseExperience_);
     CalculateStats();
 }
 
-int Player::ReduceHealth(int amount)
-{
-    health_ -= amount;
-    if(health_ < 0)
-    {
-        int overkill = 0 - health_;
-        health_ = 0;
-        return overkill;
-    }
-    else
-    {
-        return 0;
-    }
-    
-}
-
-int Player::AddHealth(int amount)
-{
-    health_ += amount;
-    if(health_ > maxHealth_)
-    {
-        int overheal = maxHealth_ - health_;
-        health_ = maxHealth_;
-        return overheal;
-    }
-    else 
-    {
-        return 0;
-    }
-}
-
-bool Player::SetExperience(int exp)
+bool PlayerData::SetExperience(int exp)
 {
     experience_ = exp;
     if(experience_ >= maxExperience_)
     {
         experience_ -= maxExperience_;
-        inventory_.SetItemAmount("exp", experience_);
         SetLevel(level_ + 1);
         return true;
     }
@@ -83,12 +51,12 @@ bool Player::SetExperience(int exp)
     }
 }
 
-void Player::SetBaseMaxExp(int max)
+void PlayerData::SetBaseMaxExp(int max)
 {
-    baseExp_ = max;
+    baseExperience_ = max;
 }
 
-void Player::CalculateStats()
+void PlayerData::CalculateStats()
 {
     // TODO:
 }

@@ -42,7 +42,7 @@ void Inventory::AddItemEntry(const std::string& name, ogl::Texture* texture, boo
     if(found == items_.end())
     {
         // not found so create the new item entry.
-        ITEM_ENTRY ie;
+        ItemEntry ie;
         ie.item = new Item(name, texture, hidden);
         ie.count = 0;
         ie.foodstuffValue = foodstuffValue;
@@ -71,7 +71,7 @@ void Inventory::AddItemByName(const std::string &name, int count)
     }
 }
 
-ITEM_ENTRY Inventory::GetItemEntryByName(const std::string &name) const
+ItemEntry Inventory::GetItemEntryByName(const std::string &name) const
 {
     auto found = items_.find(name);
     if(found != items_.end())
@@ -80,14 +80,14 @@ ITEM_ENTRY Inventory::GetItemEntryByName(const std::string &name) const
     }
     else 
     {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
             "%s: Item `%s' does not have an entry!", __FUNCTION__, name.c_str());
-        ITEM_ENTRY blank = { nullptr, 0 };
+        ItemEntry blank = { nullptr, 0, 0 };
         return blank;
     }
 }
 
-void Inventory::ForEachItemEntry(std::function<void(const std::string&,const ITEM_ENTRY&)> expr) const
+void Inventory::ForEachItemEntry(std::function<void(const std::string&,const ItemEntry&)> expr) const
 {
     for(auto it = items_.begin(); it != items_.end(); ++it)
     {
@@ -143,7 +143,7 @@ bool Inventory::ConvertItemToFoodstuff(const std::string& name, int amount)
         return false;
     }
 
-    ITEM_ENTRY ie = GetItemEntryByName(name);
+    ItemEntry ie = GetItemEntryByName(name);
 
     if(ie.foodstuffValue <= 0)
     {

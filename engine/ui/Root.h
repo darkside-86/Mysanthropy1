@@ -69,7 +69,7 @@ namespace engine { namespace ui {
         // Keeps track of what object is currently being hovered
         Object*     mouseOver_ = nullptr;
         // Keeps track of whether a mouse button is up or down.
-        // TODO: which button??? May be the source of "unrepeatable" "random" crashes
+        // TODO: keep track per button
         bool        mouseDown_ = false;
     };
 

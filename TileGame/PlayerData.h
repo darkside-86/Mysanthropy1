@@ -1,4 +1,4 @@
-// Player.h
+// PlayerData.h
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2018
@@ -21,39 +21,36 @@
 #include "Inventory.h"
 
 // encapsulates player data such as stats and level
-class Player
+class PlayerData
 {
 public:
-    Player();
-    virtual ~Player();
+    PlayerData();
+    virtual ~PlayerData();
 
+    inline bool IsBoy() const { return isBoy_; }
+    inline void SetBoy(bool b) { isBoy_ = b; }
+    
     inline int GetLevel() const { return level_; }
     void SetLevel(int level);
-    inline int GetHealth() const { return health_; }
-    inline int GetMaxHealth() const { return maxHealth_; }
-    int ReduceHealth(int amount);
-    int AddHealth(int amount);
     // returns true if user gets a level increase
     bool SetExperience(int exp);
-    inline int GetExperience() { return experience_; }
-    inline int GetMaxExperience() { return maxExperience_; }
-    inline Inventory& GetInventory() { return inventory_; }
+    inline int GetExperience() const { return experience_; }
+    inline int GetMaxExperience() const { return maxExperience_; }
     inline void SetStatScale(float v) { statScale_ = v; }
     inline void SetExperienceScale(float v) { experienceScale_ = v; }
     void SetBaseMaxExp(int max); // required experience from level 1 to 2
     void CalculateStats();
 private:
+    bool isBoy_ = true;
+    // experience level - read from savedata configuration
     int level_ = 1;
-    int health_ = 1;
-    int maxHealth_ = 1;
-    // experience for current level
+    // experience for current level. Set by savegame configuration
     int experience_ = 0; 
-    // TODO: set level 1-2 experience from configuration
-    int maxExperience_ = 500; 
-    int baseExp_ = 500;
+    // experience required to gain a level. set by configuration
+    int maxExperience_ = 251; 
+    int baseExperience_ = 251;
     // logarithmic multiplier for base stats
     float statScale_;
     // logarithmic multipler for experience levels
     float experienceScale_; 
-    Inventory inventory_;
 };

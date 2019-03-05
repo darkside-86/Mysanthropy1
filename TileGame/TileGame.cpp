@@ -27,9 +27,10 @@
 #include "engine/GameEngine.h"
 #include "engine/ui/Root.h"
 
-TileGame::TileGame()
+TileGame::TileGame() : configuration_("TileGame/gameconfig.lua")
 { 
-
+    // process inventory configuration
+    configuration_.AddItemEntries(inventory_);
 }
 
 TileGame::~TileGame()
@@ -84,9 +85,7 @@ bool TileGame::Initialize()
                     UIShowInventory(showingInventory_);
                     return;
                 case SDLK_ESCAPE:
-                    // TODO: confirmation popup before returning to main menu
-                    EndGame();
-                    ReturnToMainMenu();
+                    UIShowMMPopup(true);
                     return;
                 default:
                     // without this the entire screen except UI goes black......
@@ -108,7 +107,7 @@ bool TileGame::Initialize()
                         harvestSoundChannel_ = -1;
                     }
                 }
-                const float baseSpeed = configuration_->GetBasePlayerSpeed();
+                const float baseSpeed = configuration_.GetBasePlayerSpeed();
                 playerSprite_->StartAnimation();
                 if(vel.y != 0)
                     vel.y /= glm::abs(vel.y); // set to 1 or -1
@@ -171,7 +170,7 @@ bool TileGame::Initialize()
                         std::string rclicks = std::to_string(targetedEntity_->GetRemainingClicks());
                         std::string mclicks = std::to_string(targetedEntity_->GetMaxClicks());
                         std::string message = std::string("Now targeting a ") + targetedEntity_->GetName();
-                        target_->SetTargetSprite(targetedEntity_, Target::TARGET_TYPE::FRIENDLY,
+                        target_.SetTargetSprite(targetedEntity_, Target::TARGET_TYPE::FRIENDLY,
                             Target::SPRITE_TYPE::ENTSPR);
                         if(targetedEntity_->GetMaxClicks() != -1)
                         {
@@ -222,6 +221,11 @@ void TileGame::Update(float dtime)
     if(gameState_ == GAME_STATE::SPLASH)
     {
         splashScreen_->Update(dtime);
+    }
+    else if(gameState_ == GAME_STATE::RETURNING_TO_MENU)
+    {
+        EndGame();
+        ReturnToMainMenu();
     }
     else
     {
@@ -323,7 +327,7 @@ void TileGame::Render(engine::GraphicsContext& gc)
         // TODO: fix glitchy tile movement
         tileMap_->Render(-camera_.x,-camera_.y, program);
         // render the visual target before the actual sprites being targeted
-        target_->Render(-camera_, program);
+        target_.Render(-camera_, program);
         RenderSortPass();
         for(auto it=renderList_.begin(); it != renderList_.end(); ++it)
         {
@@ -342,34 +346,23 @@ void TileGame::StartGame()
 {
     // Change the game state
     gameState_ = GAME_STATE::PLAYING;
-    // Load map and set up entities and configuration
+    // Load map and set up entities
     tileMap_ = new TileMap("res/tilemaps/island.bin");
     loadedEntities_ = tileMap_->GenerateEntities();
-    configuration_ = new Configuration("TileGame/gameconfig.lua");
-    // create target object
-    target_ = new Target();
-    target_->SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
+    // clear target
+    target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
     // get menu information to determine save or load game data then destroy 
     // the splash screen
     auto gameLoadState = splashScreen_->GetGameLoadState();
     splashScreen_->Cleanup();
     delete splashScreen_;
     splashScreen_ = nullptr;
-    // set up player configuration data and inventory.
-    player_ = new Player();
-    configuration_->AddItemEntries(player_->GetInventory());
-    player_->SetExperienceScale(configuration_->GetExperienceScale());
-    player_->SetBaseMaxExp(configuration_->GetBaseExperience());
-    // create saveData object
-    saveData_ = new SaveData(player_->GetInventory(), *player_);
-    // write data to saveData for when game is saved. also to determine
+    // name of save slot and determine
     // survivalist gender when spawning new player sprite.
     saveSlot_ = gameLoadState.saveName;
-    if(gameLoadState.newGame)
-        saveData_->SetPlayerGender(gameLoadState.boyCharacter);
     // either start a new game or load new game according to menu option
     if(gameLoadState.newGame)
-        NewGame();
+        NewGame(gameLoadState.boyCharacter);
     else 
         LoadGame();
     // Set player sprite common info
@@ -393,8 +386,8 @@ void TileGame::StartGame()
 
 void TileGame::LoadGame()
 {
-    bool loaded = saveData_->ReadFromFile(saveSlot_);
-    if(!loaded) // the main menu should prevent loading invalid files
+    bool loaded = saveData_.ReadFromFile(saveSlot_);
+    if(!loaded) // the main menu should generally prevent loading invalid files
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
             "%s: Attempt to load invalid save file!", __FUNCTION__);
@@ -402,14 +395,14 @@ void TileGame::LoadGame()
     else
     {
         // create the sprite
-        playerSprite_ = LoadLGSpr( saveData_->GetPlayerGender() ? configuration_->GetBoySurvivalistSprite() :
-            configuration_->GetGirlSurvivalistSprite() );
-        // process move command
-        playerSprite_->SetPosition({(float)saveData_->GetMoveCommand().locationX,
-            (float)saveData_->GetMoveCommand().locationY,0.f});
+        playerSprite_ = LoadPlayerLGSpr( saveData_.PlayerIsBoy() ? configuration_.GetBoySurvivalistSprite() :
+            configuration_.GetGirlSurvivalistSprite() );
+        // process locate command
+        playerSprite_->SetPosition({(float)saveData_.GetLocationCommand().locationX,
+            (float)saveData_.GetLocationCommand().locationY,0.f});
     }
     // process harvest commands
-    saveData_->ForEachHarvestCommand([this](const HarvestCommand& cmd){
+    saveData_.ForEachHarvestCommand([this](const HarvestCommand& cmd){
         Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
         if(ent == nullptr)
         {
@@ -431,7 +424,7 @@ void TileGame::LoadGame()
         }
     });
     // process farm commands
-    saveData_->ForEachFarmCommand([this](const FarmCommand& cmd){
+    saveData_.ForEachFarmCommand([this](const FarmCommand& cmd){
         Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
         if(ent == nullptr)
         {
@@ -444,45 +437,59 @@ void TileGame::LoadGame()
             ent->SetFarmData(cmd);
         }
     });
+    // process player and inventory.
+    playerSprite_->GetPlayerData().SetExperienceScale(configuration_.GetExperienceScale());
+    playerSprite_->GetPlayerData().SetBaseMaxExp(configuration_.GetBaseExperience());
+    saveData_.LoadPlayerData(playerSprite_->GetPlayerData());
+    saveData_.LoadInventoryData(inventory_);
 
     // log the timestamp of the last save time
     time_t currentTime = time(nullptr);
-    time_t timeStamp = saveData_->GetTimeStamp();
+    time_t timeStamp = saveData_.GetTimeStamp();
     time_t secondsElapsed = currentTime - timeStamp;
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
         "%ld seconds since last file save", (long)secondsElapsed);
+
+    // discard save data
+    saveData_.ClearData();
 }
 
 void TileGame::SaveGame()
 {
     auto pos = playerSprite_->GetPosition();
-    saveData_->SetMoveCommand(MoveCommand((int)pos.x, (int)pos.y));
+    saveData_.SetLocationCommand(LocationCommand((int)pos.x, (int)pos.y));
     auto harvestCmds = GetHarvestCommands();
     for(auto each : harvestCmds)
     {
-        saveData_->AddHarvestCommand(each);
+        saveData_.AddHarvestCommand(each);
     }
     auto farmCmds = GetFarmCommands();
     for(auto each : farmCmds)
     {
-        saveData_->AddFarmCommand(each);
+        saveData_.AddFarmCommand(each);
     }
-    saveData_->WriteToFile(saveSlot_);
+    saveData_.SaveInventoryData(inventory_);
+    saveData_.SavePlayerData(playerSprite_->GetPlayerData());
+    saveData_.WriteToFile(saveSlot_);
 }
 
-void TileGame::NewGame()
+void TileGame::NewGame(bool boy)
 {
     int ix, iy;
-    configuration_->GetTileSpawnPoint(ix, iy);
-    playerSprite_ = LoadLGSpr(saveData_->GetPlayerGender() ? configuration_->GetBoySurvivalistSprite() :
-        configuration_->GetGirlSurvivalistSprite());
+    configuration_.GetTileSpawnPoint(ix, iy);
+    playerSprite_ = LoadPlayerLGSpr(boy ? configuration_.GetBoySurvivalistSprite() :
+        configuration_.GetGirlSurvivalistSprite());
     playerSprite_->SetPosition({
         (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
         (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight(),
         0.f
     });
-    player_->SetLevel(1);
-    player_->SetExperience(0);
+    // set up player configuration data
+    playerSprite_->GetPlayerData().SetExperienceScale(configuration_.GetExperienceScale());
+    playerSprite_->GetPlayerData().SetBaseMaxExp(configuration_.GetBaseExperience());
+    playerSprite_->GetPlayerData().SetLevel(1);
+    playerSprite_->GetPlayerData().SetExperience(0);
+    playerSprite_->GetPlayerData().SetBoy(boy);
 }
 
 void TileGame::EndGame()
@@ -490,26 +497,22 @@ void TileGame::EndGame()
     if(gameState_ != GAME_STATE::SPLASH)
     {
         delete luaBindings_;
-        lua_close(uiScript_);
+        if(uiScript_)
+        {
+            lua_close(uiScript_);
+            uiScript_ = nullptr;
+        }
         SaveGame();
-        UnloadLGSpr(playerSprite_, saveData_->GetPlayerGender() ? 
-            configuration_->GetBoySurvivalistSprite() : configuration_->GetGirlSurvivalistSprite());
+        UnloadPlayerLGSpr(playerSprite_, playerSprite_->GetPlayerData().IsBoy() ? 
+            configuration_.GetBoySurvivalistSprite() : configuration_.GetGirlSurvivalistSprite());
+        delete swimFilter_;
+        swimFilter_ = nullptr;
+        CleanupLoadedEntities();
+        delete tileMap_;
+        tileMap_ = nullptr;
     }
     auto &sm = engine::GameEngine::Get().GetSoundManager();
     sm.StopMusic();
-    delete tileMap_;
-    tileMap_ = nullptr;
-    delete configuration_;
-    configuration_ = nullptr;
-    CleanupLoadedEntities();
-    delete target_;
-    target_ = nullptr;
-    delete player_;
-    player_ = nullptr;
-    delete swimFilter_;
-    swimFilter_ = nullptr;
-    delete saveData_;
-    saveData_ = nullptr;
 }
 
 void TileGame::ReturnToMainMenu()
@@ -605,6 +608,7 @@ void TileGame::UISetFoodstuffBarData(int amount)
     lua_getglobal(uiScript_, "SetFoodstuffBarData");
     lua_pushinteger(uiScript_, amount);
     int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
             "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
@@ -612,12 +616,25 @@ void TileGame::UISetFoodstuffBarData(int amount)
     }
 }
 
-Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
+void TileGame::UIShowMMPopup(bool show)
+{
+    lua_getglobal(uiScript_, "ToggleMMPopup");
+    lua_pushboolean(uiScript_, show);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);    
+    }
+}
+
+PlayerSprite* TileGame::LoadPlayerLGSpr(const std::string& name, int w, int h)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
     ogl::Texture* texture = tm.GetTexture(path + "_fr1.gif");
-    Sprite* sprite = new Sprite(texture, w, h);
+    PlayerSprite* sprite = new PlayerSprite(texture, w, h);
     sprite->AddAnimFrame("front_stand", tm.GetTexture(path + "_fr1.gif"));
     sprite->AddAnimFrame("front_walk", tm.GetTexture(path + "_fr1.gif"));
     sprite->AddAnimFrame("front_walk", tm.GetTexture(path + "_fr2.gif"));
@@ -633,7 +650,7 @@ Sprite* TileGame::LoadLGSpr(const std::string& name, int w, int h)
     return sprite;
 }
 
-void TileGame::UnloadLGSpr(Sprite*& sprite, const std::string& name)
+void TileGame::UnloadPlayerLGSpr(PlayerSprite*& sprite, const std::string& name)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
@@ -723,6 +740,11 @@ Entity* TileGame::FindEntityByLocation(int x, int y)
 
 void TileGame::SetupUIScript()
 {
+    if(uiScript_)
+    {
+        lua_close(uiScript_);
+        uiScript_ = nullptr;
+    }
     uiScript_ = luaL_newstate();
     luaL_openlibs(uiScript_);
     luaBindings_ = new engine::ui::LuaBindings(uiScript_);
@@ -738,6 +760,8 @@ void TileGame::SetupUIScript()
     lua_setglobal(uiScript_, "TileGame_ConvertItemToFoodstuff");
     lua_pushcfunction(uiScript_, TileGame::lua_GetFoodstuffCount);
     lua_setglobal(uiScript_, "TileGame_GetFoodstuffCount");
+    lua_pushcfunction(uiScript_, TileGame::lua_ReturnToMainMenu);
+    lua_setglobal(uiScript_, "TileGame_ReturnToMainMenu");
 
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", 
@@ -838,7 +862,7 @@ void TileGame::InteractWithTarget()
 void TileGame::ClearTarget()
 {   
     targetedEntity_ = nullptr;
-    target_->SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
+    target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
     // TODO: when target circles are rendered, clear their state and visibility
 }
 
@@ -871,6 +895,7 @@ void TileGame::CheckHarvestCast(float dtime)
         UISetCastBarValue(currentCastTime_ / maxCastTime_);
         if(currentCastTime_ >= maxCastTime_)
         {
+            bool dinged = false;
             // the cast is completed so run ability, currently only harvest.
             // UIWriteLineToConsole("Cast complete");
             if(harvestSoundChannel_ != -1)
@@ -880,21 +905,25 @@ void TileGame::CheckHarvestCast(float dtime)
             }
             if(targetedEntity_->IsFarmable() && targetedEntity_->IsReadyForPickup())
             {
+                // check farming
                 auto itemToAdd = targetedEntity_->Farm();
                 SetFarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
                     FarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y,
                         false, time(nullptr)));
-                player_->GetInventory().AddItemByName(itemToAdd.name, itemToAdd.num);
+                inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
                 UIWriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
                     + " " + itemToAdd.name + "(s)");
-                player_->GetInventory().AddItemByName("exp", itemToAdd.num);
-                UIWriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp");
+                dinged = playerSprite_->GetPlayerData().SetExperience(
+                    playerSprite_->GetPlayerData().GetExperience() + itemToAdd.num);
+                UIWriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
+                    1.0f, 0.f, 1.0f, 1.0f);
                 UIBuildInventory();
                 UpdatePlayerExperience();
                 ClearTarget(); // to prevent accidentally harvesting instead of farming item
             }
             else 
             {
+                // check harvest-clicking
                 targetedEntity_->DecRemainingClicks();
                 SetHarvestCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
                     targetedEntity_->GetMaxClicks() - targetedEntity_->GetRemainingClicks());
@@ -902,11 +931,21 @@ void TileGame::CheckHarvestCast(float dtime)
                 auto itemsToAdd = targetedEntity_->OnInteract();
                 for(auto each : itemsToAdd)
                 {
-                    UIWriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
-                        + " " + each.name + "(s)");
-                    player_->GetInventory().AddItemByName(each.name, each.num);
-                    UIBuildInventory();
-                    UpdatePlayerExperience();
+                    if(each.name != "exp")
+                    {
+                        UIWriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
+                            + " " + each.name);
+                        inventory_.AddItemByName(each.name, each.num);
+                        UIBuildInventory();
+                    }
+                    else 
+                    {   // item exp is a special handled case, not added to inventory
+                        UIWriteLineToConsole(std::string("You gain ") + std::to_string(each.num) + " experience.", 
+                            1.0f, 0.0f, 1.0f, 1.0f);
+                        dinged = playerSprite_->GetPlayerData().SetExperience(
+                            playerSprite_->GetPlayerData().GetExperience() + each.num);
+                        UpdatePlayerExperience();
+                    }
                 }
                 if(targetedEntity_->GetRemainingClicks() <= 0)
                 {
@@ -914,11 +953,21 @@ void TileGame::CheckHarvestCast(float dtime)
                     auto items = targetedEntity_->OnDestroy();
                     for(auto each : items)
                     {
-                        UIWriteLineToConsole(std::string("You received ") + std::to_string(each.num)
-                            + " " + each.name + "(s)");
-                        player_->GetInventory().AddItemByName(each.name, each.num);
-                        UIBuildInventory();
-                        UpdatePlayerExperience();
+                        if(each.name != "exp")
+                        {
+                            UIWriteLineToConsole(std::string("You received ") + std::to_string(each.num)
+                                + " " + each.name);
+                            inventory_.AddItemByName(each.name, each.num);
+                            UIBuildInventory();
+                        }
+                        else 
+                        {
+                            UIWriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
+                                + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                            dinged = playerSprite_->GetPlayerData().SetExperience( 
+                                playerSprite_->GetPlayerData().GetExperience() + each.num);
+                            UpdatePlayerExperience();
+                        }
                     }
                     RemoveSpriteFromRenderList(targetedEntity_);
                     RemoveEntityFromLoaded(targetedEntity_);
@@ -927,24 +976,21 @@ void TileGame::CheckHarvestCast(float dtime)
             }
             harvesting_ = false;
             UIToggleCastBar(false);
+            if(dinged)
+            {
+                UIWriteLineToConsole(std::string("You are now level ") + std::to_string(
+                    playerSprite_->GetPlayerData().GetLevel()) + "!", 1.0f, 1.0f, 0.0f, 1.0f);
+            }
         }
     }
 }
 
 void TileGame::UpdatePlayerExperience()
 {
-    // experience is internally stored in inventory and emptied by player object upon leveling up
-    auto entry = player_->GetInventory().GetItemEntryByName("exp");
-    bool dinged = player_->SetExperience(entry.count);
-    int experience = player_->GetExperience();
-    int maxExperience = player_->GetMaxExperience();
+    int experience = playerSprite_->GetPlayerData().GetExperience();
+    int maxExperience = playerSprite_->GetPlayerData().GetMaxExperience();
     float value = (float)experience / (float)maxExperience;
     UISetExperienceBar(value);
-    if(dinged)
-    {
-        UIWriteLineToConsole(std::string("You have reached level ") + std::to_string(player_->GetLevel())
-            + "!", 1.f, 1.f, 0.f, 1.f);
-    }
     // print information for debugging purposes.
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
         "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);
@@ -998,7 +1044,7 @@ std::vector<FarmCommand> TileGame::GetFarmCommands()
 
 void TileGame::PrintInventory()
 {
-    player_->GetInventory().ForEachItemEntry([this](const std::string& k, const ITEM_ENTRY& ie){
+    inventory_.ForEachItemEntry([this](const std::string& k, const ItemEntry& ie){
         if(ie.count > 0)
         {
             if(!ie.item->IsHiddenFromInventory())
@@ -1018,7 +1064,7 @@ int TileGame::lua_GetInventory(lua_State* L)
     // build a table as array of table={name=...,texture=...,count=...}
     // but ignore item entry if count is 0
     lua_newtable(L);
-    tg->player_->GetInventory().ForEachItemEntry([L](const std::string& name, const ITEM_ENTRY& ie){
+    tg->inventory_.ForEachItemEntry([L](const std::string& name, const ItemEntry& ie){
         if(ie.count > 0 && !ie.item->IsHiddenFromInventory())
         {
             int nextIndex = (int)lua_rawlen(L, -1);
@@ -1051,7 +1097,7 @@ int TileGame::lua_ConvertItemToFoodstuff(lua_State* L)
 
     const char* name = lua_tostring(L, 1);
     int amount = (int)lua_tointeger(L, 2);
-    bool result = tg->player_->GetInventory().ConvertItemToFoodstuff(name, amount);
+    bool result = tg->inventory_.ConvertItemToFoodstuff(name, amount);
 
     lua_pushboolean(L, result);
     return 1;
@@ -1065,8 +1111,21 @@ int TileGame::lua_GetFoodstuffCount(lua_State* L)
     TileGame* tg = (TileGame*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    int count = tg->player_->GetInventory().GetItemAmount("foodstuff");
+    int count = tg->inventory_.GetItemAmount("foodstuff");
 
     lua_pushinteger(L, count);
     return 1;
+}
+
+int TileGame::lua_ReturnToMainMenu(lua_State* L)
+{
+    // get TileGame
+    lua_pushstring(L, "TileGame");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    tg->gameState_ = GAME_STATE::RETURNING_TO_MENU;
+
+    return 0;
 }

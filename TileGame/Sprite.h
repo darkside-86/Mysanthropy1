@@ -38,8 +38,8 @@ class Sprite : public engine::GameObject
 public:
     Sprite(ogl::Texture* img, int width=0, int height=0);
     virtual ~Sprite();
-    void Update(float dtime) override;
-    void Render(const glm::vec3& camPos, ogl::Program& program) override;
+    virtual void Update(float dtime) override;
+    virtual void Render(const glm::vec3& camPos, ogl::Program& program) override;
     int GetWidth() const { return width_; }
     int GetHeight() const { return height_; }
     void SetCurrentAnim(const std::string& name, float maxTime);

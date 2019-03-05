@@ -18,16 +18,18 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+// Base class for user actions that modify the map or location of the player between savegame loads
 class PlayerCommand
 {
 public:
-    enum ACTION { HARVEST, MOVE, FARM };
+    enum ACTION { HARVEST, LOCATION, FARM };
 
     PlayerCommand(ACTION a) : action(a) {}
     virtual ~PlayerCommand() {}
     ACTION action;
 };
 
+// Represents one click-harvest of a static harvestable object
 class HarvestCommand : public PlayerCommand 
 {
 public:
@@ -38,16 +40,18 @@ public:
     int targetX, targetY, count;
 };
 
-class MoveCommand : public PlayerCommand
+// Sets the location of the player upon loading the savegame
+class LocationCommand : public PlayerCommand
 {
 public:
-    MoveCommand(int x, int y) : PlayerCommand(ACTION::MOVE), 
+    LocationCommand(int x, int y) : PlayerCommand(ACTION::LOCATION), 
         locationX(x), locationY(y) {}
-    virtual ~MoveCommand() {}
+    virtual ~LocationCommand() {}
 
     int locationX, locationY;
 };
 
+// Represents a farming of a farmable object and stores the time of the farm action
 class FarmCommand : public PlayerCommand
 {
 public:

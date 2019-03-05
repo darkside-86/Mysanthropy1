@@ -27,12 +27,12 @@
 #include "engine/Game.h"
 #include "engine/ui/LuaBindings.h"
 #include "ogl/Texture.h"
-#include "Player.h"
+#include "PlayerData.h"
 #include "PlayerCommand.h"
+#include "PlayerSprite.h"
 #include "TileMap.h"
 #include "SaveData.h"
 #include "SplashScreen.h"
-#include "Sprite.h"
 #include "SwimFilter.h"
 #include "Target.h"
 
@@ -81,9 +81,11 @@ public:
     void UIBuildInventory();
     // Sets the value of the foodstuff counter in the corner
     void UISetFoodstuffBarData(int amount);
+    // Show dialog box for returning to main menu
+    void UIShowMMPopup(bool show);
 private:
     // determines what Update and Render does
-    enum GAME_STATE { SPLASH, PLAYING };
+    enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
 
     // menu handling and starting /////////////////////////////////////////////
 
@@ -95,16 +97,16 @@ private:
     // Saves a game to slot specified by saveSlot_
     void SaveGame();
     // Fills game world with data from configuration file instead of loading from savegame
-    void NewGame();
+    void NewGame(bool boy);
     // Cleans up data to prepare for return to main menu
     void EndGame();
     // Rebuilds splash screen object and sets game state back to SPLASH SCREEN
     void ReturnToMainMenu();
 
     // load a sprite and animations from lost guardian folder
-    Sprite* LoadLGSpr(const std::string& name, int w=0, int h=0);
+    PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w=0, int h=0);
     // unload textures associated with lost guardian sprite and destroy sprite
-    void UnloadLGSpr(Sprite*& sprite, const std::string& name);
+    void UnloadPlayerLGSpr(PlayerSprite*& sprite, const std::string& name);
     // Checks if a given sprite is "Swimming" that is, its base is on a "liquid" tile
     bool SpriteIsSwimming(Sprite* sprite);
     // Destroy all entities
@@ -153,19 +155,23 @@ private:
     static int lua_ConvertItemToFoodstuff(lua_State* L);
     // Gets the amount of foodstuff currency
     static int lua_GetFoodstuffCount(lua_State* L);
+    // Returns to main menu from a dialog button
+    static int lua_ReturnToMainMenu(lua_State* L);
 
     // Core game configuration
-    Configuration* configuration_ = nullptr;
+    Configuration configuration_;
     // The map currently loaded
     TileMap* tileMap_ = nullptr;
     // Represents the location and image of the player in the world  
-    Sprite* playerSprite_ = nullptr;
+    PlayerSprite* playerSprite_ = nullptr;
+    // Inventory (shared across all playable chars)
+    Inventory inventory_;
     // Places a swim filter over sprites that are swimming
     SwimFilter* swimFilter_ = nullptr;
     // The entity being targeted (if any) by the user
     Entity* targetedEntity_ = nullptr;
     // The visual target info
-    Target* target_ = nullptr;
+    Target target_;
     // True if a casting sequence was started.
     bool harvesting_ = false;
     // The number of seconds that a cast must occur before being completed
@@ -175,18 +181,17 @@ private:
     // Sound channel harvest sound is being played on. Needed to cancel playback of sound. -1 indicates
     //  an invalid channel and is ignored.
     int harvestSoundChannel_ = -1;
-    // Player data. TODO: refactor
-    Player* player_;
     // harvest commands. value is number of clicks
     std::unordered_map<ENT_COORDS, int> harvestCommands_;
     // farm commands
     std::unordered_map<ENT_COORDS, FarmCommand> farmCommands_;
     // Save game data.
-    SaveData* saveData_;
+    SaveData saveData_;
     // State of game
     GAME_STATE gameState_ = GAME_STATE::SPLASH;
+    // Autosave frequency
+    static constexpr float AUTOSAVE_FREQUENCY = 120.0f; // in seconds
     // Autosave timer
-    static constexpr float AUTOSAVE_FREQUENCY = 100.0f; // in seconds
     float autosaveTimer_ = 0.0f;
     // Splash screen main menu
     SplashScreen* splashScreen_ = nullptr;

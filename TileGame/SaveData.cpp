@@ -23,7 +23,7 @@
 
 #include "engine/GameEngine.h"
 
-SaveData::SaveData(Inventory& inv, Player& player) : moveCommand_(0,0), inventory_(inv), player_(player)
+SaveData::SaveData() : locationCommand_(0,0)
 {
 
 }
@@ -74,22 +74,21 @@ void SaveData::WriteToFile(const std::string& fileName)
     out.write((char*)&MINOR_VERSION, sizeof(MINOR_VERSION));
     // next write inventory.
     // first the number of entries.
-    size_t numEntries = inventory_.GetNumEntries();
+    size_t numEntries = items_.size();
     out.write((char*)&numEntries, sizeof(numEntries));
     // then each entry
-    inventory_.ForEachItemEntry([&out](const std::string& k, const ITEM_ENTRY& entry){
-        // name first
-        std::string itemName = entry.item->GetName();
-        size_t sz = itemName.size();
+    for(const auto& item : items_)
+    {
+        // to write string to file we write the length then the string without the 0 at the end
+        size_t sz = strlen(item.name);
         out.write((char*)&sz, sizeof(sz));
-        out.write(itemName.c_str(), sz);
-        // then count
-        int count = entry.count;
-        out.write((char*)&count, sizeof(count));
-    });
+        out.write(item.name, sz);
+        // write the item count
+        out.write((char*)&item.count, sizeof(item.count));
+    }
     // write the move command
-    out.write((char*)&moveCommand_.locationX, sizeof(moveCommand_.locationX));
-    out.write((char*)&moveCommand_.locationY, sizeof(moveCommand_.locationY));
+    out.write((char*)&locationCommand_.locationX, sizeof(locationCommand_.locationX));
+    out.write((char*)&locationCommand_.locationY, sizeof(locationCommand_.locationY));
     // write each harvest command starting with the number of harvest commands
     size_t numHarvestCommands = harvestCommands_.size();
     out.write((char*)&numHarvestCommands, sizeof(numHarvestCommands));
@@ -111,24 +110,19 @@ void SaveData::WriteToFile(const std::string& fileName)
         out.write((char*)&command.readyToFarm, sizeof(command.readyToFarm));
         out.write((char*)&command.farmedTime, sizeof(command.farmedTime));
     }
-    // write player experience and current level.
-    int exp = player_.GetExperience();
-    int level = player_.GetLevel();
-    out.write((char*)&exp, sizeof(exp));
-    out.write((char*)&level, sizeof(level));
+    // write player experience and current level and gender
+    out.write((char*)&playerData_, sizeof(playerData_));
     // write the current system time.
     time_t currentTime = time(nullptr);
     out.write((char*)&currentTime, sizeof(currentTime));
-    // write the player gender as char. bool size is not well-defined across platforms
-    char isB = isBoy_;
-    out.write((char*)&isB, sizeof(isB));
     out.close();
+    ClearData(); // discard data after writing. caller will have to manually refill data for another save
 }
 
 bool SaveData::ReadFromFile(const std::string& fileName)
 {
-    // destroy existing data.
-    Cleanup();
+    // destroy existing data just in case.
+    ClearData();
 
     std::ifstream in;
     std::string path = std::string(FILE_DIR) + fileName + FILE_EXT;
@@ -150,27 +144,27 @@ bool SaveData::ReadFromFile(const std::string& fileName)
     in.read((char*)&numEntries, sizeof(numEntries));
     for(int i=0; i < numEntries; ++i)
     {
+        ITEM_DATA ie;
         // first, name
         size_t strLen;
         in.read((char*)&strLen, sizeof(strLen));
-        char* szName = new char[strLen+1];
-        szName[strLen] = 0;
-        in.read(szName, strLen);
-        std::string name = szName;
-        delete [] szName;
+        ie.name = new char[strLen+1];
+        ie.name[strLen] = 0;
+        in.read(ie.name, strLen);
         // then count.
-        int count;
-        in.read((char*)&count, sizeof(count));
+        in.read((char*)&ie.count, sizeof(ie.count));
         // Add the entry.
-        inventory_.AddItemByName(name, count);
+        items_.push_back(ie);
     }
     // read the move command.
-    in.read((char*)&moveCommand_.locationX, sizeof(moveCommand_.locationX));
-    in.read((char*)&moveCommand_.locationY, sizeof(moveCommand_.locationY));
+    in.read((char*)&locationCommand_.locationX, sizeof(locationCommand_.locationX));
+    in.read((char*)&locationCommand_.locationY, sizeof(locationCommand_.locationY));
     // read number of harvest commands.
     size_t numHarvestCommands;
     in.read((char*)&numHarvestCommands, sizeof(numHarvestCommands));
     // read each harvest command.
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+        "%s: Number of harvest commands: %d", __FUNCTION__, numHarvestCommands);
     for(size_t i=0; i < numHarvestCommands; ++i)
     {
         // x, y, then count
@@ -184,6 +178,8 @@ bool SaveData::ReadFromFile(const std::string& fileName)
     size_t numFarmCommands;
     in.read((char*)&numFarmCommands, sizeof(numFarmCommands));
     // read each farm command.
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+        "%s: Number of farm commands: %d", __FUNCTION__, numFarmCommands);
     for(size_t i=0; i < numFarmCommands; ++i)
     {
         FarmCommand fc(0,0,false,0);
@@ -194,27 +190,64 @@ bool SaveData::ReadFromFile(const std::string& fileName)
         farmCommands_.push_back(fc);
     }
 
-    // read player experience and then current level.
-    int exp, level;
-    in.read((char*)&exp, sizeof(exp));
-    in.read((char*)&level, sizeof(level));
-    player_.SetLevel(level);
-    player_.SetExperience(exp);
+    // read player experience and then current level and then gender
+    in.read((char*)&playerData_, sizeof(playerData_));
+    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+        "PLAYER GENDER = %s", playerData_.boy ? "boy" : "girl");
     // read timestamp
     in.read((char*)&timeStamp_, sizeof(timeStamp_));
-    // read player gender
-    char isB;
-    in.read((char*)&isB, sizeof(isB));
-    isBoy_ = isB;
     in.close();
     return true;
 }
 
-void SaveData::Cleanup()
+void SaveData::ClearData()
 {
-    moveCommand_.locationX = 0;
-    moveCommand_.locationY = 0;
+    locationCommand_.locationX = 0;
+    locationCommand_.locationY = 0;
     harvestCommands_.clear();
     farmCommands_.clear();
-    inventory_.ClearItems();
+    for(auto item : items_)
+    {
+        delete [] item.name;
+    }
+    items_.clear();
+    playerData_.level = 0;
+    playerData_.experience = 0;
+    playerData_.boy = 0;
+}
+
+void SaveData::SavePlayerData(const PlayerData& data)
+{
+    playerData_.level = data.GetLevel();
+    playerData_.experience = data.GetExperience();
+    playerData_.boy = data.IsBoy();
+}
+
+void SaveData::SaveInventoryData(const Inventory& inv)
+{
+    inv.ForEachItemEntry([this](const std::string& s, const ItemEntry& ie){
+        // no need to write items of amount 0 to file
+        if(ie.count > 0)
+        {
+            ITEM_DATA itemData;
+            itemData.name = new char[s.size()+1];
+            itemData.name[s.size()] = 0;
+            strcpy_s(itemData.name, s.size()+1, s.c_str());
+            itemData.count = ie.count;
+            items_.push_back(itemData);
+        }
+    });
+}
+
+void SaveData::LoadPlayerData(PlayerData& data)
+{
+    data.SetLevel(playerData_.level);
+    data.SetExperience(playerData_.experience);
+    data.SetBoy(playerData_.boy);
+}
+
+void SaveData::LoadInventoryData(Inventory& inv)
+{
+    for(auto item : items_)
+        inv.AddItemByName(item.name, item.count);
 }

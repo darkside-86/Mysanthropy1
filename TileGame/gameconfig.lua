@@ -27,11 +27,6 @@ BASE_MOB_EXP_SCALE = 1.25
 -- the experience penalty for killing lower level mobs per level difference
 MOB_EXP_PENALTY = 0.9
 -- Entries for all possible inventory items
-ITEM_ENTRY {
-    name = "exp",
-    hidden = true,
-    texture = "res/textures/items/exp.png"
-}
 
 ITEM_ENTRY {
     name = "foodstuff",

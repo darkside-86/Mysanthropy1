@@ -103,12 +103,14 @@ add_executable (
 add_executable ( 
     RPG
 	    gamemain.cpp
+        TileGame/CombatUnit.cpp
         TileGame/Configuration.cpp
         TileGame/Entity.cpp
         TileGame/Image2D.cpp
         TileGame/Inventory.cpp
         TileGame/Item.cpp
-        TileGame/Player.cpp
+        TileGame/PlayerData.cpp
+        TileGame/PlayerSprite.cpp
         TileGame/SaveData.cpp
         TileGame/SplashScreen.cpp
         TileGame/Sprite.cpp

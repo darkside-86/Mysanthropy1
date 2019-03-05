@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 #include "Frame.h"
 
-#include "../GameEngine.h"
 #include "ogl/Vertex.h"
 
 namespace engine { namespace ui {
@@ -40,7 +39,6 @@ namespace engine { namespace ui {
 
     Frame::~Frame()
     {
-        // GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, "Destructor on Frame %llx", this);
         delete vbo_;
         delete vao_;
         delete borderVao_;
