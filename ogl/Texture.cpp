@@ -1,7 +1,7 @@
 // Texture.cpp 
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,14 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "Texture.h"
-
 #include <iostream>
 
 #include <GL/glew.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
-#include "ErrorCheck.h"
+#include "ErrorCheck.hpp"
+#include "Texture.hpp"
 
 namespace ogl
 {

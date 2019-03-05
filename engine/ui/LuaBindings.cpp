@@ -1,7 +1,7 @@
 // LuaBindings.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,20 +17,20 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "LuaBindings.h"
+#include "LuaBindings.hpp"
 
 #include <sstream>
 #include <unordered_map>
 #include <vector>
 
-#include "Button.h"
-#include "Frame.h"
-#include "Label.h"
-#include "Object.h"
-#include "Root.h"
-#include "Slider.h"
-#include "TextField.h"
-#include "Texture.h"
+#include "Button.hpp"
+#include "Frame.hpp"
+#include "Label.hpp"
+#include "Object.hpp"
+#include "Root.hpp"
+#include "Slider.hpp"
+#include "TextField.hpp"
+#include "Texture.hpp"
 
 namespace engine { namespace ui {
 

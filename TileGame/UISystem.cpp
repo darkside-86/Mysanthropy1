@@ -1,7 +1,7 @@
 // UISystem.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 #include <vector>
 
-#include "engine/GameEngine.h"
-#include "UISystem.h"
-#include "TileGame.h"
+#include "engine/GameEngine.hpp"
+#include "UISystem.hpp"
+#include "TileGame.hpp"
 
 UISystem::UISystem(TileGame& tileGame) : game_(tileGame)
 {

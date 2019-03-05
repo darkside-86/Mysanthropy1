@@ -1,7 +1,7 @@
 // SplashScreen.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,14 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "SplashScreen.h"
-
 #include <filesystem>
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/GameEngine.h"
-#include "engine/ui/Root.h"
-#include "ogl/Vertex.h"
+#include "engine/GameEngine.hpp"
+#include "engine/ui/Root.hpp"
+#include "ogl/Vertex.hpp"
+#include "SplashScreen.hpp"
 
 SplashScreen::SplashScreen()
 {

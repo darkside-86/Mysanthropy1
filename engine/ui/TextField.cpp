@@ -1,7 +1,7 @@
 // TextField.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 #include <SDL/SDL_ttf.h>
 
-#include "../GameEngine.h"
-#include "../TextRenderer.h"
-#include "TextField.h"
+#include "../GameEngine.hpp"
+#include "../TextRenderer.hpp"
+#include "TextField.hpp"
 
 namespace engine { namespace ui {
 

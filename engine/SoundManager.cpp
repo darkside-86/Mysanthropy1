@@ -1,7 +1,7 @@
 // SoundManager.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,8 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "SoundManager.h"
-
-#include "GameEngine.h"
+#include "GameEngine.hpp"
+#include "SoundManager.hpp"
 
 namespace engine
 {

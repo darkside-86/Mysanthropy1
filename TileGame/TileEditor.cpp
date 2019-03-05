@@ -1,7 +1,7 @@
 // TileEditor.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,17 +17,16 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "TileEditor.h"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 #include <vector>
 
-#include "engine/GameEngine.h"
-#include "engine/ui/Root.h"
-#include "ogl/ErrorCheck.h"
+#include "engine/GameEngine.hpp"
+#include "engine/ui/Root.hpp"
+#include "ogl/ErrorCheck.hpp"
+#include "TileEditor.hpp"
 
 TileEditor::TileEditor()
 {

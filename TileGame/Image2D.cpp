@@ -1,7 +1,7 @@
 // Image2D.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,14 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "Image2D.h"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
-#include "ogl/ErrorCheck.h"
-#include "ogl/Vertex.h"
+#include "ogl/ErrorCheck.hpp"
+#include "Image2D.hpp"
+#include "ogl/Vertex.hpp"
 
 Image2D::Image2D(int width, int height)
 {
@@ -44,7 +43,7 @@ Image2D::Image2D(int width, int height)
     ogl::VertexBufferLayout vbl;
     ogl::Vertex::PushLayout(vbl);
     vao_.AddBuffer(vbo_, vbl);
-    Pixel* pixels = new Pixel[width*height];
+    PIXEL* pixels = new PIXEL[width*height];
     for(int i=0; i < width*height; ++i)
     {
         pixels[i] = {255,255,255,255}; // fill with...

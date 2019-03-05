@@ -1,7 +1,7 @@
 // GraphicsContext.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,17 +17,16 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "GraphicsContext.h"
-
 #include <fstream>
 #include <string>
 
 #include <GL/glew.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/GameEngine.h"
-#include "ogl/ElementBuffer.h"
-#include "ogl/Shader.h"
+#include "engine/GameEngine.hpp"
+#include "GraphicsContext.hpp"
+#include "ogl/ElementBuffer.hpp"
+#include "ogl/Shader.hpp"
 
 namespace engine
 {

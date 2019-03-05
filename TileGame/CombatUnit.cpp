@@ -1,7 +1,7 @@
 // CombatUnit.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,8 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "CombatUnit.h"
-
-#include "engine/GameEngine.h"
+#include "engine/GameEngine.hpp"
+#include "CombatUnit.hpp"
 
 CombatUnit::CombatUnit(bool attackable, const std::unordered_map<std::string, CombatAbility>& abilities)
     : attackable_(attackable), abilities_(abilities)

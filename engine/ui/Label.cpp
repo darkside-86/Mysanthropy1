@@ -1,7 +1,7 @@
 // Label.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "Label.h"
+#include "Label.hpp"
 
-#include "../GameEngine.h"
-#include "ogl/Vertex.h"
+#include "../GameEngine.hpp"
+#include "ogl/Vertex.hpp"
 
 namespace engine { namespace ui {
     Label::Label(Object* parent, const std::string& text, const std::string& fontAlias, const Color& color)

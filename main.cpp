@@ -1,7 +1,7 @@
 // main.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,13 +18,8 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 
-#include "engine/EventListeners.h"
-#include "engine/CircleShape.h"
-#include "engine/Game.h"
-#include "engine/GameEngine.h"
-#include "engine/RectangleShape.h"
-
-#include "TileGame/TileEditor.h"
+#include "engine/GameEngine.hpp"
+#include "TileGame/TileEditor.hpp"
 
 int main(int argc, char* argv[])
 {

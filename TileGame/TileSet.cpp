@@ -1,7 +1,7 @@
 // TileSet.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,13 +17,12 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "TileSet.h"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/GameEngine.h"
-#include "ogl/Vertex.h"
+#include "engine/GameEngine.hpp"
+#include "ogl/Vertex.hpp"
+#include "TileSet.hpp"
 
 TileSet::TileSet(const std::string& fpath, int tileWidth, int tileHeight) 
     : pathToTexture_(fpath), tileWidth_(tileWidth), tileHeight_(tileHeight)

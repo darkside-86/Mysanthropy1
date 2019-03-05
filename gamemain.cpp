@@ -1,7 +1,7 @@
 // main.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 
-#include "engine/GameEngine.h"
-#include "TileGame/TileGame.h"
+#include "engine/GameEngine.hpp"
+#include "TileGame/TileGame.hpp"
 
 int main(int argc, char* argv[])
 {

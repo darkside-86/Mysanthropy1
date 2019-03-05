@@ -1,7 +1,7 @@
 // Sprite.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,13 +17,12 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "Sprite.h"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "ogl/ErrorCheck.h"
-#include "ogl/Vertex.h"
+#include "ogl/ErrorCheck.hpp"
+#include "ogl/Vertex.hpp"
+#include "Sprite.hpp"
 
 Sprite::Sprite(ogl::Texture* img, int width, int height) :
     anim0_(img)

@@ -1,15 +1,7 @@
-#include "VertexBufferLayout.h"
-
-#include <iostream>
-#include <sstream>
-#include <string>
-
-#include <GL/glew.h>
-
 // VertexBufferLayout.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
-// (c) 2018
+// (c) 2019
 //-----------------------------------------------------------------------------
 // This program is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#include "ErrorCheck.h"
+
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <GL/glew.h>
+#include "ErrorCheck.hpp"
+#include "VertexBufferLayout.hpp"
 
 namespace ogl
 {
