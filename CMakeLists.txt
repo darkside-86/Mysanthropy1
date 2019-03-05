@@ -119,6 +119,7 @@ add_executable (
         TileGame/TileGame.cpp
         TileGame/TileMap.cpp
         TileGame/TileSet.cpp
+        TileGame/UISystem.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )

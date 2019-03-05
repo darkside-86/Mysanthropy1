@@ -53,7 +53,7 @@ public:
     virtual ~CombatUnit();
     inline void SetLocation(const glm::vec3& loc) { location_ = loc; }
     inline void SetMaxHealth(const int h) { maxHealth_ = h; }
-    // return value = excess healing (a negative number) or overkill
+    // return value = excess healing (a negative number) or overkill or 0
     int UseAbility(CombatUnit& other, const std::string& abilityName);
 private:
     // determines whether or not an ability is in range

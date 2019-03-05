@@ -1,4 +1,4 @@
-print("TileGame.lua: Welcome to Despacito Island user interface 0.1")
+print("Welcome to Despacito Island user interface 0.1")
 local screenWidth = GetScreenWidth()
 local screenHeight = GetScreenHeight()
 
@@ -143,7 +143,7 @@ inventoryFrame.panel:AddOnClicked(function(x,y)
         end
     end
     if clicked ~= nil then 
-        local keepGoing = TileGame_ConvertItemToFoodstuff(clicked.name, 1)
+        local keepGoing = Game_ConvertItemToFoodstuff(clicked.name, 1)
         if keepGoing == false then 
             inventoryFrame.convertingFood = false 
             inventoryFrame.convertBtn:SetColor(0.2,0.2,1,0.7)
@@ -152,12 +152,12 @@ inventoryFrame.panel:AddOnClicked(function(x,y)
             clicked.count = clicked.count - 1
             clicked.countLbl:SetText(clicked.count)
         end
-        SetFoodstuffBarData(TileGame_GetFoodstuffCount())
+        SetFoodstuffBarData(Game_GetFoodstuffCount())
     end
 end)
 -- build the inventory item list
 function BuildInventory()
-    local inventoryData = TileGame_GetInventory()
+    local inventoryData = Game_GetInventory()
     if inventoryFrame.panel.elements ~= nil then 
         for k,v in pairs(inventoryFrame.panel.elements) do 
             v:SetVisible(false)
@@ -205,7 +205,7 @@ function SetFoodstuffBarData(num)
     foodstuffBar.label2:SetText(tostring(num))
 end
 -- Initial data
-SetFoodstuffBarData(TileGame_GetFoodstuffCount())
+SetFoodstuffBarData(Game_GetFoodstuffCount())
 
 -- Return to main menu popup --------------------------------------------------
 -------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ returnMM.confirmBtn:SetColor(0,0,0,0)
 returnMM.confirmBtn:SetBorderColor(1,1,1,1)
 returnMM.confirmBtn:SetBorderSize(1)
 returnMM.confirmBtn:AddOnClicked(function() 
-    TileGame_ReturnToMainMenu()
+    Game_ReturnToMainMenu()
     returnMM:SetVisible(false)
 end)
 returnMM.cancelBtn = UIButton.New(returnMM, TEXTURE_UIBLANK, "Cancel", "sans14", 10)

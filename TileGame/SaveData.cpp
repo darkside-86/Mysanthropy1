@@ -211,9 +211,7 @@ void SaveData::ClearData()
         delete [] item.name;
     }
     items_.clear();
-    playerData_.level = 0;
-    playerData_.experience = 0;
-    playerData_.boy = 0;
+    playerData_ = {0,0,0};
 }
 
 void SaveData::SavePlayerData(const PlayerData& data)
@@ -249,5 +247,7 @@ void SaveData::LoadPlayerData(PlayerData& data)
 void SaveData::LoadInventoryData(Inventory& inv)
 {
     for(auto item : items_)
-        inv.AddItemByName(item.name, item.count);
+    {
+        inv.SetItemAmount(item.name, item.count);
+    }
 }

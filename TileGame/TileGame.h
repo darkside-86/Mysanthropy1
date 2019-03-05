@@ -21,11 +21,8 @@
 #include <vector>
 #include <unordered_map>
 
-#include <lua/lua.hpp>
-
 #include "Configuration.h"
 #include "engine/Game.h"
-#include "engine/ui/LuaBindings.h"
 #include "ogl/Texture.h"
 #include "PlayerData.h"
 #include "PlayerCommand.h"
@@ -35,6 +32,7 @@
 #include "SplashScreen.h"
 #include "SwimFilter.h"
 #include "Target.h"
+#include "UISystem.h"
 
 struct ENT_COORDS
 {
@@ -54,6 +52,8 @@ namespace std { template <> struct hash<ENT_COORDS> {
 class TileGame : public engine::Game 
 {
 public:
+    // determines what Update and Render does
+    enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
     // constructor
     TileGame();
     // destructor
@@ -66,26 +66,13 @@ public:
     void Update(float dtime);
     // render either the main menu or game world depending on game state
     void Render(engine::GraphicsContext& gc);
-    // UI functions ///////////////////////////////////////////////////////////
-    // Writes an unwrapped line to the Lua UI console window in the bottom left corner
-    void UIWriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
-    // Sets the progress level of the cast bar
-    void UISetCastBarValue(float value);
-    // Sets whether or not cast bar should be visible
-    void UIToggleCastBar(bool show);
-    // Sets the percentage of progress of the experience bar
-    void UISetExperienceBar(float value);
-    // Shows or hides the bottom right inventory window
-    void UIShowInventory(bool show);
-    // Creates the UI elements for the inventory window such as each item icon
-    void UIBuildInventory();
-    // Sets the value of the foodstuff counter in the corner
-    void UISetFoodstuffBarData(int amount);
-    // Show dialog box for returning to main menu
-    void UIShowMMPopup(bool show);
+
+    // returns a reference to the inventory object
+    inline Inventory& GetInventory() { return inventory_; }
+    // sets the game state
+    inline void SetGameState(GAME_STATE gs) { gameState_ = gs; }
+
 private:
-    // determines what Update and Render does
-    enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
 
     // menu handling and starting /////////////////////////////////////////////
 
@@ -117,8 +104,6 @@ private:
     void RenderSortPass();
     // Removes a sprite from the render list.
     void RemoveSpriteFromRenderList(const Sprite* sprite);
-    // Sets up the Lua UI system and loads the UI Lua files
-    void SetupUIScript();
     // Check to see if a sprite is colliding with the collision box of an entity
     bool EntityCollisionCheck(Sprite* sprite);
     // Check to see if point x,y is inside of rectangle defined by left, top, right, and bottom params
@@ -146,17 +131,6 @@ private:
     std::vector<HarvestCommand> GetHarvestCommands();
     // convert farmCommands_ to a vector of FarmCommand and return the result
     std::vector<FarmCommand> GetFarmCommands();
-
-    // C++ functions exposed to lua ///////////////////////////////////////////
-
-    // Returns a lua array of {name=...,count=...} data
-    static int lua_GetInventory(lua_State* L);
-    // Called by inventory frame, attempts to convert a given item into foodstuff
-    static int lua_ConvertItemToFoodstuff(lua_State* L);
-    // Gets the amount of foodstuff currency
-    static int lua_GetFoodstuffCount(lua_State* L);
-    // Returns to main menu from a dialog button
-    static int lua_ReturnToMainMenu(lua_State* L);
 
     // Core game configuration
     Configuration configuration_;
@@ -206,8 +180,6 @@ private:
     std::vector<Sprite*> renderList_;
     // list of loaded map entities. Owns pointers
     std::vector<Entity*> loadedEntities_;
-    // lua state for running the UI system
-    lua_State* uiScript_ = nullptr;
-    // bindings to C++ UI library
-    engine::ui::LuaBindings* luaBindings_ = nullptr;
+    // Lua ui system object
+    UISystem* uiSystem_;
 };

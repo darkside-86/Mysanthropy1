@@ -82,10 +82,10 @@ bool TileGame::Initialize()
                     break;
                 case SDLK_i:
                     showingInventory_ = !showingInventory_;
-                    UIShowInventory(showingInventory_);
+                    uiSystem_->ShowInventory(showingInventory_);
                     return;
                 case SDLK_ESCAPE:
-                    UIShowMMPopup(true);
+                    uiSystem_->ShowMMPopup(true);
                     return;
                 default:
                     // without this the entire screen except UI goes black......
@@ -99,8 +99,8 @@ bool TileGame::Initialize()
                 if(harvesting_)
                 {
                     harvesting_ = false;
-                    UIToggleCastBar(false);
-                    UIWriteLineToConsole("Cast interrupted by player", 1.f, 0.f, 0.f, 0.9f);
+                    uiSystem_->ToggleCastBar(false);
+                    uiSystem_->WriteLineToConsole("Cast interrupted by player", 1.f, 0.f, 0.f, 0.9f);
                     if(harvestSoundChannel_ != -1)
                     {
                         engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
@@ -164,8 +164,10 @@ bool TileGame::Initialize()
                     {
                         ClearTarget();
                         harvesting_ = false;
+                        engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+                        harvestSoundChannel_ = -1;
                         if(targetedEntity_ != *found)
-                            UIToggleCastBar(false);
+                            uiSystem_->ToggleCastBar(false);
                         targetedEntity_ = (*found);
                         std::string rclicks = std::to_string(targetedEntity_->GetRemainingClicks());
                         std::string mclicks = std::to_string(targetedEntity_->GetMaxClicks());
@@ -176,7 +178,7 @@ bool TileGame::Initialize()
                         {
                             message += " (" + rclicks + "/" + mclicks + ")";
                         }
-                        UIWriteLineToConsole(message);
+                        uiSystem_->WriteLineToConsole(message);
                         if(targetedEntity_->IsFarmable())
                         {
                             std::string output = " Farmable";
@@ -185,7 +187,7 @@ bool TileGame::Initialize()
                             else 
                                 output += " in " + std::to_string(targetedEntity_->FarmTimeRemaining())
                                     + " seconds.";
-                            UIWriteLineToConsole(output);
+                            uiSystem_->WriteLineToConsole(output);
                         }
                     }
                 }
@@ -193,7 +195,9 @@ bool TileGame::Initialize()
                 {
                     ClearTarget();
                     harvesting_ = false; // how else to handle the resulting null pointer?
-                    UIToggleCastBar(false);
+                    engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+                    harvestSoundChannel_ = -1;
+                    uiSystem_->ToggleCastBar(false);
                 }
             }
         }
@@ -234,7 +238,7 @@ void TileGame::Update(float dtime)
         if(autosaveTimer_ >= AUTOSAVE_FREQUENCY)
         {
             autosaveTimer_ -= AUTOSAVE_FREQUENCY;
-            UIWriteLineToConsole("Autosaving...", 0.6f, 0.6f, 0.6f, 1.0f);
+            uiSystem_->WriteLineToConsole("Autosaving...", 0.6f, 0.6f, 0.6f, 1.0f);
             SaveGame();
         }
 
@@ -375,12 +379,13 @@ void TileGame::StartGame()
     // Setup render list
     SetupRenderList();
     // Setup lua UI
-    SetupUIScript();
+    uiSystem_ = new UISystem(*this);
     // Update experience bar to reflect current xp levels
     UpdatePlayerExperience();
     // load sounds
     auto& sm = engine::GameEngine::Get().GetSoundManager();
     sm.LoadSound("res/sounds/chopping.wav");
+    // start looping background music. TODO: fix SoundManager to get more song variety
     sm.PlayMusic("res/music/island1.ogg", -1);
 }
 
@@ -441,6 +446,7 @@ void TileGame::LoadGame()
     playerSprite_->GetPlayerData().SetExperienceScale(configuration_.GetExperienceScale());
     playerSprite_->GetPlayerData().SetBaseMaxExp(configuration_.GetBaseExperience());
     saveData_.LoadPlayerData(playerSprite_->GetPlayerData());
+    inventory_.ClearItems();
     saveData_.LoadInventoryData(inventory_);
 
     // log the timestamp of the last save time
@@ -494,14 +500,11 @@ void TileGame::NewGame(bool boy)
 
 void TileGame::EndGame()
 {
+    auto &sm = engine::GameEngine::Get().GetSoundManager();
     if(gameState_ != GAME_STATE::SPLASH)
     {
-        delete luaBindings_;
-        if(uiScript_)
-        {
-            lua_close(uiScript_);
-            uiScript_ = nullptr;
-        }
+        delete uiSystem_;
+        uiSystem_ = nullptr;
         SaveGame();
         UnloadPlayerLGSpr(playerSprite_, playerSprite_->GetPlayerData().IsBoy() ? 
             configuration_.GetBoySurvivalistSprite() : configuration_.GetGirlSurvivalistSprite());
@@ -510,8 +513,9 @@ void TileGame::EndGame()
         CleanupLoadedEntities();
         delete tileMap_;
         tileMap_ = nullptr;
+        sm.UnloadSound("res/sounds/chopping.wav");
     }
-    auto &sm = engine::GameEngine::Get().GetSoundManager();
+    inventory_.ClearItems();
     sm.StopMusic();
 }
 
@@ -520,113 +524,6 @@ void TileGame::ReturnToMainMenu()
     splashScreen_ = new SplashScreen();
     splashScreen_->Initialize();
     gameState_ = GAME_STATE::SPLASH;
-}
-
-void TileGame::UIWriteLineToConsole(const std::string& line, float r, float g, float b, float a)
-{
-    lua_getglobal(uiScript_, "WriteLineToConsole");
-    lua_pushstring(uiScript_, line.c_str());
-    lua_pushnumber(uiScript_, r);
-    lua_pushnumber(uiScript_, g);
-    lua_pushnumber(uiScript_, b);
-    lua_pushnumber(uiScript_, a);
-    int ok = lua_pcall(uiScript_, 5, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);
-    }
-}
-
-void TileGame::UISetCastBarValue(float value)
-{
-    lua_getglobal(uiScript_, "SetCastBarValue");
-    lua_pushnumber(uiScript_, value);
-    int ok = lua_pcall(uiScript_, 1, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);
-    }
-}
-
-void TileGame::UIToggleCastBar(bool show)
-{
-    lua_getglobal(uiScript_, "ToggleCastBar");
-    lua_pushboolean(uiScript_, show);
-    int ok = lua_pcall(uiScript_, 1, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);
-    }
-}
-
-void TileGame::UISetExperienceBar(float value)
-{
-    lua_getglobal(uiScript_, "SetExperienceBar");
-    lua_pushnumber(uiScript_, value);
-    int ok = lua_pcall(uiScript_, 1, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);
-    }
-}
-
-void TileGame::UIShowInventory(bool show)
-{
-    lua_getglobal(uiScript_, "ShowInventory");
-    lua_pushboolean(uiScript_, show);
-    int ok = lua_pcall(uiScript_, 1, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);    
-    }
-}
-
-void TileGame::UIBuildInventory()
-{
-    lua_getglobal(uiScript_, "BuildInventory");
-    int ok = lua_pcall(uiScript_, 0, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);    
-    }
-}
-
-void TileGame::UISetFoodstuffBarData(int amount)
-{
-    lua_getglobal(uiScript_, "SetFoodstuffBarData");
-    lua_pushinteger(uiScript_, amount);
-    int ok = lua_pcall(uiScript_, 1, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);    
-    }
-}
-
-void TileGame::UIShowMMPopup(bool show)
-{
-    lua_getglobal(uiScript_, "ToggleMMPopup");
-    lua_pushboolean(uiScript_, show);
-    int ok = lua_pcall(uiScript_, 1, 0, 0);
-    if(ok != LUA_OK)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);    
-    }
 }
 
 PlayerSprite* TileGame::LoadPlayerLGSpr(const std::string& name, int w, int h)
@@ -738,54 +635,6 @@ Entity* TileGame::FindEntityByLocation(int x, int y)
     return nullptr;
 }
 
-void TileGame::SetupUIScript()
-{
-    if(uiScript_)
-    {
-        lua_close(uiScript_);
-        uiScript_ = nullptr;
-    }
-    uiScript_ = luaL_newstate();
-    luaL_openlibs(uiScript_);
-    luaBindings_ = new engine::ui::LuaBindings(uiScript_);
-
-    // set TileGame instance in registry
-    lua_pushstring(uiScript_, "TileGame");
-    lua_pushlightuserdata(uiScript_, this);
-    lua_settable(uiScript_, LUA_REGISTRYINDEX);
-    // set globals
-    lua_pushcfunction(uiScript_, TileGame::lua_GetInventory);
-    lua_setglobal(uiScript_, "TileGame_GetInventory");
-    lua_pushcfunction(uiScript_, TileGame::lua_ConvertItemToFoodstuff);
-    lua_setglobal(uiScript_, "TileGame_ConvertItemToFoodstuff");
-    lua_pushcfunction(uiScript_, TileGame::lua_GetFoodstuffCount);
-    lua_setglobal(uiScript_, "TileGame_GetFoodstuffCount");
-    lua_pushcfunction(uiScript_, TileGame::lua_ReturnToMainMenu);
-    lua_setglobal(uiScript_, "TileGame_ReturnToMainMenu");
-
-    std::vector<const char*> CORE_UI_LIB = {
-        "ui/lib/fonts.lua", 
-        "ui/lib/keycodes.lua", 
-        "ui/lib/Window.lua", 
-        "ui/TileGame.lua" // main UI code
-    };
-    try 
-    {
-        int errCode = 0;
-        for(auto luaFile : CORE_UI_LIB)
-        {
-            errCode = luaL_dofile(uiScript_, luaFile);
-            if(errCode != 0) throw errCode;
-        }
-    }
-    catch(int err)
-    {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                "Lua error %d: %s", err, lua_tostring(uiScript_, -1));
-        lua_pop(uiScript_, 1);
-    }
-}
-
 bool TileGame::EntityCollisionCheck(Sprite* sprite)
 {
     // given a sprite check collision (for now) for all entities.
@@ -840,7 +689,7 @@ void TileGame::InteractWithTarget()
     const float maxDistance = 48.f;
     if(dist > maxDistance)
     {
-        UIWriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
+        uiSystem_->WriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
         if(harvestSoundChannel_ != -1)
         {
             engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
@@ -855,7 +704,7 @@ void TileGame::InteractWithTarget()
         // WriteLineToConsole("Interacting with target...", 0.f, 1.f, 0.f, 1.f);
         auto& sm = engine::GameEngine::Get().GetSoundManager();
         harvestSoundChannel_ = sm.PlaySound("res/sounds/chopping.wav");
-        UIToggleCastBar(true);
+        uiSystem_->ToggleCastBar(true);
     }
 }
 
@@ -892,7 +741,7 @@ void TileGame::CheckHarvestCast(float dtime)
     if(harvesting_)
     {
         currentCastTime_ += dtime;
-        UISetCastBarValue(currentCastTime_ / maxCastTime_);
+        uiSystem_->SetCastBarValue(currentCastTime_ / maxCastTime_);
         if(currentCastTime_ >= maxCastTime_)
         {
             bool dinged = false;
@@ -911,13 +760,13 @@ void TileGame::CheckHarvestCast(float dtime)
                     FarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y,
                         false, time(nullptr)));
                 inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
-                UIWriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
+                uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
                     + " " + itemToAdd.name + "(s)");
                 dinged = playerSprite_->GetPlayerData().SetExperience(
                     playerSprite_->GetPlayerData().GetExperience() + itemToAdd.num);
-                UIWriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
+                uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
                     1.0f, 0.f, 1.0f, 1.0f);
-                UIBuildInventory();
+                uiSystem_->BuildInventory();
                 UpdatePlayerExperience();
                 ClearTarget(); // to prevent accidentally harvesting instead of farming item
             }
@@ -933,14 +782,15 @@ void TileGame::CheckHarvestCast(float dtime)
                 {
                     if(each.name != "exp")
                     {
-                        UIWriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
+                        uiSystem_->WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
                             + " " + each.name);
                         inventory_.AddItemByName(each.name, each.num);
-                        UIBuildInventory();
+                        uiSystem_->BuildInventory();
                     }
                     else 
                     {   // item exp is a special handled case, not added to inventory
-                        UIWriteLineToConsole(std::string("You gain ") + std::to_string(each.num) + " experience.", 
+                        uiSystem_->WriteLineToConsole(std::string("You gain ") 
+                            + std::to_string(each.num) + " experience.", 
                             1.0f, 0.0f, 1.0f, 1.0f);
                         dinged = playerSprite_->GetPlayerData().SetExperience(
                             playerSprite_->GetPlayerData().GetExperience() + each.num);
@@ -949,20 +799,20 @@ void TileGame::CheckHarvestCast(float dtime)
                 }
                 if(targetedEntity_->GetRemainingClicks() <= 0)
                 {
-                    UIWriteLineToConsole("Removing...");
+                    uiSystem_->WriteLineToConsole("Removing...");
                     auto items = targetedEntity_->OnDestroy();
                     for(auto each : items)
                     {
                         if(each.name != "exp")
                         {
-                            UIWriteLineToConsole(std::string("You received ") + std::to_string(each.num)
-                                + " " + each.name);
+                            uiSystem_->WriteLineToConsole(std::string("You received ") 
+                                + std::to_string(each.num) + " " + each.name);
                             inventory_.AddItemByName(each.name, each.num);
-                            UIBuildInventory();
+                            uiSystem_->BuildInventory();
                         }
                         else 
                         {
-                            UIWriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
+                            uiSystem_->WriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
                                 + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
                             dinged = playerSprite_->GetPlayerData().SetExperience( 
                                 playerSprite_->GetPlayerData().GetExperience() + each.num);
@@ -975,10 +825,12 @@ void TileGame::CheckHarvestCast(float dtime)
                 }
             }
             harvesting_ = false;
-            UIToggleCastBar(false);
+            uiSystem_->ToggleCastBar(false);
+            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+            harvestSoundChannel_ = -1;
             if(dinged)
             {
-                UIWriteLineToConsole(std::string("You are now level ") + std::to_string(
+                uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
                     playerSprite_->GetPlayerData().GetLevel()) + "!", 1.0f, 1.0f, 0.0f, 1.0f);
             }
         }
@@ -990,7 +842,7 @@ void TileGame::UpdatePlayerExperience()
     int experience = playerSprite_->GetPlayerData().GetExperience();
     int maxExperience = playerSprite_->GetPlayerData().GetMaxExperience();
     float value = (float)experience / (float)maxExperience;
-    UISetExperienceBar(value);
+    uiSystem_->SetExperienceBar(value);
     // print information for debugging purposes.
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
         "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);
@@ -1048,84 +900,7 @@ void TileGame::PrintInventory()
         if(ie.count > 0)
         {
             if(!ie.item->IsHiddenFromInventory())
-                UIWriteLineToConsole(std::to_string(ie.count) + " " + k + "(s)");
+                uiSystem_->WriteLineToConsole(std::to_string(ie.count) + " " + k + "(s)");
         }
     });
-}
-
-int TileGame::lua_GetInventory(lua_State* L)
-{
-    // get TileGame
-    lua_pushstring(L, "TileGame");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    // build a table as array of table={name=...,texture=...,count=...}
-    // but ignore item entry if count is 0
-    lua_newtable(L);
-    tg->inventory_.ForEachItemEntry([L](const std::string& name, const ItemEntry& ie){
-        if(ie.count > 0 && !ie.item->IsHiddenFromInventory())
-        {
-            int nextIndex = (int)lua_rawlen(L, -1);
-            nextIndex++;
-            lua_newtable(L);
-            lua_pushstring(L, "name");
-            lua_pushstring(L, name.c_str());
-            lua_rawset(L, -3);
-            lua_pushstring(L, "texture");
-             const std::string tpath = ie.item->GetIcon()->GetPath();
-            lua_pushstring(L, tpath.c_str());
-            lua_rawset(L, -3);
-            lua_pushstring(L, "count");
-            lua_pushinteger(L, ie.count);
-            lua_rawset(L, -3);
-            lua_rawseti(L, -2, nextIndex);
-        }
-    });
-    return 1;
-}
-
-// name, amount
-int TileGame::lua_ConvertItemToFoodstuff(lua_State* L)
-{
-    // get TileGame
-    lua_pushstring(L, "TileGame");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    const char* name = lua_tostring(L, 1);
-    int amount = (int)lua_tointeger(L, 2);
-    bool result = tg->inventory_.ConvertItemToFoodstuff(name, amount);
-
-    lua_pushboolean(L, result);
-    return 1;
-}
-
-int TileGame::lua_GetFoodstuffCount(lua_State* L)
-{
-    // get TileGame
-    lua_pushstring(L, "TileGame");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    int count = tg->inventory_.GetItemAmount("foodstuff");
-
-    lua_pushinteger(L, count);
-    return 1;
-}
-
-int TileGame::lua_ReturnToMainMenu(lua_State* L)
-{
-    // get TileGame
-    lua_pushstring(L, "TileGame");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileGame* tg = (TileGame*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    tg->gameState_ = GAME_STATE::RETURNING_TO_MENU;
-
-    return 0;
 }

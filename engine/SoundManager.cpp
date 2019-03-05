@@ -69,6 +69,21 @@ namespace engine
         }
     }
 
+    void SoundManager::UnloadSound(const std::string& path)
+    {
+        auto found = sounds_.find(path);
+        if(found != sounds_.end())
+        {
+            Mix_FreeChunk(found->second);
+            sounds_.erase(found);
+        }
+        else 
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "%s: `%s' is not loaded.",
+                __FUNCTION__, path.c_str());
+        }
+    }
+
     int SoundManager::PlaySound(const std::string& path)
     {
         auto found = sounds_.find(path);
@@ -87,22 +102,6 @@ namespace engine
     void SoundManager::HaltSound(int channel)
     {
         Mix_HaltChannel(channel);
-    }
-
-    void SoundManager::UnloadSound(const std::string& path)
-    {
-        auto found = sounds_.find(path);
-        if(found != sounds_.end())
-        {
-            Mix_FreeChunk(found->second);
-            sounds_.erase(found);
-            return;
-        }
-        else 
-        {
-            GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "%s: `%s' was not loaded",
-                __FUNCTION__, path.c_str());
-        }
     }
 
     void SoundManager::PlayMusic(const std::string& path, int loops)

@@ -60,7 +60,7 @@ namespace engine { namespace ui {
     static int lua_ErrorHandler(lua_State* L)
     {
         const char* errorMsg = lua_tostring(L, 1);
-        GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING, "%s", errorMsg);
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::ERROR, "%s", errorMsg);
         return 0;
     }
 

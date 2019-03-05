@@ -31,9 +31,9 @@ namespace engine
         SoundManager();
         ~SoundManager();
         void LoadSound(const std::string& path);
+        void UnloadSound(const std::string& path);
         // returns what channel the sound will be played on
         int PlaySound(const std::string& path);
-        void UnloadSound(const std::string& path);
         // stop a channel as returned by PlaySound
         void HaltSound(int channel);
         void PlayMusic(const std::string& path, int loops);
