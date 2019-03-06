@@ -35,8 +35,11 @@ public:
     enum SPRITE_TYPE { MOBSPR, ENTSPR, NONE };
     Target();
     virtual ~Target();
-    void SetTargetSprite(const Sprite* sprite, const TARGET_TYPE tt, const SPRITE_TYPE st);
+    void SetTargetSprite(Sprite* sprite, const TARGET_TYPE tt, const SPRITE_TYPE st);
+    inline Sprite* GetTargetSprite() { return target_; }
+    inline SPRITE_TYPE GetTargetSpriteType() { return targetSpriteType_; }
     void Render(const glm::vec3 camera, ogl::Program& prog);
+    bool IsTargetEntity(const Entity* entity);
 private:
     // vertex data of the baseVbo_. Changes often enough to keep it in RAM
     ogl::Vertex vertices_[6];
@@ -52,7 +55,7 @@ private:
     // for coloring target base on friendly/static sprites
     ogl::Texture* greenBaseTexture_;
     // used to determine location of target on ground
-    const Sprite* target_;
+    Sprite* target_;
     // if a sprite is an "Entity" the health bar is clicks / max clicks
     //  or if it is a mob then the health bar above represents health / max health
     SPRITE_TYPE targetSpriteType_;

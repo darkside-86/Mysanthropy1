@@ -87,7 +87,7 @@ bool TileGame::Initialize()
                 case SDLK_ESCAPE:
                     uiSystem_->ShowMMPopup(true);
                     return;
-                case SDLK_1: // hit yourself ^_^
+                case SDLK_1: // hit yourself ^_^ (for now)
                     playerSprite_->GetCombatUnit().UseAbility(playerSprite_->GetCombatUnit(), "attack", combatLog);
                     uiSystem_->WriteLineToConsole(combatLog, 0.f, 0.f, 1.0f, 1.0f);
                     return;
@@ -104,7 +104,7 @@ bool TileGame::Initialize()
                 {
                     harvesting_ = false;
                     uiSystem_->ToggleCastBar(false);
-                    uiSystem_->WriteLineToConsole("Cast interrupted by player", 1.f, 0.f, 0.f, 0.9f);
+                    uiSystem_->WriteLineToConsole("Harvest interrupted by player", 1.f, 0.f, 0.f, 0.9f);
                     if(harvestSoundChannel_ != -1)
                     {
                         engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
@@ -137,9 +137,7 @@ bool TileGame::Initialize()
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
         // nothing to do here on main menu screen. (UIRoot handles all of that)
         if(gameState_ == GAME_STATE::SPLASH)
-        {
             return;
-        }
         if(e.type == SDL_MOUSEBUTTONDOWN)
         {
             if(e.button == 1) // primary mouse button
@@ -147,61 +145,50 @@ bool TileGame::Initialize()
                 int clickedX = e.x;
                 int clickedY = e.y;
                 engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
-                // look for an entity/mob to target.
-                auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
-                    [this, clickedX, clickedY](const Entity* ent) {
+                // TODO: look for a mob to target first
+                auto mobFound = std::find_if(mobSprites_.begin(), mobSprites_.end(), 
+                    [this, clickedX, clickedY](const MobSprite* mob) {
                         float x = camera_.x + (float)clickedX;
                         float y = camera_.y + (float)clickedY;
-                        return (
-                            x > ent->GetPosition().x && x < ent->GetPosition().x + (float)ent->GetWidth() &&
-                            y > ent->GetPosition().y && y < ent->GetPosition().y + (float)ent->GetHeight()
-                        );
+                        auto pos = mob->GetPosition();
+                        float w = (float)mob->GetWidth();
+                        float h = (float)mob->GetHeight();
+                        return (x > pos.x && x < pos.x + w && y > pos.y && y < pos.y + h);
                     }
                 );
-                if(found != loadedEntities_.end())
+                if(mobFound != mobSprites_.end())
                 {
-                    if((*found) == targetedEntity_)
-                    {
-                        InteractWithTarget();
-                    }
-                    else 
-                    {
-                        ClearTarget();
-                        harvesting_ = false;
-                        engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-                        harvestSoundChannel_ = -1;
-                        if(targetedEntity_ != *found)
-                            uiSystem_->ToggleCastBar(false);
-                        targetedEntity_ = (*found);
-                        std::string rclicks = std::to_string(targetedEntity_->GetRemainingClicks());
-                        std::string mclicks = std::to_string(targetedEntity_->GetMaxClicks());
-                        std::string message = std::string("Now targeting a ") + targetedEntity_->GetName();
-                        target_.SetTargetSprite(targetedEntity_, Target::TARGET_TYPE::FRIENDLY,
-                            Target::SPRITE_TYPE::ENTSPR);
-                        if(targetedEntity_->GetMaxClicks() != -1)
-                        {
-                            message += " (" + rclicks + "/" + mclicks + ")";
-                        }
-                        uiSystem_->WriteLineToConsole(message);
-                        if(targetedEntity_->IsFarmable())
-                        {
-                            std::string output = " Farmable";
-                            if(targetedEntity_->IsReadyForPickup())
-                                output += " now.";
-                            else 
-                                output += " in " + std::to_string(targetedEntity_->FarmTimeRemaining())
-                                    + " seconds.";
-                            uiSystem_->WriteLineToConsole(output);
-                        }
-                    }
+                    auto aggro = (*mobFound)->GetAggroType();
+                    target_.SetTargetSprite(*mobFound, aggro == MobType::AGGRO_TYPE::HOSTILE 
+                        ? Target::TARGET_TYPE::HOSTILE : Target::TARGET_TYPE::NEUTRAL,
+                        Target::SPRITE_TYPE::MOBSPR);
+                    harvesting_ = false; // make sure harvest is interrupted upon aquiring new target
                 }
-                else 
+                else
                 {
-                    ClearTarget();
-                    harvesting_ = false; // how else to handle the resulting null pointer?
-                    engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-                    harvestSoundChannel_ = -1;
-                    uiSystem_->ToggleCastBar(false);
+                    // look for an entity to target.
+                    auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
+                        [this, clickedX, clickedY](const Entity* ent) {
+                            float x = camera_.x + (float)clickedX;
+                            float y = camera_.y + (float)clickedY;
+                            return (
+                                x > ent->GetPosition().x && x < ent->GetPosition().x + (float)ent->GetWidth() &&
+                                y > ent->GetPosition().y && y < ent->GetPosition().y + (float)ent->GetHeight()
+                            );
+                        }
+                    );
+                    // if we found one, set it as the target and begin interacting with it
+                    if(found != loadedEntities_.end())
+                    {
+                        target_.SetTargetSprite(*found, Target::TARGET_TYPE::FRIENDLY, Target::SPRITE_TYPE::ENTSPR);
+                        InteractWithEntity(*found);
+                        return;
+                    }
+                    else // no target was found so cancel harvest and clear existing target
+                    {
+                        harvesting_ = false;
+                        ClearTarget();
+                    }
                 }
             }
         }
@@ -553,6 +540,11 @@ void TileGame::EndGame()
         swimFilter_ = nullptr;
         CleanupLoadedEntities();
         CleanupMobSpawners();
+        for(auto eachMob : mobSprites_)
+        {
+            delete eachMob;
+        }
+        mobSprites_.clear();
         delete tileMap_;
         tileMap_ = nullptr;
         sm.UnloadSound("res/sounds/chopping.wav");
@@ -716,54 +708,59 @@ bool TileGame::CheckPoint(float x, float y, float left, float top, float right, 
     return (x >= left && x <= right && y >= top && y <= bottom);
 }
 
-void TileGame::InteractWithTarget()
+void TileGame::InteractWithEntity(Entity* ent)
 {
-    if(targetedEntity_->IsFarmable() && !targetedEntity_->IsReadyForPickup() 
-      && targetedEntity_->GetMaxClicks() == -1)
+    if(ent->IsFarmable() && !ent->IsReadyForPickup() 
+      && ent->GetMaxClicks() == -1)
     {
-        if(harvestSoundChannel_ != -1)
-        {
-            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-            harvestSoundChannel_ = -1;
-        }
-        return; // the target is not interactive except when farmable or clickable
+        // the target is not interactive except when farmable or clickable
+        StopHarvestSound();
+        return; 
     }
 
-    // check to see if we are in 32.f units of bottom center of targeted entity.
-    glm::vec3 bottomCenter = targetedEntity_->GetPosition();
-    bottomCenter.x += (float)targetedEntity_->GetWidth() / 2.f;
-    bottomCenter.y += (float)targetedEntity_->GetHeight();
+    // check to see if we are in MAX_DISTANCE units of bottom center of targeted entity.
+    const float MAX_DISTANCE = 48.f;
+    glm::vec3 bottomCenter = ent->GetPosition();
+    bottomCenter.x += (float)ent->GetWidth() / 2.f;
+    bottomCenter.y += (float)ent->GetHeight();
     glm::vec3 playerCenter = playerSprite_->GetPosition();
     playerCenter.x += (float)playerSprite_->GetWidth() / 2.f;
     playerCenter.y += (float)playerSprite_->GetHeight() / 2.f;
     float dist = glm::distance(bottomCenter, playerCenter);
-    const float maxDistance = 48.f;
-    if(dist > maxDistance)
+    if(dist > MAX_DISTANCE)
     {
         uiSystem_->WriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
-        if(harvestSoundChannel_ != -1)
-        {
-            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-            harvestSoundChannel_ = -1;
-        }
+        StopHarvestSound();
     }
     else 
     {
-        maxCastTime_ = targetedEntity_->GetClickTime();
+        // if already harvesting and clicked, then just ignore
+        if(harvesting_)
+            return;
+        // in range so we can play the sound and set the harvesting flag for checking
+        // during update intervals as well as show the harvesting cast bar
+        maxCastTime_ = ent->GetClickTime();
         currentCastTime_ = 0.0f;
         harvesting_ = true;
-        // WriteLineToConsole("Interacting with target...", 0.f, 1.f, 0.f, 1.f);
         auto& sm = engine::GameEngine::Get().GetSoundManager();
+        StopHarvestSound();
         harvestSoundChannel_ = sm.PlaySound("res/sounds/chopping.wav");
         uiSystem_->ToggleCastBar(true);
     }
 }
 
+void TileGame::StopHarvestSound()
+{
+    if(harvestSoundChannel_ != -1)
+    {
+        engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
+        harvestSoundChannel_ = -1;
+    }
+}
+
 void TileGame::ClearTarget()
 {   
-    targetedEntity_ = nullptr;
     target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
-    // TODO: when target circles are rendered, clear their state and visibility
 }
 
 void TileGame::RemoveEntityFromLoaded(Entity* ent)
@@ -778,8 +775,8 @@ void TileGame::RemoveEntityFromLoaded(Entity* ent)
     {
         loadedEntities_.erase(found);
     }
-    // clear target state in case it is being targeted
-    if(targetedEntity_ == ent)
+    // clear target state if it is being targeted
+    if(target_.IsTargetEntity(ent))
     {
         ClearTarget();
     }
@@ -793,26 +790,32 @@ void TileGame::CheckHarvestCast(float dtime)
     {
         currentCastTime_ += dtime;
         uiSystem_->SetCastBarValue(currentCastTime_ / maxCastTime_);
+        // handle completion of harvest
         if(currentCastTime_ >= maxCastTime_)
         {
-            bool dinged = false;
-            // the cast is completed so run ability, currently only harvest.
-            // UIWriteLineToConsole("Cast complete");
-            if(harvestSoundChannel_ != -1)
+            bool dinged = false; // level up flag
+            StopHarvestSound();
+            // if the current target isn't of type Entity then something has gone horribly wrong because
+            // target switching should have cancelled the harvest
+            if(target_.GetTargetSpriteType() != Target::SPRITE_TYPE::ENTSPR)
             {
-                engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-                harvestSoundChannel_ = -1;
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                    "%s: Target is not an entity (this point should have never been reached!)", __FUNCTION__);
+                harvesting_ = false;
+                return;
             }
-            if(targetedEntity_->IsFarmable() && targetedEntity_->IsReadyForPickup())
+            // now it is safe to cast targeted sprite to the Entity
+            Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
+            if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
             {
                 // check farming
-                auto itemToAdd = targetedEntity_->Farm();
-                SetFarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
-                    FarmCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y,
+                auto itemToAdd = targetedEntity->Farm();
+                SetFarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
+                    FarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y,
                         false, time(nullptr)));
                 inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
                 uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
-                    + " " + itemToAdd.name + "(s)");
+                    + " " + itemToAdd.name);
                 dinged = playerSprite_->GetPlayerData().SetExperience(
                     playerSprite_->GetPlayerData().GetExperience() + itemToAdd.num);
                 uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
@@ -824,11 +827,11 @@ void TileGame::CheckHarvestCast(float dtime)
             else 
             {
                 // check harvest-clicking
-                targetedEntity_->DecRemainingClicks();
-                SetHarvestCommand((int)targetedEntity_->GetPosition().x, (int)targetedEntity_->GetPosition().y, 
-                    targetedEntity_->GetMaxClicks() - targetedEntity_->GetRemainingClicks());
+                targetedEntity->DecRemainingClicks();
+                SetHarvestCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
+                    targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
                 // get the item(s) to add.
-                auto itemsToAdd = targetedEntity_->OnInteract();
+                auto itemsToAdd = targetedEntity->OnInteract();
                 for(auto each : itemsToAdd)
                 {
                     if(each.name != "exp")
@@ -848,10 +851,9 @@ void TileGame::CheckHarvestCast(float dtime)
                         UpdatePlayerExperience();
                     }
                 }
-                if(targetedEntity_->GetRemainingClicks() <= 0)
+                if(targetedEntity->GetRemainingClicks() == 0)
                 {
-                    uiSystem_->WriteLineToConsole("Removing...");
-                    auto items = targetedEntity_->OnDestroy();
+                    auto items = targetedEntity->OnDestroy();
                     for(auto each : items)
                     {
                         if(each.name != "exp")
@@ -870,15 +872,14 @@ void TileGame::CheckHarvestCast(float dtime)
                             UpdatePlayerExperience();
                         }
                     }
-                    RemoveSpriteFromRenderList(targetedEntity_);
-                    RemoveEntityFromLoaded(targetedEntity_);
+                    RemoveSpriteFromRenderList(targetedEntity);
+                    RemoveEntityFromLoaded(targetedEntity);
                     ClearTarget();
                 }
             }
             harvesting_ = false;
             uiSystem_->ToggleCastBar(false);
-            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-            harvestSoundChannel_ = -1;
+            StopHarvestSound();
             if(dinged)
             {
                 uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(

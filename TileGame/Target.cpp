@@ -20,6 +20,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Entity.hpp"
+#include "MobSprite.hpp"
 #include "ogl/ErrorCheck.hpp"
 #include "Target.hpp"
 
@@ -73,7 +74,7 @@ Target::~Target()
     delete blankHealthTexture_;
 }
 
-void Target::SetTargetSprite(const Sprite* sprite, const Target::TARGET_TYPE tt, const Target::SPRITE_TYPE st)
+void Target::SetTargetSprite(Sprite* sprite, const Target::TARGET_TYPE tt, const Target::SPRITE_TYPE st)
 {
     target_ = sprite;
     targetSpriteType_ = st;
@@ -157,7 +158,10 @@ void Target::Render(const glm::vec3 camera, ogl::Program& prog)
     }
     else if(targetSpriteType_ == SPRITE_TYPE::MOBSPR)
     {
-        // once mobs are implemented, convert as so and get health/maxhealth
+        MobSprite* mob = (MobSprite*)target_;
+        float value = (float)mob->GetCombatUnit().GetCurrentHealth() /
+            (float)mob->GetCombatUnit().GetMaxHealth();
+        newX = value * (float)mob->GetWidth();
     }
     pos = target_->GetPosition();
     pos.y -= 4.0f;
@@ -175,4 +179,13 @@ void Target::Render(const glm::vec3 camera, ogl::Program& prog)
     fullHealthVao_.Bind();
     colorHealthTexture_->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+bool Target::IsTargetEntity(const Entity* entity)
+{
+    if(targetSpriteType_ == SPRITE_TYPE::ENTSPR)
+    {
+        return entity == (Entity*)target_;
+    }
+    return false;
 }

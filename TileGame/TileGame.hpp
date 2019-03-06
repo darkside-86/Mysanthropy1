@@ -56,8 +56,6 @@ class TileGame : public engine::Game
 public:
     // determines what Update and Render does
     enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
-    // RTTI of targeted object
-    enum TARGET_CLASS { TGTSPRITE, TGTPLAYERSPRITE, TGTMOBSPRITE, TGTENTITY, TGTNONE };
     // constructor
     TileGame();
     // destructor
@@ -119,8 +117,10 @@ private:
     // Check to see if point x,y is inside of rectangle defined by left, top, right, and bottom params
     bool CheckPoint(float x, float y, float left, float top, float right, float bottom);
     // Checks the distance between player and targeted entity and begins click action
-    void InteractWithTarget();
-    // Clears the current target
+    void InteractWithEntity(Entity* ent);
+    // Stop playing harvesting sound
+    void StopHarvestSound();
+    // Clear target
     void ClearTarget();
     // Remove an entity from the list of loaded entities
     void RemoveEntityFromLoaded(Entity* ent);
@@ -152,9 +152,7 @@ private:
     Inventory inventory_;
     // Places a swim filter over sprites that are swimming
     SwimFilter* swimFilter_ = nullptr;
-    // The entity being targeted (if any) by the user
-    Entity* targetedEntity_ = nullptr;
-    // The visual target info
+    // The complete target info
     Target target_;
     // True if a casting sequence was started.
     bool harvesting_ = false;

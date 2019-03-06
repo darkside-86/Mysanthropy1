@@ -69,6 +69,8 @@ public:
     inline CombatUnit& GetCombatUnit() { return *combatUnit_; }
     // update. 
     void Update(float dtime) override;
+    // get aggro type
+    inline MobType::AGGRO_TYPE GetAggroType() const { return aggroType_; }
 private:
     // animation speed for each time animation is set
     float animSpeed_;
