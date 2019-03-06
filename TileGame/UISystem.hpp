@@ -48,6 +48,10 @@ public:
     void SetFoodstuffBarData(int amount);
     // Show dialog box for returning to main menu
     void ShowMMPopup(bool show);
+    // Sets unit frame top info
+    void PlayerUnitFrame_SetNameAndLevel(const std::string& name, int level);
+    // Sets unit frame health info
+    void PlayerUnitFrame_SetHealth(const int current, const int max);
 private:
     // prints the Lua error and pops it after a bad pcall
     void PrintLuaError(lua_State* L);
@@ -58,6 +62,8 @@ private:
     static int lua_Game_ConvertItemToFoodstuff(lua_State* L);
     static int lua_Game_GetFoodstuffCount(lua_State* L);
     static int lua_Game_ReturnToMainMenu(lua_State* L);
+    static int lua_Game_GetSaveSlot(lua_State* L);
+    static int lua_Game_GetPlayerLevel(lua_State* L);
 
     // the lua state
     lua_State* script_;

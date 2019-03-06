@@ -87,6 +87,13 @@ void Sprite::Render(const glm::vec3& camPos, ogl::Program& program)
     program.Use();
     program.SetUniform("u_model", model);
     vao_.Bind();
+    if(currentAnim_ != "")
+    {
+        auto found = animFrames_.find(currentAnim_);
+        if(found == animFrames_.end())
+            currentAnim_ = "";
+    }
+    
     if(currentAnim_ == "")
     {
         anim0_->Bind();

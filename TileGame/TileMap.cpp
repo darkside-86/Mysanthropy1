@@ -54,6 +54,7 @@ TileMap::~TileMap()
     delete collisionVao_;
     delete redTexture_;
     CleanupEntities();
+    CleanupSpawners();
     lua_close(scripting_);
 }
 
@@ -101,7 +102,7 @@ void TileMap::SaveToFile(const std::string& path)
     }
 
     const unsigned char MAJOR_VERSION = 0;
-    const unsigned char MINOR_VERSION = 5;
+    const unsigned char MINOR_VERSION = 6;
     const std::string TILESET_PATH = tileSet_->GetPathToTexture();
     out.write((char*)&MAJOR_VERSION, sizeof(unsigned char));
     out.write((char*)&MINOR_VERSION, sizeof(unsigned char));
@@ -133,8 +134,11 @@ void TileMap::SaveToFile(const std::string& path)
     // write the entities.
     size = mapEntities_.size();
     out.write((char*)&size, sizeof(size));
-    out.write((char*)&mapEntities_[0], sizeof(ENTITY_LOCATION) * mapEntities_.size());
-
+    out.write((char*)&mapEntities_[0], sizeof(ENTITY_LOCATION) * size);
+    // write the spawners
+    size = spawnerLocations_.size();
+    out.write((char*)&size, sizeof(size));
+    out.write((char*)&spawnerLocations_[0], sizeof(MOBSPAWNER_LOCATION) * size);
     out.close();
 }
 
@@ -153,6 +157,7 @@ void TileMap::LoadFromFile(const std::string& path)
     height_ = 0;
     scriptPath_ = "";
     CleanupEntities();
+    CleanupSpawners();
     
     std::ifstream in;
     in.open(path, std::ios::binary);
@@ -220,7 +225,13 @@ void TileMap::LoadFromFile(const std::string& path)
     in.read((char*)&size, sizeof(size));
     mapEntities_.resize(size);
     in.read((char*)&mapEntities_[0], size * sizeof(ENTITY_LOCATION));
-
+    // read spawner locations
+    if(minorV >= 6)
+    {
+        in.read((char*)&size, sizeof(size));
+        spawnerLocations_.resize(size);
+        in.read((char*)&spawnerLocations_[0], size * sizeof(MOBSPAWNER_LOCATION));
+    }
     in.close();
 
     // run the script at scriptPath_
@@ -377,6 +388,19 @@ std::vector<Entity*> TileMap::GenerateEntities()
     return entities;
 }
 
+std::vector<MobSpawner*> TileMap::GenerateSpawners()
+{
+    std::vector<MobSpawner*> spawners;
+    for(auto it=spawnerLocations_.begin(); it != spawnerLocations_.end(); ++it)
+    {
+        // TODO: fix spawner location struct to include information provided by const literals here
+        MobSpawner* ms = new MobSpawner(mobTypes_[it->spawnerID], it->freq, 
+            {(float)it->x, (float)it->y, 0.0f}, it->chance);
+        spawners.push_back(ms);
+    }
+    return spawners;
+}
+
 void TileMap::FillWithTile(const Tile& tile, bool layer1)
 {
     for(int i=0; i < width_*height_; ++i)
@@ -420,6 +444,22 @@ ENTITY_TYPE TileMap::GetEntityType(int index)
     }
 }
 
+MobType TileMap::GetMobType(int index)
+{
+    if(index >= 0 && index < mobTypes_.size())
+    {
+        return mobTypes_[index];
+    }
+    else 
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+            "%s: index out of range (%d)", __FUNCTION__, index);
+        MobType blank;
+        blank.name = "";
+        return blank;
+    }
+}
+
 void TileMap::AddEntityLocation(unsigned short entityID, unsigned int x, unsigned int y)
 {
     ENTITY_LOCATION location = { entityID, x, y };
@@ -450,6 +490,63 @@ bool TileMap::RemoveEntityLocation(unsigned short entityID, unsigned int x, unsi
         return false;
     }
     
+}
+
+unsigned short TileMap::GetEntityIDAtLocation(unsigned int x, unsigned int y)
+{
+    auto it = std::find_if(mapEntities_.begin(), mapEntities_.end(), 
+        [this, x, y](const ENTITY_LOCATION& loc){
+            ENTITY_TYPE t = GetEntityType(loc.entityID);
+            return x >= loc.x  && x <= loc.x + t.width &&
+                y >= loc.y && y <= loc.y + t.height;
+        }
+    );
+    if(it != mapEntities_.end())
+    {
+        return it->entityID;
+    }
+    else 
+    {
+        return INVALID_ENTITY_ID;
+    }
+}
+
+void TileMap::AddSpawnerLocation(unsigned short spawnerID, unsigned int x, unsigned int y, float freq, float chance)
+{
+    MOBSPAWNER_LOCATION loc = { spawnerID, x, y, freq, chance };
+    spawnerLocations_.push_back(loc);
+}
+
+void TileMap::RemoveSpawnerLocation(unsigned short spawnerID, unsigned int x, unsigned int y)
+{
+    auto it = std::find_if(spawnerLocations_.begin(), spawnerLocations_.end(), 
+        [this, spawnerID, x, y](const MOBSPAWNER_LOCATION& loc){
+            return loc.spawnerID == spawnerID && 
+                x >= loc.x && x <= loc.x + 16 &&
+                y >= loc.y && y <= loc.y + 16;
+        }
+    );
+    if(it != spawnerLocations_.end())
+    {
+        spawnerLocations_.erase(it);
+    }
+}
+
+unsigned short TileMap::GetMobTypeIDAtLocation(unsigned int x, unsigned int y, float& freq, float& chance)
+{
+    auto it = std::find_if(spawnerLocations_.begin(), spawnerLocations_.end(), 
+        [this, x, y](const MOBSPAWNER_LOCATION& loc){
+            return x >= loc.x && x <= loc.x + 16 && 
+                y >= loc.y && y <= loc.y + 16;
+        }
+    );
+    if(it != spawnerLocations_.end())
+    {
+        freq = it->freq;
+        chance = it->chance;
+        return it->spawnerID;
+    }
+    return INVALID_MOBTYPE_ID;
 }
 
 void TileMap::SetupScripting()
@@ -485,6 +582,36 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "FARMABLE");
     lua_pushcfunction(scripting_, TileMap::lua_OnDestroy);
     lua_setglobal(scripting_, "ON_DESTROY");
+    lua_pushcfunction(scripting_, TileMap::lua_BeginMobType);
+    lua_setglobal(scripting_, "BEGIN_MOB_TYPE");
+    lua_pushcfunction(scripting_, TileMap::lua_DefaultAnimation);
+    lua_setglobal(scripting_, "DEFAULT_ANIMATION");
+    lua_pushcfunction(scripting_, TileMap::lua_FrAnimTextureList);
+    lua_setglobal(scripting_, "FR_ANIM_TEXTURE_LIST");
+    lua_pushcfunction(scripting_, TileMap::lua_BkAnimTextureList);
+    lua_setglobal(scripting_, "BK_ANIM_TEXTURE_LIST");
+    lua_pushcfunction(scripting_, TileMap::lua_LfAnimTextureList);
+    lua_setglobal(scripting_, "LF_ANIM_TEXTURE_LIST");
+    lua_pushcfunction(scripting_, TileMap::lua_RtAnimTextureList);
+    lua_setglobal(scripting_, "RT_ANIM_TEXTURE_LIST");
+    lua_pushcfunction(scripting_, TileMap::lua_AnimSpeed);
+    lua_setglobal(scripting_, "ANIM_SPEED");
+    lua_pushcfunction(scripting_, TileMap::lua_MobWidth);
+    lua_setglobal(scripting_, "MOB_WIDTH");
+    lua_pushcfunction(scripting_, TileMap::lua_MobHeight);
+    lua_setglobal(scripting_, "MOB_HEIGHT");
+    lua_pushcfunction(scripting_, TileMap::lua_MobSpeed);
+    lua_setglobal(scripting_, "MOB_SPEED");
+    lua_pushcfunction(scripting_, TileMap::lua_MobLeash);
+    lua_setglobal(scripting_, "MOB_LEASH");
+    lua_pushcfunction(scripting_, TileMap::lua_MobCollisionBox);
+    lua_setglobal(scripting_, "MOB_COLLISION_BOX");
+    lua_pushcfunction(scripting_, TileMap::lua_MobAggroType);
+    lua_setglobal(scripting_, "MOB_AGGRO_TYPE");
+    lua_pushcfunction(scripting_, TileMap::lua_CombatAbilityList);
+    lua_setglobal(scripting_, "COMBAT_ABILITY_LIST");
+    lua_pushcfunction(scripting_, TileMap::lua_EndMobType);
+    lua_setglobal(scripting_, "END_MOB_TYPE");
 }
 
 void TileMap::CleanupEntities()
@@ -507,6 +634,11 @@ void TileMap::CleanupEntities()
         delete [] it->farmInfo.pendingTexture;
     }
     entityTypes_.clear();
+}
+
+void TileMap::CleanupSpawners()
+{
+    mobTypes_.clear();
 }
 
 // lua : LIQUIDS ( {ix,iy}... )
@@ -719,5 +851,225 @@ int TileMap::lua_OnDestroy(lua_State* L)
         ++itemDropCounter;
     }
 
+    return 0;
+}
+
+int TileMap::lua_BeginMobType(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    const char* name = lua_tostring(L, 1);
+    tileMap->currentMobType_.name = name;
+    return 0;
+}
+
+int TileMap::lua_DefaultAnimation(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    const char* defaultAnimation = lua_tostring(L, 1);
+    tileMap->currentMobType_.defaultAnimation = defaultAnimation;
+    return 0;  
+}
+
+int TileMap::lua_FrAnimTextureList(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    tileMap->currentMobType_.frAnimTextureList.clear();
+    for(int i=1; i <= lua_gettop(L); ++i)
+    {
+        const char* frame = lua_tostring(L, i);
+        tileMap->currentMobType_.frAnimTextureList.push_back(frame);
+    }
+    return 0;
+}
+
+int TileMap::lua_BkAnimTextureList(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    tileMap->currentMobType_.bkAnimTextureList.clear();
+    for(int i=1; i <= lua_gettop(L); ++i)
+    {
+        const char* frame = lua_tostring(L, i);
+        tileMap->currentMobType_.bkAnimTextureList.push_back(frame);
+    }
+    return 0;     
+}
+
+int TileMap::lua_LfAnimTextureList(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    tileMap->currentMobType_.lfAnimTextureList.clear();
+    for(int i=1; i <= lua_gettop(L); ++i)
+    {
+        const char* frame = lua_tostring(L, i);
+        tileMap->currentMobType_.lfAnimTextureList.push_back(frame);
+    }
+    return 0;  
+}
+
+int TileMap::lua_RtAnimTextureList(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    tileMap->currentMobType_.rtAnimTextureList.clear();
+    for(int i=1; i <= lua_gettop(L); ++i)
+    {
+        const char* frame = lua_tostring(L, i);
+        tileMap->currentMobType_.rtAnimTextureList.push_back(frame);
+    }
+    return 0;  
+}
+
+int TileMap::lua_AnimSpeed(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    float animSpeed = (float)lua_tonumber(L, 1);
+    tileMap->currentMobType_.animSpeed = animSpeed;
+    return 0;
+}
+
+int TileMap::lua_MobWidth(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    int width = (int)lua_tointeger(L, 1);
+    tileMap->currentMobType_.width = width;
+    return 0;
+}
+
+int TileMap::lua_MobHeight(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    int height = (int)lua_tointeger(L, 1);
+    tileMap->currentMobType_.height = height;
+    return 0;
+}
+
+int TileMap::lua_MobSpeed(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    float speed = (float)lua_tonumber(L, 1);
+    tileMap->currentMobType_.speed = speed;
+
+    return 0;
+}
+
+int TileMap::lua_MobLeash(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    float leash = (float)lua_tonumber(L, 1);
+    tileMap->currentMobType_.leash = leash;
+    return 0;
+}
+
+int TileMap::lua_MobCollisionBox(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    BOX box = {
+        (float)lua_tonumber(L, 1), (float)lua_tonumber(L, 2),
+        (float)lua_tonumber(L, 3), (float)lua_tonumber(L, 4)
+    };
+    tileMap->currentMobType_.collisionBox = box;
+    return 0;
+}
+
+int TileMap::lua_MobAggroType(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    const char* aggro = lua_tostring(L, 1);
+    if(strcmp(aggro,"hostile")==0)
+    {
+        tileMap->currentMobType_.aggroType = MobType::AGGRO_TYPE::HOSTILE;
+    }
+    else 
+    {
+        tileMap->currentMobType_.aggroType = MobType::AGGRO_TYPE::NEUTRAL;
+    }
+    return 0;
+}
+    
+int TileMap::lua_CombatAbilityList(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    
+    const char* abilityListName = lua_tostring(L, 1);
+    const auto& lists = CombatAbilityLists::Get().GetLists();
+    const auto found = lists.find(abilityListName);
+    if(found != lists.end())
+    {
+        tileMap->currentMobType_.combatAbilityList = found->second;
+    }
+    else 
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+            "%s: CombatAbilityList not set because it (%s) wasn't found", __FUNCTION__, abilityListName);
+    }
+    return 0;
+}
+
+int TileMap::lua_EndMobType(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    // push back the current object.
+    tileMap->mobTypes_.push_back(tileMap->currentMobType_);
     return 0;
 }

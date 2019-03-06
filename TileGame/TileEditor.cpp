@@ -62,14 +62,23 @@ bool TileEditor::Initialize()
     lua_setglobal(uiScript_, "TileEditor_GetScriptPath");
     lua_pushcfunction(uiScript_, TileEditor::lua_SetScriptPath);
     lua_setglobal(uiScript_, "TileEditor_SetScriptPath");
-    lua_pushcfunction(uiScript_, TileEditor::lua_SelectEntity);
-    lua_setglobal(uiScript_, "TileEditor_SelectEntity");
+    lua_pushcfunction(uiScript_, TileEditor::lua_PlaceEntity);
+    lua_setglobal(uiScript_, "TileEditor_PlaceEntity");
     lua_pushcfunction(uiScript_, TileEditor::lua_RemoveEntity);
     lua_setglobal(uiScript_, "TileEditor_RemoveEntity");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SelectEntity);
+    lua_setglobal(uiScript_, "TileEditor_SelectEntity");
+    lua_pushcfunction(uiScript_, TileEditor::lua_PlaceSpawner);
+    lua_setglobal(uiScript_, "TileEditor_PlaceSpawner");
+    lua_pushcfunction(uiScript_, TileEditor::lua_RemoveSpawner);
+    lua_setglobal(uiScript_, "TileEditor_RemoveSpawner");
+    lua_pushcfunction(uiScript_, TileEditor::lua_SelectSpawner);
+    lua_setglobal(uiScript_, "TileEditor_SelectSpawner");
 
     tileMap_ = new TileMap("res/tilemaps/island.bin");
     tileSet_ = tileMap_->GetTileSet();
     entities_ = tileMap_->GenerateEntities();
+    mobSpawners_ = tileMap_->GenerateSpawners();
 
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", "ui/lib/keycodes.lua", "ui/lib/Window.lua", "ui/TileEditor.lua"
@@ -94,6 +103,12 @@ bool TileEditor::Initialize()
 
     // tileMap_ = new TileMap(tileSet_, 32, 32);
 
+    UpdateMapName("island");
+
+    auto& tm = engine::GameEngine::Get().GetTextureManager();
+    ogl::Texture* skullTexture = tm.GetTexture("res/textures/skull.png");
+    skullIcon_ = new Sprite(skullTexture, 16, 16);
+
     engine::GameEngine::Get().AddMouseButtonListener([this](const SDL_MouseButtonEvent& e){
 
         if(e.type == SDL_MOUSEBUTTONDOWN && e.button == 1)
@@ -102,7 +117,7 @@ bool TileEditor::Initialize()
             engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
 
             // first check to see if we need to place an entity
-            if(entityToPlace_ != nullptr && entityID_ >= 0 && !entityToRemove_)
+            if(clickAction_ == CLICK_ACTION::PLACING_ENTITY && entityToPlace_ != nullptr)
             {
                 entityToPlace_->SetPosition({
                     -(float)cameraX_ + (float)clickedX,
@@ -114,13 +129,66 @@ bool TileEditor::Initialize()
                 tileMap_->AddEntityLocation(entityID_, 
                     -cameraX_ + clickedX,
                     -cameraY_ + clickedY);
+                clickAction_ = CLICK_ACTION::NONE;
                 return; // nothing else to do for this mouse click
             }
-            else if(entityToRemove_)
+            else if(clickAction_ == CLICK_ACTION::REMOVING_ENTITY)
             {
                 tileMap_->RemoveEntityLocation(entityID_, -cameraX_ + clickedX, -cameraY_ + clickedY);
                 RemoveEntity(entityID_, -cameraX_ + clickedX, -cameraY_ + clickedY);
-                entityToRemove_ = false;
+                clickAction_ = CLICK_ACTION::NONE;
+                return;
+            }
+            else if(clickAction_ == CLICK_ACTION::SELECTING_ENTITY)
+            {
+                // search entire entity list for mouse collision
+                unsigned short foundID = tileMap_->GetEntityIDAtLocation(
+                    clickedX - cameraX_, clickedY - cameraY_);
+                if(foundID != INVALID_ENTITY_ID)
+                {
+                    UpdateEntitySelection(foundID);
+                    clickAction_ = CLICK_ACTION::NONE;
+                }
+                else 
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                        "%s: Entity to select was not found so still searching next click", __FUNCTION__);
+                }
+                return;
+            }
+            else if(clickAction_ == CLICK_ACTION::PLACING_SPAWNER && mobSpawnerToPlace_ != nullptr)
+            {
+                mobSpawnerToPlace_->SetPosition({ (float)clickedX - (float)cameraX_, 
+                    (float)clickedY - (float)cameraY_, 0.0f});
+                mobSpawners_.push_back(mobSpawnerToPlace_);
+                tileMap_->AddSpawnerLocation(mobSpawnerID_, clickedX - cameraX_, clickedY - cameraY_, 
+                    mobSpawnerToPlace_->GetFrequency(), mobSpawnerToPlace_->GetPercentChance());
+                mobSpawnerToPlace_ = nullptr;
+                clickAction_ = CLICK_ACTION::NONE;
+                return;
+            }
+            else if(clickAction_ == CLICK_ACTION::REMOVING_SPAWNER)
+            {
+                tileMap_->RemoveSpawnerLocation(mobSpawnerID_, clickedX - cameraX_, clickedY - cameraY_);
+                RemoveSpawner(mobSpawnerID_, clickedX - cameraX_, clickedY - cameraY_);
+                clickAction_ = CLICK_ACTION::NONE;
+                return;
+            }
+            else if(clickAction_ == CLICK_ACTION::SELECTING_SPAWNER)
+            {
+                float freq=0.f, ch=0.f;
+                unsigned short foundID = tileMap_->GetMobTypeIDAtLocation(clickedX - cameraX_, 
+                    clickedY - cameraY_, freq, ch);
+                if(foundID != INVALID_MOBTYPE_ID)
+                {
+                    UpdateSpawnerSelection(foundID, freq, ch);
+                    clickAction_ = CLICK_ACTION::NONE;
+                }
+                else 
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                        "%s: Spawner to select was not found so still searching next click", __FUNCTION__);
+                }
                 return;
             }
             // what is the selected x,y index value based on what is clicked at top with tiles rendered
@@ -187,6 +255,7 @@ void TileEditor::Cleanup()
     delete luaBindings_;
     lua_close(uiScript_);
     delete tileMap_;
+    delete skullIcon_;
 }
 
 void TileEditor::Update(float dtime)
@@ -220,6 +289,14 @@ void TileEditor::Render(engine::GraphicsContext& gc)
     for(auto it : entities_)
     {
         it->Render(glm::vec3((float)cameraX_, (float)cameraY_, 0.f), program);
+    }
+
+    // draw all the mob spawners by rendering a skull at their location
+    for(auto it : mobSpawners_)
+    {
+        auto pos = it->GetPosition();
+        skullIcon_->SetPosition(pos);
+        skullIcon_->Render({(float)cameraX_, (float)cameraY_, 0.0f}, program);
     }
 
     // draw all tiles from the set across the top
@@ -300,6 +377,19 @@ void TileEditor::UpdateHoverData(int mouseX, int mouseY)
     luaL_dostring(uiScript_, "UpdateHoverData()");
 }
 
+void TileEditor::UpdateMapName(const std::string& name)
+{
+    lua_getglobal(uiScript_, "UpdateMapName");
+    lua_pushstring(uiScript_, name.c_str());
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
+}
+
 void TileEditor::SetupSelection(int index)
 {
     ENTITY_TYPE et = tileMap_->GetEntityType(index);
@@ -311,6 +401,18 @@ void TileEditor::SetupSelection(int index)
     }
     entityToPlace_ = new Entity(et);
     // once placed it will be added to vector of entities
+}
+
+void TileEditor::SetupSpawnPlacing(int index, float freq, float chance)
+{
+    MobType t = tileMap_->GetMobType(index);
+    if(t.name == "")
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+            "%s: Invalid mob type index %d", __FUNCTION__, index);
+        return;
+    }
+    mobSpawnerToPlace_ = new MobSpawner(t, freq, {0.0f,0.0f,0.0f}, chance);
 }
 
 void TileEditor::CleanupEntities()
@@ -346,6 +448,52 @@ void TileEditor::RemoveEntity(int index, int x, int y)
     if(it != entities_.end())
     {
         entities_.erase(it);
+    }
+}
+
+void TileEditor::RemoveSpawner(int index, int x, int y)
+{
+    auto t = tileMap_->GetMobType(index);
+    auto it = mobSpawners_.begin();
+    for(; it != mobSpawners_.end(); ++it)
+    {
+        auto pos = (*it)->GetPosition();
+        if( (*it)->GetMobType().name == t.name &&
+          (float)x >= pos.x && (float)x <= pos.x + 16 &&
+          (float)y >= pos.y && (float)y <= pos.y + 16 )
+            break;
+    }
+    if(it != mobSpawners_.end())
+    {
+        mobSpawners_.erase(it);
+    }
+}
+
+void TileEditor::UpdateEntitySelection(int index)
+{
+    lua_getglobal(uiScript_, "UpdateEntitySelection");
+    lua_pushinteger(uiScript_, index);
+    int ok = lua_pcall(uiScript_, 1, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
+    }
+}
+
+void TileEditor::UpdateSpawnerSelection(int index, float freq, float chance)
+{
+    lua_getglobal(uiScript_, "UpdateSpawnerSelection");
+    lua_pushinteger(uiScript_, index);
+    lua_pushnumber(uiScript_, freq);
+    lua_pushnumber(uiScript_, chance);
+    int ok = lua_pcall(uiScript_, 3, 0, 0);
+    if(ok != LUA_OK)
+    {
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+            "%s: %s", __FUNCTION__, lua_tostring(uiScript_, -1));
+        lua_pop(uiScript_, 1);
     }
 }
 
@@ -471,8 +619,8 @@ int TileEditor::lua_SetScriptPath(lua_State* L)
     return 0;
 }
 
-// TileEditor_SelectEntity(iIndex)
-int TileEditor::lua_SelectEntity(lua_State* L)
+// TileEditor_PlaceEntity(iIndex)
+int TileEditor::lua_PlaceEntity(lua_State* L)
 {
     // get TileEditor
     lua_pushstring(L, "TileEditor");
@@ -483,7 +631,7 @@ int TileEditor::lua_SelectEntity(lua_State* L)
     int index = (int)lua_tonumber(L, 1);
     te->entityID_ = index;
     te->SetupSelection(index);
-
+    te->clickAction_ = CLICK_ACTION::PLACING_ENTITY;
     return 0;
 }
 
@@ -496,7 +644,57 @@ int TileEditor::lua_RemoveEntity(lua_State* L)
 
     int index = (int)lua_tonumber(L, 1);
     te->entityID_ = index;
-    te->entityToRemove_ = true;
+    te->clickAction_ = CLICK_ACTION::REMOVING_ENTITY;
 
+    return 0;
+}
+
+int TileEditor::lua_SelectEntity(lua_State* L)
+{
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    te->clickAction_ = CLICK_ACTION::SELECTING_ENTITY;
+    return 0;
+}
+
+// lua : PlaceSpawner(index, freq, chance)
+int TileEditor::lua_PlaceSpawner(lua_State* L)
+{
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    int index = (int)lua_tointeger(L, 1);
+    float freq = (float)lua_tonumber(L, 2);
+    float chance = (float)lua_tonumber(L, 3);
+    te->SetupSpawnPlacing(index, freq, chance);
+    te->clickAction_ = CLICK_ACTION::PLACING_SPAWNER;
+    te->mobSpawnerID_ = index;
+    return 0;
+}
+
+// lua : RemoveSpawner(index)
+int TileEditor::lua_RemoveSpawner(lua_State* L)
+{
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    int index = (int)lua_tointeger(L, 1);
+    te->mobSpawnerID_ = index;
+    te->clickAction_ = CLICK_ACTION::REMOVING_SPAWNER;
+    return 0;
+}
+
+int TileEditor::lua_SelectSpawner(lua_State* L)
+{  
+    lua_pushstring(L, "TileEditor");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    te->clickAction_ = CLICK_ACTION::SELECTING_SPAWNER;
     return 0;
 }

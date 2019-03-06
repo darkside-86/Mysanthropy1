@@ -89,6 +89,8 @@ namespace engine
         inline std::default_random_engine& GetRNG() { return rng_; }
         // Return contents of a small text file as a string
         std::string ReadFileAsString(const std::string& path);
+        // rotate a 2D vector
+        void Rotate2DVector(float &x, float &y, const float degrees);
     private:
         // Hidden constructor. Only accessible through singleton
         GameEngine() {}

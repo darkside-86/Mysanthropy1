@@ -210,4 +210,16 @@ namespace engine
         return result;
     }
 
+    void GameEngine::Rotate2DVector(float &x, float &y, const float degrees)
+    {
+        float x0 = x;
+        float y0 = y;
+        float theta = glm::radians(degrees);
+
+        float x1 = glm::cos(theta) * x0 - glm::sin(theta) * y0;
+        float y1 = glm::sin(theta) * x0 + glm::cos(theta) * y0;
+        x = x1;
+        y = y1;
+    }
+
 }

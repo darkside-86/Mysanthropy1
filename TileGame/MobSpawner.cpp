@@ -1,4 +1,4 @@
-// PlayerSprite.cpp
+// MobSpawner.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -17,29 +17,35 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "PlayerSprite.hpp"
+#include "engine/GameEngine.hpp"
+#include "MobSpawner.hpp"
 
-PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h) : Sprite(texture,w,h)
+MobSpawner::MobSpawner(const MobType& mt, float frequency, const glm::vec3 &pos, float percentChance)
+    : mobType_(mt), frequency_(frequency), percentChance_(percentChance), position_(pos)
 {
-    CombatAbilityList playerAbilities;
-    // a simple test ability. 3rd field is false for testing. otherwise it would make
-    //  no sense for the player to attack themselves.
-    playerAbilities["attack"] = { 0, 32, false, 0.0f, 0.0f, true, 
-        [](const CombatUnit& cu) { return 1; }};
-    combatUnit_ = new CombatUnit(false, playerAbilities, "player");
-    // TODO: Feed combatUnit stats instead to calculate health
-    combatUnit_->SetMaxHealth(10);
+
 }
 
-PlayerSprite::~PlayerSprite()
+MobSpawner::~MobSpawner()
 {
-    delete combatUnit_;
+
 }
 
-void PlayerSprite::Update(float dtime)
+// caller takes ownership of non-null pointer
+void MobSpawner::Update(float dtime, MobSprite*& spawned)
 {
-    Sprite::Update(dtime);
-    // todo: define combat location as exact center of sprite
-    combatUnit_->SetLocation(position_);
-    combatUnit_->Update(dtime);
+    spawned = nullptr;
+    timer_ += dtime;
+    if(timer_ >= frequency_)
+    {
+        timer_ -= frequency_;
+        // attempt to spawn
+        auto& rng = engine::GameEngine::Get().GetRNG();
+        float roll = 100.0f * (float)rng() / (float)rng.max();
+        if(roll < percentChance_)
+        {
+            spawned = new MobSprite(mobType_);
+            spawned->SetPosition(position_);
+        }
+    }
 }

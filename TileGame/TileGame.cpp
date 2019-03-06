@@ -55,6 +55,7 @@ bool TileGame::Initialize()
         }
         if(e.type == SDL_KEYDOWN)
         {
+            std::string combatLog;
             // TODO: create a customizable keybind system using unordered_map and UI commands
             glm::vec3 vel = playerSprite_->GetVelocity();
             switch(e.keysym.sym)
@@ -85,6 +86,10 @@ bool TileGame::Initialize()
                     return;
                 case SDLK_ESCAPE:
                     uiSystem_->ShowMMPopup(true);
+                    return;
+                case SDLK_1: // hit yourself ^_^
+                    playerSprite_->GetCombatUnit().UseAbility(playerSprite_->GetCombatUnit(), "attack", combatLog);
+                    uiSystem_->WriteLineToConsole(combatLog, 0.f, 0.f, 1.0f, 1.0f);
                     return;
                 default:
                     // without this the entire screen except UI goes black......
@@ -243,6 +248,10 @@ void TileGame::Update(float dtime)
 
         // update player movement
         playerSprite_->Update(dtime);
+        
+        // update health on UI
+        uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetCombatUnit().GetCurrentHealth(), 
+            playerSprite_->GetCombatUnit().GetMaxHealth());
 
         // tile collision detection.
         float left, top, right, bottom;
@@ -252,6 +261,10 @@ void TileGame::Update(float dtime)
         for(auto each : loadedEntities_)
         {
             each->Update(dtime);
+            if(each->IsFarmable() && each->IsReadyForPickup())
+            {
+                RemoveFarmCommand((int)each->GetPosition().x, (int)each->GetPosition().y);
+            }
         }
 
         // check casting and update cast bar
@@ -277,7 +290,23 @@ void TileGame::Update(float dtime)
         // test player against entity collision
         else if(EntityCollisionCheck(playerSprite_))
             playerSprite_->Update(-dtime);
-        
+        // update mobs
+        for(auto it : mobSprites_)
+        {
+            it->Update(dtime);
+        }
+        // update mob spawners.
+        for(auto it : mobSpawners_)
+        {
+            MobSprite* mobSprite = nullptr;
+            it->Update(dtime, mobSprite);
+            if(mobSprite)
+            {
+                mobSprites_.push_back(mobSprite);
+                renderList_.push_back(mobSprite);
+            }
+        }
+
         // todo: bound player to map area
 
         // calculate camera.
@@ -352,6 +381,7 @@ void TileGame::StartGame()
     // Load map and set up entities
     tileMap_ = new TileMap("res/tilemaps/island.bin");
     loadedEntities_ = tileMap_->GenerateEntities();
+    mobSpawners_ = tileMap_->GenerateSpawners();
     // clear target
     target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
     // get menu information to determine save or load game data then destroy 
@@ -363,6 +393,8 @@ void TileGame::StartGame()
     // name of save slot and determine
     // survivalist gender when spawning new player sprite.
     saveSlot_ = gameLoadState.saveName;
+    // Setup lua UI
+    uiSystem_ = new UISystem(*this);
     // either start a new game or load new game according to menu option
     if(gameLoadState.newGame)
         NewGame(gameLoadState.boyCharacter);
@@ -377,8 +409,6 @@ void TileGame::StartGame()
     swimFilter_ = new SwimFilter();
     // Setup render list
     SetupRenderList();
-    // Setup lua UI
-    uiSystem_ = new UISystem(*this);
     // Update experience bar to reflect current xp levels
     UpdatePlayerExperience();
     // load sounds
@@ -386,6 +416,10 @@ void TileGame::StartGame()
     sm.LoadSound("res/sounds/chopping.wav");
     // start looping background music. TODO: fix SoundManager to get more song variety
     sm.PlayMusic("res/music/island1.ogg", -1);
+    // set UI information
+    uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, playerSprite_->GetPlayerData().GetLevel());
+    uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetCombatUnit().GetCurrentHealth(), 
+        playerSprite_->GetCombatUnit().GetMaxHealth());
 }
 
 void TileGame::LoadGame()
@@ -406,6 +440,7 @@ void TileGame::LoadGame()
             (float)saveData_.GetLocationCommand().locationY,0.f});
     }
     // process harvest commands
+    harvestCommands_.clear();
     saveData_.ForEachHarvestCommand([this](const HarvestCommand& cmd){
         Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
         if(ent == nullptr)
@@ -425,9 +460,11 @@ void TileGame::LoadGame()
                     RemoveEntityFromLoaded(ent);
                 }
             }
+            SetHarvestCommand(cmd.targetX, cmd.targetY, cmd.count);
         }
     });
     // process farm commands
+    farmCommands_.clear();
     saveData_.ForEachFarmCommand([this](const FarmCommand& cmd){
         Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
         if(ent == nullptr)
@@ -439,6 +476,8 @@ void TileGame::LoadGame()
         else
         {
             ent->SetFarmData(cmd);
+            SetFarmCommand(cmd.targetX, cmd.targetY, FarmCommand(cmd.targetX, 
+                cmd.targetY, cmd.readyToFarm, cmd.farmedTime));
         }
     });
     // process player and inventory.
@@ -495,6 +534,9 @@ void TileGame::NewGame(bool boy)
     playerSprite_->GetPlayerData().SetLevel(1);
     playerSprite_->GetPlayerData().SetExperience(0);
     playerSprite_->GetPlayerData().SetBoy(boy);
+    // clear harvest and farm data
+    harvestCommands_.clear();
+    farmCommands_.clear();
 }
 
 void TileGame::EndGame()
@@ -510,6 +552,7 @@ void TileGame::EndGame()
         delete swimFilter_;
         swimFilter_ = nullptr;
         CleanupLoadedEntities();
+        CleanupMobSpawners();
         delete tileMap_;
         tileMap_ = nullptr;
         sm.UnloadSound("res/sounds/chopping.wav");
@@ -586,6 +629,15 @@ void TileGame::CleanupLoadedEntities()
         delete (*it);
     }
     loadedEntities_.clear();
+}
+
+void TileGame::CleanupMobSpawners()
+{
+    for(auto it=mobSpawners_.begin(); it != mobSpawners_.end(); ++it)
+    {
+        delete *it;
+    }
+    mobSpawners_.clear();
 }
 
 void TileGame::SetupRenderList()
@@ -831,6 +883,8 @@ void TileGame::CheckHarvestCast(float dtime)
             {
                 uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
                     playerSprite_->GetPlayerData().GetLevel()) + "!", 1.0f, 1.0f, 0.0f, 1.0f);
+                // update UI to reflect new level
+                uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, playerSprite_->GetPlayerData().GetLevel());
             }
         }
     }
@@ -872,6 +926,13 @@ void TileGame::SetFarmCommand(int x, int y, const FarmCommand& fc)
         farmCommands_[{x,y}] = fc;
     }
 }
+
+void TileGame::RemoveFarmCommand(int x, int y)
+{
+    auto found = farmCommands_.find({x,y});
+    if(found != farmCommands_.end())
+        farmCommands_.erase(found);
+}
     
 std::vector<HarvestCommand> TileGame::GetHarvestCommands()
 {
@@ -891,15 +952,4 @@ std::vector<FarmCommand> TileGame::GetFarmCommands()
         commands.push_back(it->second);
     }
     return commands;
-}
-
-void TileGame::PrintInventory()
-{
-    inventory_.ForEachItemEntry([this](const std::string& k, const ItemEntry& ie){
-        if(ie.count > 0)
-        {
-            if(!ie.item->IsHiddenFromInventory())
-                uiSystem_->WriteLineToConsole(std::to_string(ie.count) + " " + k + "(s)");
-        }
-    });
 }

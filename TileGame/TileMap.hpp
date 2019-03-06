@@ -23,7 +23,9 @@
 
 #include <lua/lua.hpp>
 
+#include "CombatAbilityLists.hpp"
 #include "Entity.hpp"
+#include "MobSpawner.hpp"
 #include "ogl/Program.hpp"
 #include "ogl/Texture.hpp"
 #include "ogl/VertexArray.hpp"
@@ -41,6 +43,18 @@ struct ENTITY_LOCATION
     unsigned short entityID = 0;
     unsigned int x = 0, y = 0;
 };
+
+constexpr unsigned short INVALID_ENTITY_ID = (unsigned short)(-1);
+
+struct MOBSPAWNER_LOCATION
+{
+    unsigned short spawnerID = 0;
+    unsigned int x = 0, y = 0;
+    float freq = 30.0f; // in seconds
+    float chance = 100.0f; // 0.0 - 100.0
+};
+
+constexpr unsigned short INVALID_MOBTYPE_ID = (unsigned short)(-1);
 
 class TileMap
 {
@@ -70,13 +84,23 @@ public:
     std::vector<Entity*> GenerateEntities();
     // Get an entity type from the list. tilemap retains pointer ownership
     ENTITY_TYPE GetEntityType(int index);
+    // generate mobspawner vector, caller owns pointers
+    std::vector<MobSpawner*> GenerateSpawners();
+    // Get a mobtype from the list.
+    MobType GetMobType(int index);
     // Add an entity location to map
     void AddEntityLocation(unsigned short entityID, unsigned int x, unsigned int y);
     bool RemoveEntityLocation(unsigned short entityID, unsigned int x, unsigned int y);
+    unsigned short GetEntityIDAtLocation(unsigned int x, unsigned int y);
+    // Add a spawner location to map
+    void AddSpawnerLocation(unsigned short spawnerID, unsigned int x, unsigned int y, float freq, float chance);
+    void RemoveSpawnerLocation(unsigned short spawnerID, unsigned int x, unsigned int y);
+    unsigned short GetMobTypeIDAtLocation(unsigned int x, unsigned int y, float& freq, float& chance);
 private:
     void SetupRender();
     void SetupScripting();
     void CleanupEntities();
+    void CleanupSpawners();
     static int lua_Liquids(lua_State* L);
     static int lua_BeginEntity(lua_State* L);
     static int lua_UseTexture(lua_State* L);
@@ -89,6 +113,21 @@ private:
     static int lua_ClickTime(lua_State* L);
     static int lua_Farmable(lua_State* L);
     static int lua_EndEntity(lua_State* L);
+    static int lua_BeginMobType(lua_State* L);
+    static int lua_DefaultAnimation(lua_State* L);
+    static int lua_FrAnimTextureList(lua_State* L);
+    static int lua_BkAnimTextureList(lua_State* L);
+    static int lua_LfAnimTextureList(lua_State* L);
+    static int lua_RtAnimTextureList(lua_State* L);
+    static int lua_AnimSpeed(lua_State* L);
+    static int lua_MobWidth(lua_State* L);
+    static int lua_MobHeight(lua_State* L);
+    static int lua_MobSpeed(lua_State* L);
+    static int lua_MobLeash(lua_State* L);
+    static int lua_MobCollisionBox(lua_State* L);
+    static int lua_MobAggroType(lua_State* L);
+    static int lua_CombatAbilityList(lua_State* L);
+    static int lua_EndMobType(lua_State* L);
     TileSet* tileSet_ = nullptr;
     std::string scriptPath_ = "";
     int width_ = 0;
@@ -114,4 +153,8 @@ private:
     std::vector<ENTITY_TYPE> entityTypes_;
     ENTITY_TYPE currentEntityType_;
     std::vector<ENTITY_LOCATION> mapEntities_;
+    // mob spawners
+    std::vector<MobType> mobTypes_;
+    MobType currentMobType_;
+    std::vector<MOBSPAWNER_LOCATION> spawnerLocations_;
 };

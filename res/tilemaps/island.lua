@@ -306,3 +306,35 @@ BEGIN_ENTITY "stone3"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY()
+
+-- Mob spawner types ----------------------------------------------------------
+-------------------------------------------------------------------------------
+
+-- 0 : redcrab ----------------------------------------------------------------
+BEGIN_MOB_TYPE "redcrab"
+ DEFAULT_ANIMATION "lf1.png"
+ FR_ANIM_TEXTURE_LIST (
+  "lf1.png", "lf2.png", "lf3.png",
+  "lf4.png", "lf5.png", "lf6.png"
+ )
+ BK_ANIM_TEXTURE_LIST (
+  "rt1.png", "rt2.png", "rt3.png",
+  "rt4.png", "rt5.png", "rt6.png"
+ )
+ RT_ANIM_TEXTURE_LIST (
+  "rt1.png", "rt2.png", "rt3.png",
+  "rt4.png", "rt5.png", "rt6.png"
+ )
+ LF_ANIM_TEXTURE_LIST (
+  "lf1.png", "lf2.png", "lf3.png",
+  "lf4.png", "lf5.png", "lf6.png"
+ )
+ ANIM_SPEED ( 0.1 )
+ MOB_WIDTH ( 32 )
+ MOB_HEIGHT ( 32 )
+ MOB_SPEED ( 20 )
+ MOB_LEASH ( 200 )
+ MOB_COLLISION_BOX ( 4, 4, 28, 28 )
+ MOB_AGGRO_TYPE ( "neutral" )
+ COMBAT_ABILITY_LIST "redcrab"
+END_MOB_TYPE()

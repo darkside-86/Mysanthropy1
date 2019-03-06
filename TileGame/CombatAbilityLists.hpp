@@ -1,4 +1,4 @@
-// PlayerSprite.cpp
+// CombatAbilityLists.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -16,30 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
+#pragma once
 
-#include "PlayerSprite.hpp"
+#include <string>
+#include <unordered_map>
 
-PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h) : Sprite(texture,w,h)
+#include "CombatUnit.hpp"
+
+class CombatAbilityLists
 {
-    CombatAbilityList playerAbilities;
-    // a simple test ability. 3rd field is false for testing. otherwise it would make
-    //  no sense for the player to attack themselves.
-    playerAbilities["attack"] = { 0, 32, false, 0.0f, 0.0f, true, 
-        [](const CombatUnit& cu) { return 1; }};
-    combatUnit_ = new CombatUnit(false, playerAbilities, "player");
-    // TODO: Feed combatUnit stats instead to calculate health
-    combatUnit_->SetMaxHealth(10);
-}
-
-PlayerSprite::~PlayerSprite()
-{
-    delete combatUnit_;
-}
-
-void PlayerSprite::Update(float dtime)
-{
-    Sprite::Update(dtime);
-    // todo: define combat location as exact center of sprite
-    combatUnit_->SetLocation(position_);
-    combatUnit_->Update(dtime);
-}
+public:
+    static const CombatAbilityLists& Get();
+    const std::unordered_map<std::string, CombatAbilityList>& GetLists() const { return lists_; }
+private:    
+    CombatAbilityLists();
+    ~CombatAbilityLists();
+    std::unordered_map<std::string, CombatAbilityList> lists_;
+};

@@ -90,8 +90,12 @@ set (
 add_executable ( 
     TileMapEditor
 	    main.cpp
+        TileGame/CombatAbilityLists.cpp
+        TileGame/CombatUnit.cpp
         TileGame/Entity.cpp
         TileGame/Image2D.cpp
+        TileGame/MobSpawner.cpp
+        TileGame/MobSprite.cpp
         TileGame/Sprite.cpp
         TileGame/TileEditor.cpp
         TileGame/TileMap.cpp
@@ -103,12 +107,15 @@ add_executable (
 add_executable ( 
     RPG
 	    gamemain.cpp
+        TileGame/CombatAbilityLists.cpp
         TileGame/CombatUnit.cpp
         TileGame/Configuration.cpp
         TileGame/Entity.cpp
         TileGame/Image2D.cpp
         TileGame/Inventory.cpp
         TileGame/Item.cpp
+        TileGame/MobSpawner.cpp
+        TileGame/MobSprite.cpp
         TileGame/PlayerData.cpp
         TileGame/PlayerSprite.cpp
         TileGame/SaveData.cpp

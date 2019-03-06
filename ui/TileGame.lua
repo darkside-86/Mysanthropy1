@@ -241,6 +241,25 @@ function ToggleMMPopup(show)
     returnMM:SetVisible(show)
 end
 
+-- create player unit frame ---------------------------------------------------
+-------------------------------------------------------------------------------
+playerUnitFrame = UIFrame.New(nil, 175, 75, 10, 10, TEXTURE_UIBLANK)
+playerUnitFrame:SetColor(0.15, 0.15, 0.15, 1)
+-- create the elements first then fill their data
+playerUnitFrame.topLabel = UILabel.New(playerUnitFrame, "???, Level ?", "sans14", 1,1,1,1)
+function PlayerUnitFrame_SetNameAndLevel(name, level)
+    playerUnitFrame.topLabel:SetText(tostring(name) .. ", Level " .. tostring(level))
+end
+playerUnitFrame.healthBar = UIFrame.New(playerUnitFrame, playerUnitFrame:GetWidth(), 20, 0, 0, TEXTURE_UIBLANK)
+playerUnitFrame.healthBar:SetYPos(playerUnitFrame.topLabel:GetHeight() + playerUnitFrame.topLabel:GetYPos())
+playerUnitFrame.healthBar:SetColor(0, 0.75, 0, 1)
+playerUnitFrame.healthBar.dataLbl = UILabel.New(playerUnitFrame.healthBar, "Health ? / ?", "sans14", 1, 1, 1, 1)
+function PlayerUnitFrame_SetHealth(current, max)
+    local percentage = current / max
+    -- set text label first
+    playerUnitFrame.healthBar.dataLbl:SetText("Health " .. tostring(current) .. " / " .. tostring(max))
+    playerUnitFrame.healthBar:SetWidth(percentage * playerUnitFrame:GetWidth())
+end
 
 
 

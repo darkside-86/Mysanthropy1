@@ -5,6 +5,10 @@ function OnSaveBtnClicked()
     TileEditor_SaveMap(text)
 end
 
+function UpdateMapName(name)
+    mainWindow.fileTf:SetText(name)
+end
+
 function OnLoadBtnClicked()
     local text = "res/tilemaps/" .. mainWindow.fileTf:GetText() .. ".bin"
     TileEditor_LoadMap(text)
@@ -50,11 +54,38 @@ function UpdateHoverData()
 end
 
 function OnPlaceBtnClicked()
-    TileEditor_SelectEntity(tonumber(entWindow.selectionTf:GetText()))
+    TileEditor_PlaceEntity(tonumber(entWindow.selectionTf:GetText()))
 end
 
 function OnRemoveBtnClicked()
     TileEditor_RemoveEntity(tonumber(entWindow.selectionTf:GetText()))
+end
+
+function OnGetBtnClicked()
+    TileEditor_SelectEntity(true)
+end
+
+function UpdateEntitySelection(id)
+    entWindow.selectionTf:SetText(tostring(id))
+end
+
+function MobOnPlaceBtnClicked()
+    TileEditor_PlaceSpawner(tonumber(mobWindow.idTf:GetText()), tonumber(mobWindow.freqTf:GetText()),
+        tonumber(mobWindow.chanceTf:GetText()))
+end
+
+function MobOnRemoveBtnClicked()
+    TileEditor_RemoveSpawner(tonumber(mobWindow.idTf:GetText()))
+end
+
+function MobOnSelectBtnClicked()
+    TileEditor_SelectSpawner()
+end
+
+function UpdateSpawnerSelection(id, freq, chance)
+    mobWindow.idTf:SetText(tostring(id))
+    mobWindow.freqTf:SetText(tostring(freq))
+    mobWindow.chanceTf:SetText(tostring(chance))
 end
 
 -- main ui
@@ -148,11 +179,13 @@ dataWindow:SetXPos(mainWindow:GetXPos() - dataWindow:GetWidth())
 dataWindow:SetYPos(mainWindow:GetYPos() + mainWindow:GetHeight() - dataWindow:GetHeight())
 dataWindow.hoverTf = UILabel.New(dataWindow, "Tile _, _", "sans14", 1, 1, 1, 1)
 dataWindow.hoverTf:SetYPos(dataWindow.closeBtn:GetHeight()+5)
+dataWindow.closeBtn:SetVisible(false)
 
 -- used to associate map script file with map and place entities
-entWindow = Window.New(nil, 175, 350, "Entities", "sans14")
+entWindow = Window.New(nil, 200, 150, "Entities", "sans14")
 entWindow:SetXPos(0)
 entWindow:SetYPos(mainWindow:GetYPos())
+entWindow.closeBtn:SetVisible(false)
 
 entWindow.label1 = UILabel.New(entWindow, "Script path", "sans14", 1,1,1,1)
 entWindow.label1:SetYPos(entWindow.closeBtn:GetHeight())
@@ -177,5 +210,52 @@ entWindow.removeBtn = UIButton.New(entWindow, TEXTURE_UIBLANK, "Remove", "sans14
 entWindow.removeBtn:SetYPos(entWindow.placeBtn:GetYPos())
 entWindow.removeBtn:SetXPos(entWindow.placeBtn:GetWidth() + 10)
 entWindow.removeBtn:AddOnClicked(OnRemoveBtnClicked)
+
+entWindow.getBtn = UIButton.New(entWindow, TEXTURE_UIBLANK, "Select", "sans14", 5)
+entWindow.getBtn:SetYPos(entWindow.removeBtn:GetYPos())
+entWindow.getBtn:SetXPos(entWindow.removeBtn:GetWidth() + entWindow.removeBtn:GetXPos() + 10)
+entWindow.getBtn:AddOnClicked(OnGetBtnClicked)
+
+-- mob spawner window
+mobWindow = Window.New(nil, 200, 200, "Mob spawners", "sans14")
+mobWindow:SetYPos(entWindow:GetYPos() + entWindow:GetHeight())
+mobWindow.closeBtn:SetVisible(false)
+mobWindow.label1 = UILabel.New(mobWindow, "ID:", "sans14", 1,1,1,1)
+mobWindow.label1:SetYPos(mobWindow.closeBtn:GetHeight())
+mobWindow.idTf = UITextField.New(mobWindow, 55, 20, "sans14", TEXTURE_UIBLANK)
+mobWindow.idTf:SetXPos(mobWindow.label1:GetWidth())
+mobWindow.idTf:SetYPos(mobWindow.label1:GetYPos())
+mobWindow.idTf:SetWidth(mobWindow:GetWidth() / 2 - mobWindow.label1:GetWidth())
+mobWindow.label2 = UILabel.New(mobWindow, "Freq:", "sans14", 1, 1, 1, 1)
+mobWindow.label2:SetYPos(mobWindow.idTf:GetYPos() + mobWindow.idTf:GetHeight())
+mobWindow.freqTf = UITextField.New(mobWindow, 55, 20, "sans14", TEXTURE_UIBLANK)
+mobWindow.freqTf:SetXPos(mobWindow.label2:GetXPos() + mobWindow.label2:GetWidth())
+mobWindow.freqTf:SetYPos(mobWindow.label2:GetYPos())
+mobWindow.freqTf:SetWidth(mobWindow:GetWidth()/2 - mobWindow.label2:GetWidth())
+mobWindow.label3 = UILabel.New(mobWindow, "Chance:", "sans14", 1, 1, 1, 1)
+mobWindow.label3:SetYPos(mobWindow.freqTf:GetYPos() + mobWindow.freqTf:GetHeight())
+mobWindow.chanceTf = UITextField.New(mobWindow, 55, 20, "sans14", TEXTURE_UIBLANK)
+mobWindow.chanceTf:SetYPos(mobWindow.label3:GetYPos())
+mobWindow.chanceTf:SetXPos(mobWindow.label3:GetWidth())
+mobWindow.chanceTf:SetWidth(mobWindow:GetWidth() / 2 - mobWindow.label3:GetWidth())
+mobWindow.placeBtn = UIButton.New(mobWindow, TEXTURE_UIBLANK, "Place", "sans14", 2)
+mobWindow.placeBtn:SetXPos( mobWindow:GetWidth() / 2 )
+mobWindow.placeBtn:SetYPos( mobWindow.closeBtn:GetHeight() )
+mobWindow.placeBtn:SetBorderSize(1)
+mobWindow.placeBtn:SetBorderColor(0,1,0,1)
+mobWindow.placeBtn:AddOnClicked(MobOnPlaceBtnClicked)
+mobWindow.removeBtn = UIButton.New(mobWindow, TEXTURE_UIBLANK, "Remove", "sans14", 2)
+mobWindow.removeBtn:SetXPos( mobWindow.placeBtn:GetXPos() + mobWindow.placeBtn:GetWidth() )
+mobWindow.removeBtn:SetYPos( mobWindow.placeBtn:GetYPos() )
+mobWindow.removeBtn:SetBorderSize(1)
+mobWindow.removeBtn:SetBorderColor(1,0,0,1)
+mobWindow.removeBtn:AddOnClicked(MobOnRemoveBtnClicked)
+mobWindow.selectBtn = UIButton.New(mobWindow, TEXTURE_UIBLANK, "Select", "sans14", 2)
+mobWindow.selectBtn:SetXPos( mobWindow.placeBtn:GetXPos() )
+mobWindow.selectBtn:SetYPos( mobWindow.placeBtn:GetYPos() + mobWindow.placeBtn:GetHeight() )
+mobWindow.selectBtn:SetBorderSize(1)
+mobWindow.selectBtn:SetBorderColor(0,0,1,1)
+mobWindow.selectBtn:AddOnClicked(MobOnSelectBtnClicked)
+
 
 

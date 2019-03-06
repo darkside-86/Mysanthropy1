@@ -41,6 +41,10 @@ UISystem::UISystem(TileGame& tileGame) : game_(tileGame)
     lua_setglobal(script_, "Game_GetFoodstuffCount");
     lua_pushcfunction(script_, lua_Game_ReturnToMainMenu);
     lua_setglobal(script_, "Game_ReturnToMainMenu");
+    lua_pushcfunction(script_, lua_Game_GetSaveSlot);
+    lua_setglobal(script_, "Game_GetSaveSlot");
+    lua_pushcfunction(script_, lua_Game_GetPlayerLevel);
+    lua_setglobal(script_, "Game_GetPlayerLevel");
     // load core lua UI libraries and the main UI file
     std::vector<const char*> CORE_UI_LIB = {
         "ui/lib/fonts.lua", 
@@ -140,6 +144,26 @@ void UISystem::ShowMMPopup(bool show)
         PrintLuaError(script_);
 }
 
+void UISystem::PlayerUnitFrame_SetNameAndLevel(const std::string& name, int level)
+{
+    lua_getglobal(script_, "PlayerUnitFrame_SetNameAndLevel");
+    lua_pushstring(script_, name.c_str());
+    lua_pushinteger(script_, level);
+    int ok = lua_pcall(script_, 2, 0, 0);
+    if(ok != LUA_OK)
+        PrintLuaError(script_);
+}
+
+void UISystem::PlayerUnitFrame_SetHealth(const int current, const int max)
+{
+    lua_getglobal(script_, "PlayerUnitFrame_SetHealth");
+    lua_pushinteger(script_, current);
+    lua_pushinteger(script_, max);
+    int ok = lua_pcall(script_, 2, 0, 0);
+    if(ok != LUA_OK)
+        PrintLuaError(script_);
+}
+
 void UISystem::PrintLuaError(lua_State* L)
 {
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
@@ -213,4 +237,21 @@ int UISystem::lua_Game_ReturnToMainMenu(lua_State* L)
     uiSystem->game_.SetGameState(TileGame::GAME_STATE::RETURNING_TO_MENU);
     
     return 0;
+}
+
+int UISystem::lua_Game_GetSaveSlot(lua_State* L)
+{
+    UISystem* uiSystem = GetUISystem(L);
+
+    std::string slot = uiSystem->game_.GetSaveSlot();
+    lua_pushstring(L, slot.c_str());
+    return 1;
+}
+
+int UISystem::lua_Game_GetPlayerLevel(lua_State* L)
+{
+    UISystem* uiSystem = GetUISystem(L);
+
+    lua_pushinteger(L, uiSystem->game_.GetPlayerSprite().GetPlayerData().GetLevel());
+    return 1;
 }

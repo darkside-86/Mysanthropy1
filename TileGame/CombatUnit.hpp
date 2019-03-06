@@ -21,8 +21,11 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <glm/glm.hpp>
+
+class CombatUnit; // forward decl
 
 // buffs/debuffs
 class CombatEffect
@@ -39,8 +42,14 @@ class CombatAbility
     int maxRange;
     // whether or not ability can be used on hostile/neutral targets
     bool offensive;
+    // cooldown in seconds
+    float cooldown;
+    // timer
+    float timer;
+    // whether or not subject to GCD
+    bool onGCD;
     // function that calculates the amount of damage, or negative numbers for healing
-    std::function<int()> calculateBaseDamage;
+    std::function<int(const CombatUnit&)> calculateBaseDamage;
     // TODO: handle buffs/debuffs
 };
 
@@ -49,21 +58,44 @@ typedef std::unordered_map<std::string,CombatAbility> CombatAbilityList;
 class CombatUnit
 {
 public:
-    CombatUnit(bool attackable, const std::unordered_map<std::string, CombatAbility>& abilities);
+    CombatUnit(bool attackable, const CombatAbilityList& abilities, const std::string& name);
     virtual ~CombatUnit();
     inline void SetLocation(const glm::vec3& loc) { location_ = loc; }
-    inline void SetMaxHealth(const int h) { maxHealth_ = h; }
+    inline int GetCurrentHealth() const { return currentHealth_; }
+    inline int GetMaxHealth() const { return maxHealth_; }
+    // TODO: Replace this with stat-based health data
+    inline void SetMaxHealth(const int h) { maxHealth_ = h; currentHealth_ = h; }
     // return value = excess healing (a negative number) or overkill or 0
-    int UseAbility(CombatUnit& other, const std::string& abilityName);
+    int UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry);
+    // updates the cooldown timers and generates 1 health per second when out of combat
+    void Update(float dtime);
+    // adds a combat unit to the aggro table. TODO: keep track of aggro % when party is implemented
+    inline bool Aggro(const CombatUnit& cu);
+    // stop fighting a target
+    void StopCombatWith(CombatUnit& target);
 private:
+    //  name of unit for combat log
+    std::string name_;
     // determines whether or not an ability is in range
     glm::vec3 location_ = {0.f, 0.f, 0.f};
     // the current health of the unit
     int currentHealth_ = 0;
     // the max health of the unit.
     int maxHealth_ = 0;
+    // recovery amount : 1 HP
+    static constexpr int RECOVERY_AMOUNT = 1;
+    // recovery rate : 1 second
+    static constexpr float RECOVERY_RATE = 1.0f;
+    // health recovery timer
+    float healthRecoveryTimer_ = 0.f;
     // list of abilities that can be performed
-    const std::unordered_map<std::string, CombatAbility> abilities_;
+    CombatAbilityList abilities_;
+    // GCD
+    static constexpr float GCD = 1.0f;
+    // GCD counter
+    float globalCooldownCounter_ = 0.0f;
     // whether or not offensive abilities can be used against this CU
     bool attackable_;
+    // aggro table
+    std::vector<const CombatUnit*> aggroTable_;
 };

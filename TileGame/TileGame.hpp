@@ -23,6 +23,8 @@
 
 #include "Configuration.hpp"
 #include "engine/Game.hpp"
+#include "MobSpawner.hpp"
+#include "MobSprite.hpp"
 #include "ogl/Texture.hpp"
 #include "PlayerData.hpp"
 #include "PlayerCommand.hpp"
@@ -54,6 +56,8 @@ class TileGame : public engine::Game
 public:
     // determines what Update and Render does
     enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
+    // RTTI of targeted object
+    enum TARGET_CLASS { TGTSPRITE, TGTPLAYERSPRITE, TGTMOBSPRITE, TGTENTITY, TGTNONE };
     // constructor
     TileGame();
     // destructor
@@ -71,6 +75,10 @@ public:
     inline Inventory& GetInventory() { return inventory_; }
     // sets the game state
     inline void SetGameState(GAME_STATE gs) { gameState_ = gs; }
+    // get the playerSprite
+    inline PlayerSprite& GetPlayerSprite() { return *playerSprite_; }
+    // get save slot name
+    inline std::string GetSaveSlot() { return saveSlot_; }
 
 private:
 
@@ -98,6 +106,8 @@ private:
     bool SpriteIsSwimming(Sprite* sprite);
     // Destroy all entities
     void CleanupLoadedEntities();
+    // Destroy mob spawners
+    void CleanupMobSpawners();
     // Sets up the renderList_ vector by filling it with entities and the player
     void SetupRenderList();
     // Perform one pass of a sort of sprites by Y value to emulate orthogonal view
@@ -125,8 +135,8 @@ private:
     void SetHarvestCommand(int x, int y, int clicks);
     // Sets a new farm command in the list of farm commands written to saved game
     void SetFarmCommand(int x, int y, const FarmCommand& fc);
-    // DEPRECATED: print inventory to the UI console
-    void PrintInventory();
+    // Removes an individual farm command such as when a farmable is ready for pickup
+    void RemoveFarmCommand(int x, int y);
     // convert harvestCommands_ to a vector of HarvestCommand and return the result
     std::vector<HarvestCommand> GetHarvestCommands();
     // convert farmCommands_ to a vector of FarmCommand and return the result
@@ -180,6 +190,10 @@ private:
     std::vector<Sprite*> renderList_;
     // list of loaded map entities. Owns pointers
     std::vector<Entity*> loadedEntities_;
+    // list of mob spawners. Owns pointers.
+    std::vector<MobSpawner*> mobSpawners_;
+    // list of mob sprites. Owns pointers
+    std::vector<MobSprite*> mobSprites_;
     // Lua ui system object
     UISystem* uiSystem_;
 };
