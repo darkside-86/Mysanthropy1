@@ -25,7 +25,7 @@ MobSprite::MobSprite(const MobType& mobType, Configuration& config, const glm::v
         std::string("res/textures/sprites/mobs/") + mobType.name + "_"
         + mobType.defaultAnimation), 
     mobType.width, mobType.height), aggroType_(mobType.aggroType), animSpeed_(mobType.animSpeed),
-    speed_(mobType.speed), leash_(mobType.leash), originalPosition_(origPos)
+    speed_(mobType.speed), leash_(mobType.leash), originalPosition_(origPos), lootTable_(mobType.lootTable)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     collisionBox_ = mobType.collisionBox;

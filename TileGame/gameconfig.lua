@@ -21,7 +21,7 @@ OTHER_STATS = 5
 -- the amount of exp to increase from level 1 to level 2
 BASE_EXP = 250
 -- the base experience value of a non-elite level 1 mob
-BASE_MOB_EXP = 25
+BASE_MOB_EXP = 10
 -- the amount of experience per mob's level given by killing a non-elite mob
 BASE_MOB_EXP_SCALE = 1.25
 -- the experience penalty for killing lower level mobs per level difference

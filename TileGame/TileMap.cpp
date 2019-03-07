@@ -612,6 +612,8 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "MOB_AGGRO_TYPE");
     lua_pushcfunction(scripting_, TileMap::lua_CombatAbilityList);
     lua_setglobal(scripting_, "COMBAT_ABILITY_LIST");
+    lua_pushcfunction(scripting_, TileMap::lua_LootTable);
+    lua_setglobal(scripting_, "LOOT_TABLE");
     lua_pushcfunction(scripting_, TileMap::lua_EndMobType);
     lua_setglobal(scripting_, "END_MOB_TYPE");
 }
@@ -1075,6 +1077,25 @@ int TileMap::lua_CombatAbilityList(lua_State* L)
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
             "%s: CombatAbilityList not set because it (%s) wasn't found", __FUNCTION__, abilityListName);
+    }
+    return 0;
+}
+
+int TileMap::lua_LootTable(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    // arguments are "name", count, chance...
+    for(int i=1; i <= lua_gettop(L); i += 3)
+    {
+        LootEntry le;
+        le.item = lua_tostring(L, i);
+        le.count = (int)lua_tointeger(L, i+1);
+        le.chance = (float)lua_tonumber(L, i+2);
+        tileMap->currentMobType_.lootTable.push_back(le);
     }
     return 0;
 }

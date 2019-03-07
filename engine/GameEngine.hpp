@@ -93,6 +93,9 @@ namespace engine
         void Rotate2DVector(float &x, float &y, const float degrees) const;
         // Format raw seconds to hour minute and seconds format.
         std::string FormatTimeInSeconds(int seconds) const;
+        // Given input between 0 and 100, generates a number between 0 and 100 and returns true
+        //  generated number is less than input.
+        bool PercentChance(float percent);
     private:
         // Hidden constructor. Only accessible through singleton
         GameEngine() {}

@@ -243,4 +243,10 @@ namespace engine
         return formatted;
     }
 
+    bool GameEngine::PercentChance(float percent)
+    {
+        float result = 100.0f * (float)rng_() / (float)rng_.max();
+        return result < percent;
+    }
+
 }

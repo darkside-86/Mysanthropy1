@@ -41,6 +41,7 @@ void PlayerCombatUnit::SetLevel(int level)
     config.GetVar("BASE_EXP", BASE_EXP);
     float multiplier = pow(EXPERIENCE_SCALE, level - 1);
     maxExperience_ = (int)(multiplier * BASE_EXP);
+    // set max health based on new level
 }
 
 bool PlayerCombatUnit::AddExperience(int exp)

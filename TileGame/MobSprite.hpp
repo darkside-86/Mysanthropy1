@@ -28,6 +28,13 @@
 #include "CombatUnit.hpp"
 #include "Configuration.hpp"
 
+class LootEntry
+{ public:
+    std::string item;
+    int count;
+    float chance; // 0-100
+};
+
 class MobType
 { public:
     enum AGGRO_TYPE { HOSTILE, NEUTRAL };
@@ -57,6 +64,8 @@ class MobType
     BOX collisionBox;
     // how mob aggros
     AGGRO_TYPE aggroType;
+    // loot table
+    std::vector<LootEntry> lootTable;
     // list of abilities mob will be able to use
     CombatAbilityList combatAbilityList;
     // TODO: much more!!!
@@ -75,16 +84,18 @@ public:
     MobSprite(const MobType& mobType, Configuration& config, const glm::vec3& origPos);
     // dtor
     virtual ~MobSprite();
-    // get the combat unit of the mob
-    inline CombatUnit& GetCombatUnit() { return *combatUnit_; }
     // update. 
     void Update(float dtime) override;
-    // get aggro type
-    inline MobType::AGGRO_TYPE GetAggroType() const { return aggroType_; }
     // was killed by player?
     inline bool KilledByPlayer() const { return killedByPlayer_; }
     // set killed by player
     inline void SetKilledByPlayer(bool b) { killedByPlayer_ = b; }
+    // Get the loot table as a const
+    inline const std::vector<LootEntry>& GetLootTable() const { return lootTable_; }
+    // get the combat unit of the mob
+    inline CombatUnit& GetCombatUnit() { return *combatUnit_; }
+    // get aggro type
+    inline MobType::AGGRO_TYPE GetAggroType() const { return aggroType_; }
 private:
     // animation speed for each time animation is set
     float animSpeed_;
@@ -98,6 +109,8 @@ private:
     static constexpr float PATROL_TIME = 3.0f;
     // was this mob killed by player combat?
     bool killedByPlayer_ = false;
+    // loot table
+    std::vector<LootEntry> lootTable_;
     // pre-aggro position
     glm::vec3 originalPosition_;
     // the combat unit

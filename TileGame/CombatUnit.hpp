@@ -87,8 +87,10 @@ public:
     inline void SetLocation(const glm::vec3& loc) { location_ = loc; }
     // get current health
     inline int GetCurrentHealth() const { return currentHealth_; }
-    // get max health. TODO: recalc max health for buffs/debuffs on statsheet
-    inline int GetMaxHealth() const { return maxHealth_; }
+    // set current health
+    inline void SetCurrentHealth(int h) { currentHealth_ = h; }
+    // get max health.
+    inline int GetMaxHealth() { maxHealth_ = statSheet_.GetMaxHealth(); return maxHealth_; }
     // return value = successful cast
     bool UseAbility(CombatUnit& other, bool targetIsFriendly, 
                     const std::string& abilityName, std::string& combatLogEntry);

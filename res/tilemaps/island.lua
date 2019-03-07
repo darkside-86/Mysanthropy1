@@ -311,31 +311,53 @@ END_ENTITY()
 -------------------------------------------------------------------------------
 
 -- 0 : redcrab ----------------------------------------------------------------
+-- Begins a mob type entry. Argument is the name of the mob used for indexing and display
 BEGIN_MOB_TYPE "redcrab"
+ -- lower and upper inclusive range the levels of the mobs that spawn
  LEVEL_RANGE (1, 5)
+ -- default "anim0" texture. See next note.
  DEFAULT_ANIMATION "lf1.png"
+ -- Front facing animation. textures are loaded as res/textures/sprites/mobs/%nameofmob%_%animtexturelistarg%
+ --   Can be any number of frames not necessarily 6.
  FR_ANIM_TEXTURE_LIST (
   "lf1.png", "lf2.png", "lf3.png",
   "lf4.png", "lf5.png", "lf6.png"
  )
+ -- Back facing animation. see above
  BK_ANIM_TEXTURE_LIST (
   "rt1.png", "rt2.png", "rt3.png",
   "rt4.png", "rt5.png", "rt6.png"
  )
+ -- Right facing animation. see above.
  RT_ANIM_TEXTURE_LIST (
   "rt1.png", "rt2.png", "rt3.png",
   "rt4.png", "rt5.png", "rt6.png"
  )
+-- Left facing animation. see above.
  LF_ANIM_TEXTURE_LIST (
   "lf1.png", "lf2.png", "lf3.png",
   "lf4.png", "lf5.png", "lf6.png"
  )
+ -- The amount of seconds between each animation frame
  ANIM_SPEED ( 0.1 )
+ -- The width in logical pixels of the mob
  MOB_WIDTH ( 20 )
+ -- The height in logical pixels of the mob
  MOB_HEIGHT ( 20 )
+ -- The default speed (unaffected by temp buffs) the mob can travel. TODO: handle water. But these mobs
+ --   can swim so no swim speed modifier.
  MOB_SPEED ( 20 )
+ -- The amount in logical pixels the mob is willing to travel away from its spawn origin point before
+ --   returning. Prevents linear "kiting"
  MOB_LEASH ( 200 )
+ -- The collision information
  MOB_COLLISION_BOX ( 4, 4, 16, 16 )
+ -- "neutral" means the mobs only attack when the player attacks them first. "hostile" for aggressive mobs
  MOB_AGGRO_TYPE ( "neutral" )
+ -- Argument should be name of ability list in C++ mob ability list. (Abilities will eventually be
+ --   defined in Lua rather than C++ but the indexing will remain the same)
  COMBAT_ABILITY_LIST "redcrab"
+ -- 25% chance to drop 1 shellfish. Arguments to LOOT_TABLE should be multiples of 3
+ LOOT_TABLE ( "shellfish", 1, 25.0 )
+-- Ends the mob entry and adds it to the list
 END_MOB_TYPE()

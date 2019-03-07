@@ -138,6 +138,15 @@ std::vector<std::string> BattleSystem::CalculateMoves()
         markedForDeletion->SetKilledByPlayer(true);
         RemoveMob(markedForDeletion);
     }
+    // check to see if player died, and if so, clear out mob list (caller will manage player death)
+    if(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth() == 0)
+    {
+        for(auto each: mobSprites_)
+        {
+            each->GetCombatUnit().SetInCombat(false);
+        }
+        mobSprites_.clear();
+    }
     // if no mobs are in list, set out of combat to true for player
     if(mobSprites_.size() == 0)
         playerSprite_->GetPlayerCombatUnit().SetInCombat(false);

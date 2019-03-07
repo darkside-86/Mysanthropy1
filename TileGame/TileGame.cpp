@@ -397,7 +397,22 @@ void TileGame::Update(float dtime)
                     float mult = pow(BASE_MOB_EXP_SCALE, (float)(level - 1));
                     int expEarned = (int)(mult * BASE_MOB_EXP);
                     bool dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(expEarned);
+                    uiSystem_->WriteLineToConsole(std::string("You gained ") + std::to_string(expEarned) +
+                        " exp!", 1.0f, 0.0f, 1.0f, 1.0f);
                     UpdatePlayerExperience(dinged);
+                    // check loot table for possible loot
+                    const auto& lootTable = (*mobIt)->GetLootTable();
+                    for(const auto& entry : lootTable)
+                    {
+                        bool itemDrops = engine::GameEngine::Get().PercentChance(entry.chance);
+                        if(itemDrops)
+                        {
+                            uiSystem_->WriteLineToConsole(std::string("You looted ") +
+                                std::to_string(entry.count) + " " + entry.item);
+                            inventory_.AddItemByName(entry.item, entry.count);
+                            uiSystem_->BuildInventory();
+                        }
+                    }
                 }
                 break;
             }
@@ -413,6 +428,23 @@ void TileGame::Update(float dtime)
             delete *mobIt;
             mobSprites_.erase(mobIt);
         }
+
+        // if player died reset to spawn point for now
+        if(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth() == 0)
+        {
+            uiSystem_->WriteLineToConsole("You died.", 0.85f, 0.f, 0.f, 1.f);
+            int ix, iy;
+            configuration_.GetTileSpawnPoint(ix, iy);
+            playerSprite_->SetPosition({ (float)(tileMap_->GetTileSet()->GetTileWidth() * ix),
+                (float)(tileMap_->GetTileSet()->GetTileHeight() * iy), 0.0f
+            });
+            // and set health to 1/3 of max
+            playerSprite_->GetPlayerCombatUnit().SetCurrentHealth((int)(0.33 * 
+                (double)playerSprite_->GetPlayerCombatUnit().GetMaxHealth()));
+            // clear target
+            ClearTarget();
+        }
+
 
         // todo: bound player to map area
 

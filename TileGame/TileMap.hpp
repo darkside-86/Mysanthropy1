@@ -128,6 +128,7 @@ private:
     static int lua_MobCollisionBox(lua_State* L);
     static int lua_MobAggroType(lua_State* L);
     static int lua_CombatAbilityList(lua_State* L);
+    static int lua_LootTable(lua_State* L);
     static int lua_EndMobType(lua_State* L);
     TileSet* tileSet_ = nullptr;
     std::string scriptPath_ = "";
