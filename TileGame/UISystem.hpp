@@ -52,6 +52,12 @@ public:
     void PlayerUnitFrame_SetNameAndLevel(const std::string& name, int level);
     // Sets unit frame health info
     void PlayerUnitFrame_SetHealth(const int current, const int max);
+    // set up target unit frame data
+    void TargetUnitFrame_SetNameAndLevel(const std::string& name, int level);
+    // set target frame health info and hostility
+    void TargetUnitFrame_SetHealth(const int current, const int max, const std::string& hostility);
+    // toggle visibility
+    void TargetUnitFrame_Toggle(bool show);
 private:
     // prints the Lua error and pops it after a bad pcall
     void PrintLuaError(lua_State* L);

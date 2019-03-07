@@ -30,6 +30,7 @@
 class Target
 {
 public:
+    // target types
     enum TARGET_TYPE { FRIENDLY, NEUTRAL, HOSTILE };
     // light RTTI data for what exactly to render above the sprite for the "healthbar"
     enum SPRITE_TYPE { MOBSPR, ENTSPR, NONE };
@@ -37,7 +38,8 @@ public:
     virtual ~Target();
     void SetTargetSprite(Sprite* sprite, const TARGET_TYPE tt, const SPRITE_TYPE st);
     inline Sprite* GetTargetSprite() { return target_; }
-    inline SPRITE_TYPE GetTargetSpriteType() { return targetSpriteType_; }
+    inline SPRITE_TYPE GetTargetSpriteType() const { return targetSpriteType_; }
+    inline TARGET_TYPE GetTargetType() const { return targetType_; }
     void Render(const glm::vec3 camera, ogl::Program& prog);
     bool IsTargetEntity(const Entity* entity);
 private:
@@ -59,6 +61,8 @@ private:
     // if a sprite is an "Entity" the health bar is clicks / max clicks
     //  or if it is a mob then the health bar above represents health / max health
     SPRITE_TYPE targetSpriteType_;
+    // Target type assigned to this target
+    TARGET_TYPE targetType_;
     // ogl objects for rendering the health bar above the object
     ogl::Vertex fullHealthVerts_[6];
     ogl::VertexArray fullHealthVao_;

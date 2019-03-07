@@ -93,6 +93,7 @@ void Target::SetTargetSprite(Sprite* sprite, const Target::TARGET_TYPE tt, const
         vertices_[5] = {{   w, 0.0f, 0.0f}, {255,255,255,255}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}; // top right
         baseVbo_.SetData(6*sizeof(ogl::Vertex), vertices_, GL_STATIC_DRAW);
         // The texture selected depends on the target type.
+        targetType_ = tt;
         switch(tt)
         {
             case TARGET_TYPE::FRIENDLY: 

@@ -29,7 +29,7 @@ public:
     MobSpawner(const MobType& mt, float frequency, const glm::vec3 &pos, float percentChance=100.0f);
     virtual ~MobSpawner();
     // caller takes ownership of non-null pointer
-    void Update(float dtime, MobSprite*& spawned, Configuration& config);
+    void Update(float dtime, MobSprite*& spawned, Configuration& config, std::vector<MobSprite*>& existingMobs);
     MobType GetMobType() const { return mobType_; }
     inline float GetFrequency() const { return frequency_; }
     inline void SetFrequency(float f) { frequency_ = f; }

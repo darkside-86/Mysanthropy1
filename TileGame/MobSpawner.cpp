@@ -32,7 +32,8 @@ MobSpawner::~MobSpawner()
 }
 
 // caller takes ownership of non-null pointer
-void MobSpawner::Update(float dtime, MobSprite*& spawned, Configuration& config)
+void MobSpawner::Update(float dtime, MobSprite*& spawned, Configuration& config, 
+    std::vector<MobSprite*>& existingMobs)
 {
     spawned = nullptr;
     timer_ += dtime;
@@ -44,8 +45,27 @@ void MobSpawner::Update(float dtime, MobSprite*& spawned, Configuration& config)
         float roll = 100.0f * (float)rng() / (float)rng.max();
         if(roll < percentChance_)
         {
-            spawned = new MobSprite(mobType_, config);
-            spawned->SetPosition(position_);
+            // make sure there are not already N number of mobs in an R radius of this spawner
+            const int LIMIT = 5;
+            int num = 0;
+            const float RADIUS = 512.f;
+            for(auto eachMob : existingMobs)
+            {
+                auto pos = eachMob->GetPosition();
+                float dist = glm::distance(position_, pos);
+                if(dist <= RADIUS)
+                    num++;
+            }
+            if(num < LIMIT)
+            {
+                spawned = new MobSprite(mobType_, config);
+                spawned->SetPosition(position_);
+            }
+            else 
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                    "Not spawning another mob due to radius and limit!");
+            }
         }
     }
 }

@@ -241,6 +241,8 @@ function ToggleMMPopup(show)
     returnMM:SetVisible(show)
 end
 
+-- todo: organize unit frames into a Lua class
+
 -- create player unit frame ---------------------------------------------------
 -------------------------------------------------------------------------------
 playerUnitFrame = UIFrame.New(nil, 175, 75, 10, 10, TEXTURE_UIBLANK)
@@ -261,8 +263,37 @@ function PlayerUnitFrame_SetHealth(current, max)
     playerUnitFrame.healthBar:SetWidth(percentage * playerUnitFrame:GetWidth())
 end
 
-
-
-
-
-
+-- create target unit frame ---------------------------------------------------
+-------------------------------------------------------------------------------
+targetUnitFrame = UIFrame.New(nil, 175, 75, 10, 10, TEXTURE_UIBLANK)
+targetUnitFrame:SetColor(0.15, 0.15, 0.15, 1)
+targetUnitFrame:SetXPos(playerUnitFrame:GetWidth() + playerUnitFrame:GetXPos() + 1)
+targetUnitFrame:SetYPos(playerUnitFrame:GetYPos())
+-- create elements first then fill in data
+targetUnitFrame.topLabel = UILabel.New(targetUnitFrame, "???, Level ?", "sans14", 1, 1, 1, 1)
+function TargetUnitFrame_SetNameAndLevel(name, level)
+    targetUnitFrame.topLabel:SetText(tostring(name) .. ", Level " .. tostring(level))
+end
+targetUnitFrame.healthBar = UIFrame.New(targetUnitFrame, targetUnitFrame:GetWidth(), 20, 0, 0, TEXTURE_UIBLANK)
+targetUnitFrame.healthBar:SetYPos(targetUnitFrame.topLabel:GetHeight() + targetUnitFrame.topLabel:GetYPos())
+targetUnitFrame.healthBar:SetColor( 0.4, 0.4, 0.4, 1) -- color will depend on hostility of target
+targetUnitFrame.healthBar.dataLbl = UILabel.New(targetUnitFrame.healthBar, "Health ? / ?", "sans14", 1, 1, 1, 1)
+function TargetUnitFrame_SetHealth(current, max, hostility)
+    local percentage = current / max 
+    -- set text label first
+    targetUnitFrame.healthBar.dataLbl:SetText("Health " .. tostring(current) .. " / " .. tostring(max))
+    -- then width indicator
+    targetUnitFrame.healthBar:SetWidth(percentage * targetUnitFrame:GetWidth())
+    -- set color based on... hostile=red, neutral=yellow, friendly=green
+    if hostility == "hostile" then 
+        targetUnitFrame.healthBar:SetColor(0.75, 0, 0, 1)
+    elseif hostility == "neutral" then 
+        targetUnitFrame.healthBar:SetColor(0.7, 0.7, 0, 1)
+    elseif hostility == "friendly" then 
+        targetUnitFrame.healthBar:SetColor(0, 0.75, 0, 1)
+    end
+end
+function TargetUnitFrame_Toggle(show)
+    targetUnitFrame:SetVisible(show)
+end
+TargetUnitFrame_Toggle(false) -- hide until C++ code shows it

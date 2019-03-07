@@ -164,6 +164,36 @@ void UISystem::PlayerUnitFrame_SetHealth(const int current, const int max)
         PrintLuaError(script_);
 }
 
+void UISystem::TargetUnitFrame_SetNameAndLevel(const std::string& name, int level)
+{
+    lua_getglobal(script_, "TargetUnitFrame_SetNameAndLevel");
+    lua_pushstring(script_, name.c_str());
+    lua_pushinteger(script_, level);
+    int ok = lua_pcall(script_, 2, 0, 0);
+    if(ok != LUA_OK)
+        PrintLuaError(script_);
+}
+
+void UISystem::TargetUnitFrame_SetHealth(const int current, const int max, const std::string& hostility)
+{
+    lua_getglobal(script_, "TargetUnitFrame_SetHealth");
+    lua_pushinteger(script_, current);
+    lua_pushinteger(script_, max);
+    lua_pushstring(script_, hostility.c_str());
+    int ok = lua_pcall(script_, 3, 0, 0);
+    if(ok != LUA_OK)
+        PrintLuaError(script_);
+}
+
+void UISystem::TargetUnitFrame_Toggle(bool show)
+{
+    lua_getglobal(script_, "TargetUnitFrame_Toggle");
+    lua_pushboolean(script_, show);
+    int ok = lua_pcall(script_, 1, 0, 0);
+    if(ok != LUA_OK)
+        PrintLuaError(script_);
+}
+
 void UISystem::PrintLuaError(lua_State* L)
 {
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,

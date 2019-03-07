@@ -154,14 +154,35 @@ bool TileGame::Initialize()
                 );
                 if(mobFound != mobSprites_.end())
                 {
+                    // Set up the target_ object data
                     auto aggro = (*mobFound)->GetAggroType();
-                    target_.SetTargetSprite(*mobFound, aggro == MobType::AGGRO_TYPE::HOSTILE 
-                        ? Target::TARGET_TYPE::HOSTILE : Target::TARGET_TYPE::NEUTRAL,
-                        Target::SPRITE_TYPE::MOBSPR);
+                    Target::TARGET_TYPE tt = Target::TARGET_TYPE::FRIENDLY; // default value
+                    switch(aggro) 
+                    { 
+                        case MobType::AGGRO_TYPE::HOSTILE: tt=Target::TARGET_TYPE::HOSTILE; break; 
+                        case MobType::AGGRO_TYPE::NEUTRAL: tt=Target::TARGET_TYPE::NEUTRAL; break;
+                    }
+                    target_.SetTargetSprite(*mobFound, tt, Target::SPRITE_TYPE::MOBSPR);
                     harvesting_ = false; // make sure harvest is interrupted upon aquiring new target
+                    // Set the unit frame data.
+                    //  not possible to use existing enums due to circular dependencies generating
+                    //  arcane compile errors
+                    uiSystem_->TargetUnitFrame_SetNameAndLevel((*mobFound)->GetCombatUnit().GetName(), 
+                        (*mobFound)->GetCombatUnit().GetStatSheet().GetLevel());
+                    std::string hostility = "friendly"; // default value
+                    switch(tt)
+                    {
+                        case Target::TARGET_TYPE::HOSTILE: hostility = "hostile"; break;
+                        case Target::TARGET_TYPE::NEUTRAL: hostility = "neutral"; break;
+                    }
+                    uiSystem_->TargetUnitFrame_SetHealth((*mobFound)->GetCombatUnit().GetCurrentHealth(), 
+                        (*mobFound)->GetCombatUnit().GetMaxHealth(), hostility);
+                    uiSystem_->TargetUnitFrame_Toggle(true);
                 }
                 else
                 {
+                    // clear unit frame in case switching from a mob to entity target
+                    ClearTarget();
                     // look for an entity to target.
                     auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
                         [this, clickedX, clickedY](const Entity* ent) {
@@ -177,6 +198,7 @@ bool TileGame::Initialize()
                     if(found != loadedEntities_.end())
                     {
                         target_.SetTargetSprite(*found, Target::TARGET_TYPE::FRIENDLY, Target::SPRITE_TYPE::ENTSPR);
+                        // TODO: print information about the entity to console
                         InteractWithEntity(*found);
                         return;
                     }
@@ -283,12 +305,34 @@ void TileGame::Update(float dtime)
         for(auto it : mobSpawners_)
         {
             MobSprite* mobSprite = nullptr;
-            it->Update(dtime, mobSprite, configuration_);
+            it->Update(dtime, mobSprite, configuration_, mobSprites_);
             if(mobSprite)
             {
                 mobSprites_.push_back(mobSprite);
                 renderList_.push_back(mobSprite);
             }
+        }
+
+        // run one pass of despawning at least one out of range mobsprite.
+        const float MAX_DISTANCE = 2048.0f;
+        auto eachMobIt = mobSprites_.begin();
+        for (; eachMobIt != mobSprites_.end(); ++eachMobIt)
+        {
+            auto mobPos = (*eachMobIt)->GetPosition();
+            auto playerPos = playerSprite_->GetPosition();
+            float distance = glm::distance(mobPos, playerPos);
+            if(distance > MAX_DISTANCE)
+            {
+                break;
+            }
+        }
+        if(eachMobIt != mobSprites_.end())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                "Despawning mob because player is too far away");
+            RemoveSpriteFromRenderList(*eachMobIt);
+            delete *eachMobIt;
+            mobSprites_.erase(eachMobIt);
         }
 
         // todo: bound player to map area
@@ -405,6 +449,8 @@ void TileGame::StartGame()
         playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel());
     uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(), 
         playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
+    uiSystem_->BuildInventory();
+    uiSystem_->SetFoodstuffBarData(inventory_.GetItemAmount("foodstuff"));
 }
 
 void TileGame::LoadGame()
@@ -757,6 +803,7 @@ void TileGame::StopHarvestSound()
 void TileGame::ClearTarget()
 {   
     target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
+    uiSystem_->TargetUnitFrame_Toggle(false);
 }
 
 void TileGame::RemoveEntityFromLoaded(Entity* ent)
