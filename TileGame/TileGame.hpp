@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "BattleSystem.hpp"
 #include "Configuration.hpp"
 #include "engine/Game.hpp"
 #include "MobSpawner.hpp"
@@ -127,7 +128,7 @@ private:
     //  given exact pixel coordinate.
     Entity* FindEntityByLocation(int x, int y);
     // Sets the experience of the player_ object, checks for level up, and updates UI experience information
-    void UpdatePlayerExperience();
+    void UpdatePlayerExperience(bool dinged);
     // Checks if a harvesting cast is completed and acts accordingly
     void CheckHarvestCast(float dtime);
     // Sets a new harvest command in the list of harvest commands written to saved game
@@ -191,6 +192,8 @@ private:
     std::vector<MobSpawner*> mobSpawners_;
     // list of mob sprites. Owns pointers
     std::vector<MobSprite*> mobSprites_;
+    // Battle system to keep track of what is in combat and process moves
+    BattleSystem* battleSystem_;
     // Lua ui system object
     UISystem* uiSystem_;
 };

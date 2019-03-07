@@ -76,12 +76,12 @@ void StatSheet::SetLevel(int level)
 
 int StatSheet::GetAttackPower()
 {
-    return strength_; // for now
+    return strength_ + (level_ - 1); // for now
 }
 
 int StatSheet::GetMaxHealth()
 {
-    return 5 * vitality_; // for now
+    return 5 * vitality_ + (level_ - 1); // for now
 }
 
 bool StatSheet::IsCoreStat(const STAT stat)

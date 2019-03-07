@@ -23,7 +23,7 @@
 MobSpawner::MobSpawner(const MobType& mt, float frequency, const glm::vec3 &pos, float percentChance)
     : mobType_(mt), frequency_(frequency), percentChance_(percentChance), position_(pos)
 {
-
+    timer_ = frequency_ - 1.0f; // ready to spawn one second after creation
 }
 
 MobSpawner::~MobSpawner()
@@ -58,7 +58,7 @@ void MobSpawner::Update(float dtime, MobSprite*& spawned, Configuration& config,
             }
             if(num < LIMIT)
             {
-                spawned = new MobSprite(mobType_, config);
+                spawned = new MobSprite(mobType_, config, position_);
                 spawned->SetPosition(position_);
             }
             else 

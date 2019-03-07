@@ -20,9 +20,9 @@
 #include "engine/GameEngine.hpp"
 #include "CombatUnit.hpp"
 
-CombatUnit::CombatUnit(Configuration& config, bool attackable, int level, const CombatAbilityList& abilities, 
+CombatUnit::CombatUnit(Configuration& config, bool player, int level, const CombatAbilityList& abilities, 
                         const std::string& name)
-    : attackable_(attackable), abilities_(abilities), name_(name), statSheet_(level, !attackable, config)
+    : abilities_(abilities), name_(name), statSheet_(level, player, config)
 {
     maxHealth_ = statSheet_.GetMaxHealth();
     currentHealth_ = maxHealth_;
@@ -33,47 +33,48 @@ CombatUnit::~CombatUnit()
 
 }
 
-bool CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry)
+bool CombatUnit::UseAbility(CombatUnit& other, bool targetIsFriendly,
+    const std::string& abilityName, std::string& combatLogEntry)
 {
     auto found = abilities_.find(abilityName);
     if(found != abilities_.end())
     {
         CombatAbility &ab = found->second;
         // check target and ability friendliness
-        if( !((ab.offensive && other.attackable_) || (!ab.offensive && !other.attackable_) ) )
+        if((ab.offensive && targetIsFriendly) || (!ab.offensive && !targetIsFriendly)  )
         {
             combatLogEntry = std::string("Cannot use ") + abilityName + " on " + other.name_;
-            return 0;
+            return false;
         }
         // check global CD
         if( ab.onGCD && globalCooldownCounter_ < GCD )
         {
             combatLogEntry = std::string("Cannot use ") + abilityName + " yet (waiting on global cooldown)";
-            return 0;
+            return false;
         }
         // check ability's cooldown in the CD table
         if(ab.timer < ab.cooldown)
         {
             combatLogEntry = abilityName + " is still on cooldown for " + std::to_string(ab.cooldown - ab.timer)
                 + " more seconds.";
-            return 0;
+            return false;
         }
         // check range
         float distance = glm::distance(location_, other.location_);
         if(distance < ab.minRange)
         {
             combatLogEntry = "Target too close";
-            return 0;
+            return false;
         }
         if(distance > ab.maxRange)
         {
             combatLogEntry = "Target too far away";
-            return 0;
+            return false;
         }
         // TODO: account for target's armor and resistances and chances to miss/dodge/parry
         Damage damageOrHealing = ab.calculateBaseDamage(*this);
         other.currentHealth_ -= damageOrHealing.amount;
-        if(other.attackable_)
+        if(ab.offensive)
         {
             combatLogEntry = name_ + "'s " + abilityName + " hit " + other.name_ + " for "
                 + std::to_string(damageOrHealing.amount) + " damage";
@@ -88,7 +89,7 @@ bool CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, s
         // set the global cooldown timer
         globalCooldownCounter_ = 0.0f;
         // determine overkill or overheal amount if any
-        int overkillOrHeal =0;
+        int overkillOrHeal;
         if(other.currentHealth_ > other.maxHealth_)
         {
             overkillOrHeal = -(other.currentHealth_ - other.maxHealth_);
@@ -99,15 +100,43 @@ bool CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, s
             overkillOrHeal = -other.currentHealth_;
             other.currentHealth_ = 0;
         }
-
-        return overkillOrHeal;
+        // todo: add overheal or overkill to log
+        return true;
     }
     else
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
             "%s: Unit does not have ability `%s'", __FUNCTION__, abilityName.c_str());
     }
-    return 0;
+    return false;
+}
+
+bool CombatUnit::AbilityInRange(CombatUnit& other, const std::string& abilityName)
+{
+    float distance = glm::distance(location_, other.location_);
+    auto found = abilities_.find(abilityName);
+    if(found != abilities_.end())
+    {
+        CombatAbility &ab = found->second;
+        return !(distance < ab.minRange || distance > ab.maxRange);
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool CombatUnit::AbilityIsReady(const std::string& abilityName)
+{
+    auto found = abilities_.find(abilityName);
+    if(found == abilities_.end())
+        return false; // "NULL" ability is never ready
+    return found->second.timer >= found->second.cooldown;
+}
+
+bool CombatUnit::GlobalCooldownIsOff()
+{
+    return globalCooldownCounter_ >= GCD;
 }
 
 void CombatUnit::Update(float dtime)

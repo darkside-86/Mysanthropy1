@@ -20,16 +20,16 @@
 #include "engine/GameEngine.hpp"
 #include "MobSprite.hpp"
 
-MobSprite::MobSprite(const MobType& mobType, Configuration& config) 
+MobSprite::MobSprite(const MobType& mobType, Configuration& config, const glm::vec3& origPos) 
     : Sprite(engine::GameEngine::Get().GetTextureManager().GetTexture(
         std::string("res/textures/sprites/mobs/") + mobType.name + "_"
         + mobType.defaultAnimation), 
     mobType.width, mobType.height), aggroType_(mobType.aggroType), animSpeed_(mobType.animSpeed),
-    speed_(mobType.speed), leash_(mobType.leash)
+    speed_(mobType.speed), leash_(mobType.leash), originalPosition_(origPos)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     collisionBox_ = mobType.collisionBox;
-    combatUnit_ = new CombatUnit(config, true, mobType.GenerateLevel(), mobType.combatAbilityList, mobType.name);
+    combatUnit_ = new CombatUnit(config, false, mobType.GenerateLevel(), mobType.combatAbilityList, mobType.name);
 
     const std::string prefix = std::string("res/textures/sprites/mobs/") + mobType.name + "_";
     // right orientation animations
@@ -62,6 +62,9 @@ MobSprite::~MobSprite()
 void MobSprite::Update(float dtime)
 {
     Sprite::Update(dtime);
+    // set combat unit
+    combatUnit_->SetLocation(position_);
+    combatUnit_->Update(dtime);
     // TODO: check leash among many other things
     patrolTimer_ += dtime;
     if(patrolTimer_ > PATROL_TIME)

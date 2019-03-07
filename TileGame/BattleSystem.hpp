@@ -1,4 +1,4 @@
-// PlayerSprite.cpp
+// BattleSystem.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -16,33 +16,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
+#pragma once
 
+#include <string>
+#include <vector>
+
+#include "MobSprite.hpp"
 #include "PlayerSprite.hpp"
+#include "Target.hpp"
 
-PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy,
-    Configuration& configuration) 
-        : Sprite(texture,w,h), isBoy_(isBoy)
+// determines what mobs are engaged in combat with player and runs AI to select moves
+// against player
+class BattleSystem
 {
-    CombatAbilityList playerAbilities;
-    // a simple test ability. TODO: a data-driven attack system
-    playerAbilities["attack"] = { 0, 32, true, 0.0f, 0.0f, true, 
-        [](CombatUnit& cu) -> Damage { 
-            return {Damage::DAMAGE_TYPE::PHYSICAL, cu.GetStatSheet().GetAttackPower()}; 
-        }
-    };
-    combatUnit_ = new PlayerCombatUnit(configuration, level, exp, playerAbilities);
-
-}
-
-PlayerSprite::~PlayerSprite()
-{
-    delete combatUnit_;
-}
-
-void PlayerSprite::Update(float dtime)
-{
-    Sprite::Update(dtime);
-    // todo: define combat location as exact center of sprite
-    combatUnit_->SetLocation(position_);
-    combatUnit_->Update(dtime);
-}
+public:
+    BattleSystem();
+    virtual ~BattleSystem();
+    void AddMob(MobSprite* mobSprite);
+    void RemoveMob(MobSprite* mobSprite);
+    void AddPlayer(PlayerSprite* playerSprite);
+    // returns combat log result
+    std::string UsePlayerAbility(const std::string& abilityName, Target& target);
+    // returns array of combat log results
+    std::vector<std::string> CalculateMoves();
+private:
+    std::vector<MobSprite*> mobSprites_;
+    PlayerSprite* playerSprite_;
+};

@@ -88,9 +88,11 @@ namespace engine
         // Return the random number generator
         inline std::default_random_engine& GetRNG() { return rng_; }
         // Return contents of a small text file as a string
-        std::string ReadFileAsString(const std::string& path);
+        std::string ReadFileAsString(const std::string& path) const;
         // rotate a 2D vector
-        void Rotate2DVector(float &x, float &y, const float degrees);
+        void Rotate2DVector(float &x, float &y, const float degrees) const;
+        // Format raw seconds to hour minute and seconds format.
+        std::string FormatTimeInSeconds(int seconds) const;
     private:
         // Hidden constructor. Only accessible through singleton
         GameEngine() {}

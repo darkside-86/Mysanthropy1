@@ -72,7 +72,7 @@ class MobSprite : public Sprite
 {
 public:
     // todo: Set up stat sheet upon creation
-    MobSprite(const MobType& mobType, Configuration& config);
+    MobSprite(const MobType& mobType, Configuration& config, const glm::vec3& origPos);
     // dtor
     virtual ~MobSprite();
     // get the combat unit of the mob
@@ -81,6 +81,10 @@ public:
     void Update(float dtime) override;
     // get aggro type
     inline MobType::AGGRO_TYPE GetAggroType() const { return aggroType_; }
+    // was killed by player?
+    inline bool KilledByPlayer() const { return killedByPlayer_; }
+    // set killed by player
+    inline void SetKilledByPlayer(bool b) { killedByPlayer_ = b; }
 private:
     // animation speed for each time animation is set
     float animSpeed_;
@@ -92,6 +96,8 @@ private:
     float patrolTimer_ = 0.0f;
     // how often to change path
     static constexpr float PATROL_TIME = 3.0f;
+    // was this mob killed by player combat?
+    bool killedByPlayer_ = false;
     // pre-aggro position
     glm::vec3 originalPosition_;
     // the combat unit

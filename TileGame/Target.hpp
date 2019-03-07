@@ -41,7 +41,6 @@ public:
     inline SPRITE_TYPE GetTargetSpriteType() const { return targetSpriteType_; }
     inline TARGET_TYPE GetTargetType() const { return targetType_; }
     void Render(const glm::vec3 camera, ogl::Program& prog);
-    bool IsTargetEntity(const Entity* entity);
 private:
     // vertex data of the baseVbo_. Changes often enough to keep it in RAM
     ogl::Vertex vertices_[6];

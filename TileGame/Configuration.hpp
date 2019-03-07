@@ -110,6 +110,8 @@ public:
         lua_pop(scripting_, 1);
     }
 
+    // TODO: ones for vector<int>
+
 private:
     static int lua_ItemEntry(lua_State *L);
     std::vector<LUA_ITEM_ENTRY> luaItemEntries_;

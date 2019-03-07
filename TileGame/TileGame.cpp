@@ -58,6 +58,7 @@ bool TileGame::Initialize()
             std::string combatLog;
             // TODO: create a customizable keybind system using unordered_map and UI commands
             glm::vec3 vel = playerSprite_->GetVelocity();
+            std::string log;
             switch(e.keysym.sym)
             {
                 case SDLK_LEFT: case SDLK_a:
@@ -83,6 +84,11 @@ bool TileGame::Initialize()
                 case SDLK_i:
                     showingInventory_ = !showingInventory_;
                     uiSystem_->ShowInventory(showingInventory_);
+                    return;
+                case SDLK_1:
+                    // attempt to use "attack" on target.
+                    log = battleSystem_->UsePlayerAbility("attack", target_);
+                    uiSystem_->WriteLineToConsole(log);
                     return;
                 case SDLK_ESCAPE:
                     uiSystem_->ShowMMPopup(true);
@@ -198,7 +204,25 @@ bool TileGame::Initialize()
                     if(found != loadedEntities_.end())
                     {
                         target_.SetTargetSprite(*found, Target::TARGET_TYPE::FRIENDLY, Target::SPRITE_TYPE::ENTSPR);
-                        // TODO: print information about the entity to console
+                        // TODO: print more information about the entity to console
+                        if((*found)->GetMaxClicks() != -1)
+                        {
+                            std::string info = (*found)->GetName() + " (" +
+                                std::to_string((*found)->GetRemainingClicks()) +
+                                "/" + std::to_string((*found)->GetMaxClicks()) + ")";
+                            uiSystem_->WriteLineToConsole(info);
+                        }
+                        if((*found)->IsFarmable())
+                        {
+                            std::string info = "Ready for pickup ";
+                            if(!(*found)->IsReadyForPickup())
+                            {
+                                time_t timeRemaining = (*found)->FarmTimeRemaining();
+                                info += "in " +
+                                    engine::GameEngine::Get().FormatTimeInSeconds((int)timeRemaining);
+                            }
+                            uiSystem_->WriteLineToConsole(info);
+                        }
                         InteractWithEntity(*found);
                         return;
                     }
@@ -313,6 +337,15 @@ void TileGame::Update(float dtime)
             }
         }
 
+        // update target information
+        if(target_.GetTargetSpriteType() == Target::SPRITE_TYPE::MOBSPR)
+        {
+            MobSprite* target = (MobSprite*)target_.GetTargetSprite();
+            uiSystem_->TargetUnitFrame_SetHealth(
+                target->GetCombatUnit().GetCurrentHealth(),
+                target->GetCombatUnit().GetMaxHealth(), "");
+        }
+
         // run one pass of despawning at least one out of range mobsprite.
         const float MAX_DISTANCE = 2048.0f;
         auto eachMobIt = mobSprites_.begin();
@@ -330,9 +363,55 @@ void TileGame::Update(float dtime)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
                 "Despawning mob because player is too far away");
+            // remove from render list
             RemoveSpriteFromRenderList(*eachMobIt);
+            // remove from battle system
+            battleSystem_->RemoveMob(*eachMobIt);
+            // delete the pointer
             delete *eachMobIt;
+            // finally remove from iterator list
             mobSprites_.erase(eachMobIt);
+        }
+
+        // calculate battle AI systems
+        auto logs = battleSystem_->CalculateMoves();
+        for(const auto& eachEntry : logs)
+        {
+            // TODO: different combat text color than white?
+            uiSystem_->WriteLineToConsole(eachEntry);
+        }
+
+        // pass through once to check for dead mobs and give EXP based on scale. TODO: loot table
+        auto mobIt = mobSprites_.begin();
+        for(;mobIt != mobSprites_.end(); ++mobIt)
+        {
+            if((*mobIt)->GetCombatUnit().GetCurrentHealth() == 0)
+            {
+                if((*mobIt)->KilledByPlayer())
+                {
+                    int level = (*mobIt)->GetCombatUnit().GetStatSheet().GetLevel();
+                    int BASE_MOB_EXP;
+                    configuration_.GetVar("BASE_MOB_EXP", BASE_MOB_EXP);
+                    float BASE_MOB_EXP_SCALE;
+                    configuration_.GetVar("BASE_MOB_EXP_SCALE", BASE_MOB_EXP_SCALE);
+                    float mult = pow(BASE_MOB_EXP_SCALE, (float)(level - 1));
+                    int expEarned = (int)(mult * BASE_MOB_EXP);
+                    bool dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(expEarned);
+                    UpdatePlayerExperience(dinged);
+                }
+                break;
+            }
+        }
+        if(mobIt != mobSprites_.end())
+        {
+            RemoveSpriteFromRenderList(*mobIt);
+            if(target_.GetTargetSprite() == (Sprite*)(*mobIt))
+            {
+                ClearTarget();
+            }
+            battleSystem_->RemoveMob(*mobIt);
+            delete *mobIt;
+            mobSprites_.erase(mobIt);
         }
 
         // todo: bound player to map area
@@ -438,12 +517,15 @@ void TileGame::StartGame()
     // Setup render list
     SetupRenderList();
     // Update experience bar to reflect current xp levels
-    UpdatePlayerExperience();
+    UpdatePlayerExperience(false);
     // load sounds
     auto& sm = engine::GameEngine::Get().GetSoundManager();
     sm.LoadSound("res/sounds/chopping.wav");
     // start looping background music. TODO: fix SoundManager to get more song variety
     sm.PlayMusic("res/music/island1.ogg", -1);
+    // setup battle system
+    battleSystem_ = new BattleSystem();
+    battleSystem_->AddPlayer(playerSprite_);
     // set UI information
     uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
         playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel());
@@ -573,6 +655,8 @@ void TileGame::EndGame()
     auto &sm = engine::GameEngine::Get().GetSoundManager();
     if(gameState_ != GAME_STATE::SPLASH)
     {
+        delete battleSystem_;
+        battleSystem_ = nullptr;
         delete uiSystem_;
         uiSystem_ = nullptr;
         SaveGame();
@@ -819,7 +903,7 @@ void TileGame::RemoveEntityFromLoaded(Entity* ent)
         loadedEntities_.erase(found);
     }
     // clear target state if it is being targeted
-    if(target_.IsTargetEntity(ent))
+    if(target_.GetTargetSprite() == (Sprite*)ent)
     {
         ClearTarget();
     }
@@ -829,113 +913,113 @@ void TileGame::RemoveEntityFromLoaded(Entity* ent)
 
 void TileGame::CheckHarvestCast(float dtime)
 {
-    if(harvesting_)
+    if(!harvesting_)
+        return;
+
+    currentCastTime_ += dtime;
+    uiSystem_->SetCastBarValue(currentCastTime_ / maxCastTime_);
+    // handle completion of harvest
+    if(currentCastTime_ >= maxCastTime_)
     {
-        currentCastTime_ += dtime;
-        uiSystem_->SetCastBarValue(currentCastTime_ / maxCastTime_);
-        // handle completion of harvest
-        if(currentCastTime_ >= maxCastTime_)
+        bool dinged = false; // level up flag
+        StopHarvestSound();
+        // if the current target isn't of type Entity then something has gone horribly wrong because
+        // target switching should have cancelled the harvest
+        if(target_.GetTargetSpriteType() != Target::SPRITE_TYPE::ENTSPR)
         {
-            bool dinged = false; // level up flag
-            StopHarvestSound();
-            // if the current target isn't of type Entity then something has gone horribly wrong because
-            // target switching should have cancelled the harvest
-            if(target_.GetTargetSpriteType() != Target::SPRITE_TYPE::ENTSPR)
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: Target is not an entity (this point should have never been reached!)", __FUNCTION__);
+            harvesting_ = false;
+            return;
+        }
+        // now it is safe to cast targeted sprite to the Entity
+        Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
+        if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
+        {
+            // check farming
+            auto itemToAdd = targetedEntity->Farm();
+            SetFarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
+                FarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y,
+                    false, time(nullptr)));
+            inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
+            uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
+                + " " + itemToAdd.name);
+            // add experience based on number of items farmed
+            dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
+            uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
+                1.0f, 0.f, 1.0f, 1.0f);
+            uiSystem_->BuildInventory();
+            UpdatePlayerExperience(dinged);
+            ClearTarget(); // to prevent accidentally harvesting instead of farming item
+        }
+        else 
+        {
+            // check harvest-clicking
+            targetedEntity->DecRemainingClicks();
+            SetHarvestCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
+                targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
+            // get the item(s) to add.
+            auto itemsToAdd = targetedEntity->OnInteract();
+            for(auto each : itemsToAdd)
             {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
-                    "%s: Target is not an entity (this point should have never been reached!)", __FUNCTION__);
-                harvesting_ = false;
-                return;
+                if(each.name != "exp")
+                {
+                    uiSystem_->WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
+                        + " " + each.name);
+                    inventory_.AddItemByName(each.name, each.num);
+                    uiSystem_->BuildInventory();
+                }
+                else 
+                {   // item exp is a special handled case, not added to inventory
+                    uiSystem_->WriteLineToConsole(std::string("You gain ") 
+                        + std::to_string(each.num) + " experience.", 
+                        1.0f, 0.0f, 1.0f, 1.0f);
+                    dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
+                    UpdatePlayerExperience(dinged);
+                }
             }
-            // now it is safe to cast targeted sprite to the Entity
-            Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
-            if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
+            if(targetedEntity->GetRemainingClicks() == 0)
             {
-                // check farming
-                auto itemToAdd = targetedEntity->Farm();
-                SetFarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
-                    FarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y,
-                        false, time(nullptr)));
-                inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
-                uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
-                    + " " + itemToAdd.name);
-                // add experience based on number of items farmed
-                dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
-                uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
-                    1.0f, 0.f, 1.0f, 1.0f);
-                uiSystem_->BuildInventory();
-                UpdatePlayerExperience();
-                ClearTarget(); // to prevent accidentally harvesting instead of farming item
-            }
-            else 
-            {
-                // check harvest-clicking
-                targetedEntity->DecRemainingClicks();
-                SetHarvestCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
-                    targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
-                // get the item(s) to add.
-                auto itemsToAdd = targetedEntity->OnInteract();
-                for(auto each : itemsToAdd)
+                auto items = targetedEntity->OnDestroy();
+                for(auto each : items)
                 {
                     if(each.name != "exp")
                     {
-                        uiSystem_->WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
-                            + " " + each.name);
+                        uiSystem_->WriteLineToConsole(std::string("You received ") 
+                            + std::to_string(each.num) + " " + each.name);
                         inventory_.AddItemByName(each.name, each.num);
                         uiSystem_->BuildInventory();
                     }
                     else 
-                    {   // item exp is a special handled case, not added to inventory
-                        uiSystem_->WriteLineToConsole(std::string("You gain ") 
-                            + std::to_string(each.num) + " experience.", 
-                            1.0f, 0.0f, 1.0f, 1.0f);
-                        dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
-                        UpdatePlayerExperience();
-                    }
-                }
-                if(targetedEntity->GetRemainingClicks() == 0)
-                {
-                    auto items = targetedEntity->OnDestroy();
-                    for(auto each : items)
                     {
-                        if(each.name != "exp")
-                        {
-                            uiSystem_->WriteLineToConsole(std::string("You received ") 
-                                + std::to_string(each.num) + " " + each.name);
-                            inventory_.AddItemByName(each.name, each.num);
-                            uiSystem_->BuildInventory();
-                        }
-                        else 
-                        {
-                            uiSystem_->WriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
-                                + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
-                            dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
-                            UpdatePlayerExperience();
-                        }
+                        uiSystem_->WriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
+                            + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                        dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
+                        UpdatePlayerExperience(dinged);
                     }
-                    RemoveSpriteFromRenderList(targetedEntity);
-                    RemoveEntityFromLoaded(targetedEntity);
-                    ClearTarget();
                 }
-            }
-            harvesting_ = false;
-            uiSystem_->ToggleCastBar(false);
-            StopHarvestSound();
-            if(dinged)
-            {
-                uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
-                    playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel()) 
-                    + "!", 1.0f, 1.0f, 0.0f, 1.0f);
-                // update UI to reflect new level
-                uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
-                    playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel());
+                RemoveSpriteFromRenderList(targetedEntity);
+                RemoveEntityFromLoaded(targetedEntity);
+                ClearTarget();
             }
         }
+        harvesting_ = false;
+        uiSystem_->ToggleCastBar(false);
+        StopHarvestSound();
     }
 }
 
-void TileGame::UpdatePlayerExperience()
+void TileGame::UpdatePlayerExperience(bool dinged)
 {
+    if(dinged)
+    {
+        uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
+            playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel()) 
+            + "!", 1.0f, 1.0f, 0.0f, 1.0f);
+        // update UI to reflect new level
+        uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
+            playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel());
+    }
     int experience = playerSprite_->GetPlayerCombatUnit().GetCurrentExperience();
     int maxExperience = playerSprite_->GetPlayerCombatUnit().GetMaxExperience();
     float value = (float)experience / (float)maxExperience;

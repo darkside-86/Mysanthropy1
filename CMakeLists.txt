@@ -108,6 +108,7 @@ add_executable (
 add_executable ( 
     RPG
 	    gamemain.cpp
+        TileGame/BattleSystem.cpp
         TileGame/CombatAbilityLists.cpp
         TileGame/CombatUnit.cpp
         TileGame/Configuration.cpp

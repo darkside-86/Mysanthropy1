@@ -331,11 +331,11 @@ BEGIN_MOB_TYPE "redcrab"
   "lf4.png", "lf5.png", "lf6.png"
  )
  ANIM_SPEED ( 0.1 )
- MOB_WIDTH ( 32 )
- MOB_HEIGHT ( 32 )
+ MOB_WIDTH ( 20 )
+ MOB_HEIGHT ( 20 )
  MOB_SPEED ( 20 )
  MOB_LEASH ( 200 )
- MOB_COLLISION_BOX ( 4, 4, 28, 28 )
+ MOB_COLLISION_BOX ( 4, 4, 16, 16 )
  MOB_AGGRO_TYPE ( "neutral" )
  COMBAT_ABILITY_LIST "redcrab"
 END_MOB_TYPE()

@@ -181,12 +181,3 @@ void Target::Render(const glm::vec3 camera, ogl::Program& prog)
     colorHealthTexture_->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
-
-bool Target::IsTargetEntity(const Entity* entity)
-{
-    if(targetSpriteType_ == SPRITE_TYPE::ENTSPR)
-    {
-        return entity == (Entity*)target_;
-    }
-    return false;
-}

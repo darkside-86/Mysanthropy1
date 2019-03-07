@@ -49,6 +49,8 @@ class CombatEffect
 // combat ability, damage, healing, or de/buffs.
 class CombatAbility
 { public:
+    // TODO: add name field
+
     // the minimum distance in logical pixels for the ability to be performed on a unit
     int minRange;
     // the maximum distance allowed for an ability to be performed
@@ -66,13 +68,14 @@ class CombatAbility
     // TODO: handle buffs/debuffs
 };
 
+// TODO: reimplement as vector
 typedef std::unordered_map<std::string,CombatAbility> CombatAbilityList;
 
 class CombatUnit
 {
 public:
     // ctor
-    CombatUnit(Configuration& config, bool attackable, int level, const CombatAbilityList& abilities, 
+    CombatUnit(Configuration& config, bool player, int level, const CombatAbilityList& abilities, 
             const std::string& name);
     // dtor
     virtual ~CombatUnit();
@@ -87,7 +90,14 @@ public:
     // get max health. TODO: recalc max health for buffs/debuffs on statsheet
     inline int GetMaxHealth() const { return maxHealth_; }
     // return value = successful cast
-    bool UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry);
+    bool UseAbility(CombatUnit& other, bool targetIsFriendly, 
+                    const std::string& abilityName, std::string& combatLogEntry);
+    // determine if an ability is in range
+    bool AbilityInRange(CombatUnit& other, const std::string& abilityName);
+    // return true if ability is ready
+    bool AbilityIsReady(const std::string& abilityName);
+    // return true if GCD is off
+    bool GlobalCooldownIsOff();
     // updates the cooldown timers and generates 1 health per second when out of combat
     void Update(float dtime);
     // get/set in combat
@@ -118,6 +128,4 @@ private:
     static constexpr float GCD = 1.0f;
     // GCD counter
     float globalCooldownCounter_ = 0.0f;
-    // whether or not offensive abilities can be used against this CU
-    bool attackable_;
 };

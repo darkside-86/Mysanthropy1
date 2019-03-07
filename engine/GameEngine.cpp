@@ -193,7 +193,7 @@ namespace engine
         float scaleY = (float)windowHeight / (float)height_;
     }
 
-    std::string GameEngine::ReadFileAsString(const std::string& path)
+    std::string GameEngine::ReadFileAsString(const std::string& path) const
     {
         std::ifstream inFile;
         inFile.open(path);
@@ -210,7 +210,7 @@ namespace engine
         return result;
     }
 
-    void GameEngine::Rotate2DVector(float &x, float &y, const float degrees)
+    void GameEngine::Rotate2DVector(float &x, float &y, const float degrees) const
     {
         float x0 = x;
         float y0 = y;
@@ -220,6 +220,27 @@ namespace engine
         float y1 = glm::sin(theta) * x0 + glm::cos(theta) * y0;
         x = x1;
         y = y1;
+    }
+
+    std::string GameEngine::FormatTimeInSeconds(int seconds) const
+    {
+        std::string formatted = "";
+        const int MINUTES = 60;
+        const int HOURS = 60 * MINUTES;
+        int hours = seconds / HOURS;
+        if(hours > 0)
+        {
+            formatted += std::to_string(hours) + " hours, ";
+            seconds -= hours * HOURS; // leave only minutes and seconds remaining for calculation
+        }
+        int minutes = seconds / MINUTES;
+        if( minutes > 0 )
+        {
+            formatted += std::to_string(minutes) + " minutes, and ";
+            seconds -= minutes * MINUTES;
+        }
+        formatted += std::to_string(seconds) + " seconds";
+        return formatted;
     }
 
 }

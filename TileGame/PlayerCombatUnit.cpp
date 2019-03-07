@@ -20,7 +20,7 @@
 #include "PlayerCombatUnit.hpp"
 
 PlayerCombatUnit::PlayerCombatUnit(Configuration& config, int level, int exp, const CombatAbilityList& abilities)
-    : CombatUnit(config, false, level, abilities, "player")
+    : CombatUnit(config, true, level, abilities, "player")
 {
     SetLevel(level);
     currentExperience_ = exp;
