@@ -312,6 +312,7 @@ END_ENTITY()
 
 -- 0 : redcrab ----------------------------------------------------------------
 BEGIN_MOB_TYPE "redcrab"
+ LEVEL_RANGE (1, 5)
  DEFAULT_ANIMATION "lf1.png"
  FR_ANIM_TEXTURE_LIST (
   "lf1.png", "lf2.png", "lf3.png",

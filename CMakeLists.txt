@@ -97,6 +97,7 @@ add_executable (
         TileGame/MobSpawner.cpp
         TileGame/MobSprite.cpp
         TileGame/Sprite.cpp
+        TileGame/StatSheet.cpp
         TileGame/TileEditor.cpp
         TileGame/TileMap.cpp
         TileGame/TileSet.cpp
@@ -116,11 +117,12 @@ add_executable (
         TileGame/Item.cpp
         TileGame/MobSpawner.cpp
         TileGame/MobSprite.cpp
-        TileGame/PlayerData.cpp
+        TileGame/PlayerCombatUnit.cpp
         TileGame/PlayerSprite.cpp
         TileGame/SaveData.cpp
         TileGame/SplashScreen.cpp
         TileGame/Sprite.cpp
+        TileGame/StatSheet.cpp
         TileGame/SwimFilter.cpp
         TileGame/Target.cpp
         TileGame/TileGame.cpp

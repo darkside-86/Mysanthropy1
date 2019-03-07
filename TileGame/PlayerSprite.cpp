@@ -19,16 +19,20 @@
 
 #include "PlayerSprite.hpp"
 
-PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h) : Sprite(texture,w,h)
+PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy,
+    Configuration& configuration) 
+        : Sprite(texture,w,h), isBoy_(isBoy)
 {
     CombatAbilityList playerAbilities;
     // a simple test ability. 3rd field is false for testing. otherwise it would make
     //  no sense for the player to attack themselves.
     playerAbilities["attack"] = { 0, 32, false, 0.0f, 0.0f, true, 
-        [](const CombatUnit& cu) { return 1; }};
-    combatUnit_ = new CombatUnit(false, playerAbilities, "player");
-    // TODO: Feed combatUnit stats instead to calculate health
-    combatUnit_->SetMaxHealth(10);
+        [](CombatUnit& cu) -> Damage { 
+            return {Damage::DAMAGE_TYPE::PHYSICAL, cu.GetStatSheet().GetAttackPower()}; 
+        }
+    };
+    combatUnit_ = new PlayerCombatUnit(configuration, level, exp, playerAbilities);
+
 }
 
 PlayerSprite::~PlayerSprite()

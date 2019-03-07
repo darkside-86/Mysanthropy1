@@ -213,11 +213,9 @@ void SaveData::ClearData()
     playerData_ = {0,0,0};
 }
 
-void SaveData::SavePlayerData(const PlayerData& data)
+void SaveData::SavePlayerData(const PLAYER_DATA& data)
 {
-    playerData_.level = data.GetLevel();
-    playerData_.experience = data.GetExperience();
-    playerData_.boy = data.IsBoy();
+    playerData_ = data;
 }
 
 void SaveData::SaveInventoryData(const Inventory& inv)
@@ -236,11 +234,9 @@ void SaveData::SaveInventoryData(const Inventory& inv)
     });
 }
 
-void SaveData::LoadPlayerData(PlayerData& data)
+PLAYER_DATA SaveData::LoadPlayerData()
 {
-    data.SetLevel(playerData_.level);
-    data.SetExperience(playerData_.experience);
-    data.SetBoy(playerData_.boy);
+    return playerData_;
 }
 
 void SaveData::LoadInventoryData(Inventory& inv)

@@ -23,6 +23,7 @@
 
 #include <lua/lua.hpp>
 
+#include "engine/GameEngine.hpp"
 #include "Inventory.hpp"
 
 struct LUA_ITEM_ENTRY
@@ -50,6 +51,65 @@ public:
     float GetMobStatScale();
     int GetBaseExperience();
     void AddItemEntries(Inventory& inv);
+
+    // direct var access
+    template <typename T>
+    void GetVar (const std::string& name, T& value) 
+    {
+        static_assert(false); // not handled
+    }
+
+    template <>
+    void GetVar(const std::string& name, std::string& value) 
+    {
+        lua_getglobal(scripting_, name.c_str());
+        if(lua_isnil(scripting_, -1) || !lua_isstring(scripting_, -1))
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s is not a string!", name.c_str());
+            value = "";
+        }
+        else 
+        {
+            value = lua_tostring(scripting_, -1);
+        }
+        lua_pop(scripting_, 1);
+    }
+
+    template <>
+    void GetVar(const std::string& name, int& value)
+    {
+        lua_getglobal(scripting_, name.c_str());
+        if(lua_isnil(scripting_, -1) || !lua_isinteger(scripting_, -1))
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s is not an integer!", name.c_str());
+            value = 0;
+        }
+        else 
+        {
+            value = (int)lua_tointeger(scripting_, -1);
+        }
+        lua_pop(scripting_, 1);
+    }
+
+    template <>
+    void GetVar(const std::string& name, float& value)
+    {
+        lua_getglobal(scripting_, name.c_str());
+        if(lua_isnil(scripting_, -1) || !lua_isnumber(scripting_, -1))
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s is not a float!", name.c_str());
+            value = 0.f;
+        }
+        else 
+        {
+            value = (float)lua_tonumber(scripting_, -1);
+        }
+        lua_pop(scripting_, 1);
+    }
+
 private:
     static int lua_ItemEntry(lua_State *L);
     std::vector<LUA_ITEM_ENTRY> luaItemEntries_;

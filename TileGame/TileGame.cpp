@@ -87,10 +87,6 @@ bool TileGame::Initialize()
                 case SDLK_ESCAPE:
                     uiSystem_->ShowMMPopup(true);
                     return;
-                case SDLK_1: // hit yourself ^_^ (for now)
-                    playerSprite_->GetCombatUnit().UseAbility(playerSprite_->GetCombatUnit(), "attack", combatLog);
-                    uiSystem_->WriteLineToConsole(combatLog, 0.f, 0.f, 1.0f, 1.0f);
-                    return;
                 default:
                     // without this the entire screen except UI goes black......
                     // TODO: fix weird velocity bug?
@@ -237,8 +233,8 @@ void TileGame::Update(float dtime)
         playerSprite_->Update(dtime);
         
         // update health on UI
-        uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetCombatUnit().GetCurrentHealth(), 
-            playerSprite_->GetCombatUnit().GetMaxHealth());
+        uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(), 
+            playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
 
         // tile collision detection.
         float left, top, right, bottom;
@@ -248,6 +244,7 @@ void TileGame::Update(float dtime)
         for(auto each : loadedEntities_)
         {
             each->Update(dtime);
+            // discard previous farm commands once an entity becomes ready for pick up.
             if(each->IsFarmable() && each->IsReadyForPickup())
             {
                 RemoveFarmCommand((int)each->GetPosition().x, (int)each->GetPosition().y);
@@ -286,7 +283,7 @@ void TileGame::Update(float dtime)
         for(auto it : mobSpawners_)
         {
             MobSprite* mobSprite = nullptr;
-            it->Update(dtime, mobSprite);
+            it->Update(dtime, mobSprite, configuration_);
             if(mobSprite)
             {
                 mobSprites_.push_back(mobSprite);
@@ -404,9 +401,10 @@ void TileGame::StartGame()
     // start looping background music. TODO: fix SoundManager to get more song variety
     sm.PlayMusic("res/music/island1.ogg", -1);
     // set UI information
-    uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, playerSprite_->GetPlayerData().GetLevel());
-    uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetCombatUnit().GetCurrentHealth(), 
-        playerSprite_->GetCombatUnit().GetMaxHealth());
+    uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
+        playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel());
+    uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(), 
+        playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
 }
 
 void TileGame::LoadGame()
@@ -420,8 +418,10 @@ void TileGame::LoadGame()
     else
     {
         // create the sprite
-        playerSprite_ = LoadPlayerLGSpr( saveData_.PlayerIsBoy() ? configuration_.GetBoySurvivalistSprite() :
-            configuration_.GetGirlSurvivalistSprite() );
+        auto playerData = saveData_.LoadPlayerData();
+        playerSprite_ = LoadPlayerLGSpr( playerData.boy ? configuration_.GetBoySurvivalistSprite() :
+            configuration_.GetGirlSurvivalistSprite(), 32, 32, playerData.boy, 
+            playerData.level, playerData.experience );
         // process locate command
         playerSprite_->SetPosition({(float)saveData_.GetLocationCommand().locationX,
             (float)saveData_.GetLocationCommand().locationY,0.f});
@@ -467,10 +467,7 @@ void TileGame::LoadGame()
                 cmd.targetY, cmd.readyToFarm, cmd.farmedTime));
         }
     });
-    // process player and inventory.
-    playerSprite_->GetPlayerData().SetExperienceScale(configuration_.GetExperienceScale());
-    playerSprite_->GetPlayerData().SetBaseMaxExp(configuration_.GetBaseExperience());
-    saveData_.LoadPlayerData(playerSprite_->GetPlayerData());
+    // process inventory.
     inventory_.ClearItems();
     saveData_.LoadInventoryData(inventory_);
 
@@ -500,7 +497,12 @@ void TileGame::SaveGame()
         saveData_.AddFarmCommand(each);
     }
     saveData_.SaveInventoryData(inventory_);
-    saveData_.SavePlayerData(playerSprite_->GetPlayerData());
+    saveData_.SavePlayerData({
+        // experience, level, gender
+        playerSprite_->GetPlayerCombatUnit().GetCurrentExperience(),
+        playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel(),
+        playerSprite_->IsBoy()
+    });
     saveData_.WriteToFile(saveSlot_);
 }
 
@@ -509,18 +511,12 @@ void TileGame::NewGame(bool boy)
     int ix, iy;
     configuration_.GetTileSpawnPoint(ix, iy);
     playerSprite_ = LoadPlayerLGSpr(boy ? configuration_.GetBoySurvivalistSprite() :
-        configuration_.GetGirlSurvivalistSprite());
+        configuration_.GetGirlSurvivalistSprite(), 32, 32, boy, 1, 0);
     playerSprite_->SetPosition({
         (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
         (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight(),
         0.f
     });
-    // set up player configuration data
-    playerSprite_->GetPlayerData().SetExperienceScale(configuration_.GetExperienceScale());
-    playerSprite_->GetPlayerData().SetBaseMaxExp(configuration_.GetBaseExperience());
-    playerSprite_->GetPlayerData().SetLevel(1);
-    playerSprite_->GetPlayerData().SetExperience(0);
-    playerSprite_->GetPlayerData().SetBoy(boy);
     // clear harvest and farm data
     harvestCommands_.clear();
     farmCommands_.clear();
@@ -534,7 +530,7 @@ void TileGame::EndGame()
         delete uiSystem_;
         uiSystem_ = nullptr;
         SaveGame();
-        UnloadPlayerLGSpr(playerSprite_, playerSprite_->GetPlayerData().IsBoy() ? 
+        UnloadPlayerLGSpr(playerSprite_, playerSprite_->IsBoy() ? 
             configuration_.GetBoySurvivalistSprite() : configuration_.GetGirlSurvivalistSprite());
         delete swimFilter_;
         swimFilter_ = nullptr;
@@ -560,12 +556,12 @@ void TileGame::ReturnToMainMenu()
     gameState_ = GAME_STATE::SPLASH;
 }
 
-PlayerSprite* TileGame::LoadPlayerLGSpr(const std::string& name, int w, int h)
+PlayerSprite* TileGame::LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
     ogl::Texture* texture = tm.GetTexture(path + "_fr1.gif");
-    PlayerSprite* sprite = new PlayerSprite(texture, w, h);
+    PlayerSprite* sprite = new PlayerSprite(texture, w, h, level, exp, boy, configuration_);
     sprite->AddAnimFrame("front_stand", tm.GetTexture(path + "_fr1.gif"));
     sprite->AddAnimFrame("front_walk", tm.GetTexture(path + "_fr1.gif"));
     sprite->AddAnimFrame("front_walk", tm.GetTexture(path + "_fr2.gif"));
@@ -816,8 +812,8 @@ void TileGame::CheckHarvestCast(float dtime)
                 inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
                 uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
                     + " " + itemToAdd.name);
-                dinged = playerSprite_->GetPlayerData().SetExperience(
-                    playerSprite_->GetPlayerData().GetExperience() + itemToAdd.num);
+                // add experience based on number of items farmed
+                dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
                 uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
                     1.0f, 0.f, 1.0f, 1.0f);
                 uiSystem_->BuildInventory();
@@ -846,8 +842,7 @@ void TileGame::CheckHarvestCast(float dtime)
                         uiSystem_->WriteLineToConsole(std::string("You gain ") 
                             + std::to_string(each.num) + " experience.", 
                             1.0f, 0.0f, 1.0f, 1.0f);
-                        dinged = playerSprite_->GetPlayerData().SetExperience(
-                            playerSprite_->GetPlayerData().GetExperience() + each.num);
+                        dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
                         UpdatePlayerExperience();
                     }
                 }
@@ -867,8 +862,7 @@ void TileGame::CheckHarvestCast(float dtime)
                         {
                             uiSystem_->WriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
                                 + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
-                            dinged = playerSprite_->GetPlayerData().SetExperience( 
-                                playerSprite_->GetPlayerData().GetExperience() + each.num);
+                            dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
                             UpdatePlayerExperience();
                         }
                     }
@@ -883,9 +877,11 @@ void TileGame::CheckHarvestCast(float dtime)
             if(dinged)
             {
                 uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
-                    playerSprite_->GetPlayerData().GetLevel()) + "!", 1.0f, 1.0f, 0.0f, 1.0f);
+                    playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel()) 
+                    + "!", 1.0f, 1.0f, 0.0f, 1.0f);
                 // update UI to reflect new level
-                uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, playerSprite_->GetPlayerData().GetLevel());
+                uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
+                    playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel());
             }
         }
     }
@@ -893,8 +889,8 @@ void TileGame::CheckHarvestCast(float dtime)
 
 void TileGame::UpdatePlayerExperience()
 {
-    int experience = playerSprite_->GetPlayerData().GetExperience();
-    int maxExperience = playerSprite_->GetPlayerData().GetMaxExperience();
+    int experience = playerSprite_->GetPlayerCombatUnit().GetCurrentExperience();
+    int maxExperience = playerSprite_->GetPlayerCombatUnit().GetMaxExperience();
     float value = (float)experience / (float)maxExperience;
     uiSystem_->SetExperienceBar(value);
     // print information for debugging purposes.

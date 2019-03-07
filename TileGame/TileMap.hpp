@@ -114,6 +114,7 @@ private:
     static int lua_Farmable(lua_State* L);
     static int lua_EndEntity(lua_State* L);
     static int lua_BeginMobType(lua_State* L);
+    static int lua_LevelRange(lua_State* L);
     static int lua_DefaultAnimation(lua_State* L);
     static int lua_FrAnimTextureList(lua_State* L);
     static int lua_BkAnimTextureList(lua_State* L);

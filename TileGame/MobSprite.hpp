@@ -23,14 +23,18 @@
 
 #include <glm/glm.hpp>
 
+#include "engine/GameEngine.hpp"
 #include "Sprite.hpp"
 #include "CombatUnit.hpp"
+#include "Configuration.hpp"
 
 class MobType
 { public:
     enum AGGRO_TYPE { HOSTILE, NEUTRAL };
     // name of combat unit
     std::string name;
+    // level range
+    int levelLower, levelUpper;
     // default animation frame to use for missing animations
     std::string defaultAnimation;
     // front moving animation
@@ -56,13 +60,19 @@ class MobType
     // list of abilities mob will be able to use
     CombatAbilityList combatAbilityList;
     // TODO: much more!!!
+
+    int GenerateLevel() const {
+        auto& rng = engine::GameEngine::Get().GetRNG();
+        int range = levelUpper - levelLower + 1;
+        return rng() % range + levelLower;
+    }
 };
 
 class MobSprite : public Sprite 
 {
 public:
     // todo: Set up stat sheet upon creation
-    MobSprite(const MobType& mobType);
+    MobSprite(const MobType& mobType, Configuration& config);
     // dtor
     virtual ~MobSprite();
     // get the combat unit of the mob

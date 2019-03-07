@@ -26,7 +26,6 @@
 #include "MobSpawner.hpp"
 #include "MobSprite.hpp"
 #include "ogl/Texture.hpp"
-#include "PlayerData.hpp"
 #include "PlayerCommand.hpp"
 #include "PlayerSprite.hpp"
 #include "TileMap.hpp"
@@ -97,7 +96,7 @@ private:
     void ReturnToMainMenu();
 
     // load a sprite and animations from lost guardian folder
-    PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w=0, int h=0);
+    PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp);
     // unload textures associated with lost guardian sprite and destroy sprite
     void UnloadPlayerLGSpr(PlayerSprite*& sprite, const std::string& name);
     // Checks if a given sprite is "Swimming" that is, its base is on a "liquid" tile

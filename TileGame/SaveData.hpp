@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "Inventory.hpp"
-#include "PlayerData.hpp"
 #include "PlayerCommand.hpp"
 
 // file structs
@@ -58,17 +57,15 @@ public:
     bool ReadFromFile(const std::string& fileName);
     inline time_t GetTimeStamp() const { return timeStamp_; }
     // writes the player data object info to the Save File internal object. To use before calling WriteToFile
-    void SavePlayerData(const PlayerData& data);
+    void SavePlayerData(const PLAYER_DATA& data);
     // writes the inventory data to the internal save file. To be used before calling WriteToFile
     void SaveInventoryData(const Inventory& inv);
-    // Loads data read from file into PlayerData. To be called after ReadFromFile
-    void LoadPlayerData(PlayerData& data);
+    // Loads data read about player
+    PLAYER_DATA LoadPlayerData();
     // Fills in inventory information. To be called after ReadFromFile
     void LoadInventoryData(Inventory& inv);
     // Discards all information read from file. Automatically called between writing and reading files
     void ClearData();
-    // Returns the gender (true=boy, false=girl) of the player
-    inline bool PlayerIsBoy() const { return playerData_.boy; }
 private:
     // major version of savegame file
     static constexpr unsigned char MAJOR_VERSION = 0;

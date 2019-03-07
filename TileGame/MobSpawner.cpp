@@ -32,7 +32,7 @@ MobSpawner::~MobSpawner()
 }
 
 // caller takes ownership of non-null pointer
-void MobSpawner::Update(float dtime, MobSprite*& spawned)
+void MobSpawner::Update(float dtime, MobSprite*& spawned, Configuration& config)
 {
     spawned = nullptr;
     timer_ += dtime;
@@ -44,7 +44,7 @@ void MobSpawner::Update(float dtime, MobSprite*& spawned)
         float roll = 100.0f * (float)rng() / (float)rng.max();
         if(roll < percentChance_)
         {
-            spawned = new MobSprite(mobType_);
+            spawned = new MobSprite(mobType_, config);
             spawned->SetPosition(position_);
         }
     }

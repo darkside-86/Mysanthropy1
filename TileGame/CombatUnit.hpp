@@ -25,12 +25,25 @@
 
 #include <glm/glm.hpp>
 
+#include "Configuration.hpp"
+#include "StatSheet.hpp"
+
 class CombatUnit; // forward decl
+
+// Damage types
+class Damage 
+{ public:
+    enum DAMAGE_TYPE { PHYSICAL };
+    DAMAGE_TYPE type;
+    int amount;
+};
 
 // buffs/debuffs
 class CombatEffect
 { public:
-    int damagePerSecond; // negative for healing
+    float maxDuration; // in seconds
+    float currentDuration; // in seconds
+    // TODO: ...
 };
 
 // combat ability, damage, healing, or de/buffs.
@@ -49,7 +62,7 @@ class CombatAbility
     // whether or not subject to GCD
     bool onGCD;
     // function that calculates the amount of damage, or negative numbers for healing
-    std::function<int(const CombatUnit&)> calculateBaseDamage;
+    std::function<Damage(CombatUnit&)> calculateBaseDamage;
     // TODO: handle buffs/debuffs
 };
 
@@ -58,24 +71,33 @@ typedef std::unordered_map<std::string,CombatAbility> CombatAbilityList;
 class CombatUnit
 {
 public:
-    CombatUnit(bool attackable, const CombatAbilityList& abilities, const std::string& name);
+    // ctor
+    CombatUnit(Configuration& config, bool attackable, int level, const CombatAbilityList& abilities, 
+            const std::string& name);
+    // dtor
     virtual ~CombatUnit();
+    // get the name of the unit
+    inline std::string GetName() { return name_; }
+    // get the stat sheet by reference
+    inline StatSheet& GetStatSheet() { return statSheet_; }
+    // set location to determine ability range
     inline void SetLocation(const glm::vec3& loc) { location_ = loc; }
+    // get current health
     inline int GetCurrentHealth() const { return currentHealth_; }
+    // get max health. TODO: recalc max health for buffs/debuffs on statsheet
     inline int GetMaxHealth() const { return maxHealth_; }
-    // TODO: Replace this with stat-based health data
-    inline void SetMaxHealth(const int h) { maxHealth_ = h; currentHealth_ = h; }
-    // return value = excess healing (a negative number) or overkill or 0
-    int UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry);
+    // return value = successful cast
+    bool UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry);
     // updates the cooldown timers and generates 1 health per second when out of combat
     void Update(float dtime);
-    // adds a combat unit to the aggro table. TODO: keep track of aggro % when party is implemented
-    inline bool Aggro(const CombatUnit& cu);
-    // stop fighting a target
-    void StopCombatWith(CombatUnit& target);
+    // get/set in combat
+    inline bool IsInCombat() const { return inCombat_; }
+    inline void SetInCombat(bool b) { inCombat_ = b; }
 private:
     //  name of unit for combat log
     std::string name_;
+    // stat sheet
+    StatSheet statSheet_;
     // determines whether or not an ability is in range
     glm::vec3 location_ = {0.f, 0.f, 0.f};
     // the current health of the unit
@@ -88,6 +110,8 @@ private:
     static constexpr float RECOVERY_RATE = 1.0f;
     // health recovery timer
     float healthRecoveryTimer_ = 0.f;
+    // determines if unit is in combat
+    bool inCombat_ = false;
     // list of abilities that can be performed
     CombatAbilityList abilities_;
     // GCD
@@ -96,6 +120,4 @@ private:
     float globalCooldownCounter_ = 0.0f;
     // whether or not offensive abilities can be used against this CU
     bool attackable_;
-    // aggro table
-    std::vector<const CombatUnit*> aggroTable_;
 };

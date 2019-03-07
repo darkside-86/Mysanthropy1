@@ -584,6 +584,8 @@ void TileMap::SetupScripting()
     lua_setglobal(scripting_, "ON_DESTROY");
     lua_pushcfunction(scripting_, TileMap::lua_BeginMobType);
     lua_setglobal(scripting_, "BEGIN_MOB_TYPE");
+    lua_pushcfunction(scripting_, TileMap::lua_LevelRange);
+    lua_setglobal(scripting_, "LEVEL_RANGE");
     lua_pushcfunction(scripting_, TileMap::lua_DefaultAnimation);
     lua_setglobal(scripting_, "DEFAULT_ANIMATION");
     lua_pushcfunction(scripting_, TileMap::lua_FrAnimTextureList);
@@ -865,6 +867,21 @@ int TileMap::lua_BeginMobType(lua_State* L)
     const char* name = lua_tostring(L, 1);
     tileMap->currentMobType_.name = name;
     return 0;
+}
+
+int TileMap::lua_LevelRange(lua_State* L)
+{
+    // retrieve "this" object
+    lua_pushstring(L, "TileMap");
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    int lower = (int)lua_tointeger(L, 1);
+    int upper = (int)lua_tointeger(L, 2);
+    tileMap->currentMobType_.levelLower = lower;
+    tileMap->currentMobType_.levelUpper = upper;
+    return 0;   
 }
 
 int TileMap::lua_DefaultAnimation(lua_State* L)

@@ -19,18 +19,29 @@
 #pragma once
 
 #include "CombatUnit.hpp"
+#include "Configuration.hpp"
 #include "Sprite.hpp"
-#include "PlayerData.hpp"
+#include "PlayerCombatUnit.hpp"
 
 class PlayerSprite : public Sprite 
 {
 public:
-    PlayerSprite(ogl::Texture* texture, int w, int h);
+    // ctor. Initialize with savedata loaded values for level and exp
+    PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy, Configuration& configuration);
+    // dtor
     virtual ~PlayerSprite();
+    // update
     void Update(float dtime) override;
-    inline CombatUnit& GetCombatUnit() { return *combatUnit_; }
-    inline PlayerData& GetPlayerData() { return playerData_; }
+    // returns reference to the combat unit
+    inline PlayerCombatUnit& GetPlayerCombatUnit() { return *combatUnit_; }
+    // gets avatar
+    inline bool IsBoy() const { return isBoy_; }
 private:
-    CombatUnit* combatUnit_;
-    PlayerData  playerData_;
+    // delete copy constructor and =
+    PlayerSprite(const PlayerSprite&) = delete;
+    void operator=(const PlayerSprite&) = delete;
+    // the player combat unit, holds experience info and manages level ups
+    PlayerCombatUnit* combatUnit_;
+    // determines avatar of player
+    bool isBoy_;
 };

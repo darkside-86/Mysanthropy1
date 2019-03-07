@@ -1,4 +1,4 @@
-// PlayerData.cpp
+// PlayerCombatUnit.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -16,47 +16,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
+#pragma once
 
-#include "PlayerData.hpp"
+#include "CombatUnit.hpp"
 
-PlayerData::PlayerData() 
+class PlayerCombatUnit : public CombatUnit 
 {
-}
-
-PlayerData::~PlayerData()
-{
-
-}
-
-void PlayerData::SetLevel(int level)
-{
-    level_ = level;
-    float mult = pow(experienceScale_, (level_-1));
-    maxExperience_ = (int)(mult * (float)baseExperience_);
-    CalculateStats();
-}
-
-bool PlayerData::SetExperience(int exp)
-{
-    experience_ = exp;
-    if(experience_ >= maxExperience_)
-    {
-        experience_ -= maxExperience_;
-        SetLevel(level_ + 1);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void PlayerData::SetBaseMaxExp(int max)
-{
-    baseExperience_ = max;
-}
-
-void PlayerData::CalculateStats()
-{
-    // TODO:
-}
+public:
+    PlayerCombatUnit(Configuration& config, int level, int exp, const CombatAbilityList& abilities);
+    virtual ~PlayerCombatUnit();
+    // calculate stats for level
+    void SetLevel(int level);
+    // return true if a level was gained
+    bool AddExperience(int exp);
+    // access numbers for display
+    inline int GetMaxExperience() const { return maxExperience_; }
+    inline int GetCurrentExperience() const { return currentExperience_; }
+private:
+    int maxExperience_;
+    int currentExperience_;
+};

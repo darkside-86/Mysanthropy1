@@ -15,9 +15,9 @@ OTHERSTAT_SCALE = 1.001
 -- The increase in mob stats (all of its stats) per level
 MOB_STAT_SCALE = 1.13
 -- base level (level=1) for core stats (which stats varies according to class)
-CORE_STATS = 10
+CORE_STATS = 5
 -- base level (level=1) for non-core stats (which vary according to class)
-OTHERSTAT_STATS = 5
+OTHER_STATS = 5
 -- the amount of exp to increase from level 1 to level 2
 BASE_EXP = 250
 -- the base experience value of a non-elite level 1 mob
@@ -26,7 +26,9 @@ BASE_MOB_EXP = 25
 BASE_MOB_EXP_SCALE = 1.25
 -- the experience penalty for killing lower level mobs per level difference
 MOB_EXP_PENALTY = 0.9
--- Entries for all possible inventory items
+
+-- Entries for all possible inventory items -----------------------------------
+-------------------------------------------------------------------------------
 
 ITEM_ENTRY {
     name = "foodstuff",

@@ -20,10 +20,12 @@
 #include "engine/GameEngine.hpp"
 #include "CombatUnit.hpp"
 
-CombatUnit::CombatUnit(bool attackable, const CombatAbilityList& abilities, const std::string& name)
-    : attackable_(attackable), abilities_(abilities), name_(name)
+CombatUnit::CombatUnit(Configuration& config, bool attackable, int level, const CombatAbilityList& abilities, 
+                        const std::string& name)
+    : attackable_(attackable), abilities_(abilities), name_(name), statSheet_(level, !attackable, config)
 {
-
+    maxHealth_ = statSheet_.GetMaxHealth();
+    currentHealth_ = maxHealth_;
 }
 
 CombatUnit::~CombatUnit()
@@ -31,7 +33,7 @@ CombatUnit::~CombatUnit()
 
 }
 
-int CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry)
+bool CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, std::string& combatLogEntry)
 {
     auto found = abilities_.find(abilityName);
     if(found != abilities_.end())
@@ -69,17 +71,17 @@ int CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, st
             return 0;
         }
         // TODO: account for target's armor and resistances and chances to miss/dodge/parry
-        int damageOrHealing = ab.calculateBaseDamage(*this);
-        other.currentHealth_ -= damageOrHealing;
+        Damage damageOrHealing = ab.calculateBaseDamage(*this);
+        other.currentHealth_ -= damageOrHealing.amount;
         if(other.attackable_)
         {
             combatLogEntry = name_ + "'s " + abilityName + " hit " + other.name_ + " for "
-                + std::to_string(damageOrHealing) + " damage";
+                + std::to_string(damageOrHealing.amount) + " damage";
         }
         else 
         {
             combatLogEntry = name_ + "'s " + abilityName + " healed " + other.name_ + " for " 
-                + std::to_string(damageOrHealing) + " healing";
+                + std::to_string(damageOrHealing.amount) + " healing";
         }
         // set the cooldown of the ability to 0
         ab.timer = 0.0f;
@@ -98,22 +100,11 @@ int CombatUnit::UseAbility(CombatUnit& other, const std::string& abilityName, st
             other.currentHealth_ = 0;
         }
 
-        // upon dying, the target should remove itself from the aggro table
-        // ...
-        auto it=aggroTable_.begin();
-        for(; it != aggroTable_.end(); ++it)
-        {
-            if(&other == *it)
-                break;
-        }
-        if(it != aggroTable_.end())
-            aggroTable_.erase(it);
-
         return overkillOrHeal;
     }
     else
     {
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
             "%s: Unit does not have ability `%s'", __FUNCTION__, abilityName.c_str());
     }
     return 0;
@@ -133,7 +124,7 @@ void CombatUnit::Update(float dtime)
             each->second.timer = each->second.cooldown;
     }
     // recovery if out of combat (clear aggro table)
-    if(aggroTable_.size() == 0)
+    if(!inCombat_)
     {
         if(currentHealth_ < maxHealth_)
         {
@@ -147,17 +138,4 @@ void CombatUnit::Update(float dtime)
             }
         }
     }
-}
-
-void CombatUnit::StopCombatWith(CombatUnit& target)
-{
-    // look for self in target's aggro table and remove if there
-    auto it = target.aggroTable_.begin();
-    for(; it != target.aggroTable_.end(); ++it)
-    {
-        if(this == (*it))
-            break;
-    }
-    if( it != target.aggroTable_.end())
-        target.aggroTable_.erase(it);
 }

@@ -30,7 +30,10 @@ CombatAbilityLists::CombatAbilityLists()
     // here construct all combat ability lists for all mobs.
     CombatAbilityList redcrab;
     redcrab["attack"] = { 0, 32, false, 0.0f, 0.0f, true, 
-        [](const CombatUnit& cu) { return 1; } };
+        [](CombatUnit& cu) -> Damage { 
+            return { Damage::DAMAGE_TYPE::PHYSICAL, cu.GetStatSheet().GetAttackPower() }; 
+        } 
+    };
     lists_["redcrab"] = redcrab;
 }
 

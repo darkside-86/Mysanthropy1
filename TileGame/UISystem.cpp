@@ -252,6 +252,6 @@ int UISystem::lua_Game_GetPlayerLevel(lua_State* L)
 {
     UISystem* uiSystem = GetUISystem(L);
 
-    lua_pushinteger(L, uiSystem->game_.GetPlayerSprite().GetPlayerData().GetLevel());
+    lua_pushinteger(L, uiSystem->game_.GetPlayerSprite().GetPlayerCombatUnit().GetStatSheet().GetLevel());
     return 1;
 }

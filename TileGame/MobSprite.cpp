@@ -20,7 +20,7 @@
 #include "engine/GameEngine.hpp"
 #include "MobSprite.hpp"
 
-MobSprite::MobSprite(const MobType& mobType) 
+MobSprite::MobSprite(const MobType& mobType, Configuration& config) 
     : Sprite(engine::GameEngine::Get().GetTextureManager().GetTexture(
         std::string("res/textures/sprites/mobs/") + mobType.name + "_"
         + mobType.defaultAnimation), 
@@ -29,7 +29,7 @@ MobSprite::MobSprite(const MobType& mobType)
 {
     auto& tm = engine::GameEngine::Get().GetTextureManager();
     collisionBox_ = mobType.collisionBox;
-    combatUnit_ = new CombatUnit(true, mobType.combatAbilityList, mobType.name);
+    combatUnit_ = new CombatUnit(config, true, mobType.GenerateLevel(), mobType.combatAbilityList, mobType.name);
 
     const std::string prefix = std::string("res/textures/sprites/mobs/") + mobType.name + "_";
     // right orientation animations
