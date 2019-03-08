@@ -14,17 +14,17 @@ if ( MSVC )
     set( 
         LIBRARIES 
             opengl32 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2.lib" 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2main.lib" 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_image.lib" 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_ttf.lib"
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/SDL2_mixer.lib"
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/assimp-vc140-mt.lib"
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/IrrXML.lib"
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/glew32.lib" 
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/lua5.3.5.lib"
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/tinyxml2.lib"
-            "${PROJECT_SOURCE_DIR}/vendor/lib64/zlib.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/SDL2.lib" 
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/SDL2main.lib" 
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/SDL2_image.lib" 
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/SDL2_ttf.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/SDL2_mixer.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/assimp-vc140-mt.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/IrrXML.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/glew32.lib" 
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/lua5.3.5.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/tinyxml2.lib"
+            "${PROJECT_SOURCE_DIR}/../vendor/lib64/zlib.lib"
     )
 else ( MSVC )
     find_library(OPENGL32_LIB NAMES libopengl32.a opengl32)
@@ -89,49 +89,48 @@ set (
 
 add_executable ( 
     TileMapEditor
-	    main.cpp
-        TileGame/CombatAbilityLists.cpp
-        TileGame/combat/Formula.cpp
-        TileGame/CombatUnit.cpp
-        TileGame/Entity.cpp
-        TileGame/Image2D.cpp
-        TileGame/MobSpawner.cpp
-        TileGame/MobSprite.cpp
-        TileGame/Sprite.cpp
-        TileGame/StatSheet.cpp
-        TileGame/TileEditor.cpp
-        TileGame/TileMap.cpp
-        TileGame/TileSet.cpp
+        combat/AttributeSheet.cpp
+        combat/CombatAbilityLists.cpp
+        combat/Formula.cpp
+        combat/CombatUnit.cpp
+        editor/TileEditor.cpp
+        editor/main.cpp
+        game/Configuration.cpp
+        game/Entity.cpp
+        game/MobSpawner.cpp
+        game/MobSprite.cpp
+        game/Sprite.cpp
+        world/TileMap.cpp
+        world/TileSet.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )
 
 add_executable ( 
     RPG
-	    gamemain.cpp
-        TileGame/BattleSystem.cpp
-        TileGame/CombatAbilityLists.cpp
-        TileGame/combat/Formula.cpp
-        TileGame/CombatUnit.cpp
-        TileGame/Configuration.cpp
-        TileGame/Entity.cpp
-        TileGame/Image2D.cpp
-        TileGame/Inventory.cpp
-        TileGame/Item.cpp
-        TileGame/MobSpawner.cpp
-        TileGame/MobSprite.cpp
-        TileGame/PlayerCombatUnit.cpp
-        TileGame/PlayerSprite.cpp
-        TileGame/SaveData.cpp
-        TileGame/SplashScreen.cpp
-        TileGame/Sprite.cpp
-        TileGame/StatSheet.cpp
-        TileGame/SwimFilter.cpp
-        TileGame/Target.cpp
-        TileGame/TileGame.cpp
-        TileGame/TileMap.cpp
-        TileGame/TileSet.cpp
-        TileGame/UISystem.cpp
+        combat/AttributeSheet.cpp
+        combat/BattleSystem.cpp
+        combat/CombatAbilityLists.cpp
+        combat/CombatUnit.cpp
+        combat/Formula.cpp
+        combat/PlayerCombatUnit.cpp
+        game/Configuration.cpp
+        game/Entity.cpp
+        game/gamemain.cpp
+        game/Inventory.cpp
+        game/Item.cpp
+        game/MobSpawner.cpp
+        game/MobSprite.cpp
+        game/PlayerSprite.cpp
+        game/SaveData.cpp
+        game/SplashScreen.cpp
+        game/Sprite.cpp
+        game/SwimFilter.cpp
+        game/Target.cpp
+        game/TileGame.cpp
+        world/TileMap.cpp
+        world/TileSet.cpp
+        game/UISystem.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )
