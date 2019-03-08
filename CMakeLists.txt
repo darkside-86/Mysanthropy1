@@ -91,6 +91,7 @@ add_executable (
     TileMapEditor
 	    main.cpp
         TileGame/CombatAbilityLists.cpp
+        TileGame/combat/Formula.cpp
         TileGame/CombatUnit.cpp
         TileGame/Entity.cpp
         TileGame/Image2D.cpp
@@ -110,6 +111,7 @@ add_executable (
 	    gamemain.cpp
         TileGame/BattleSystem.cpp
         TileGame/CombatAbilityLists.cpp
+        TileGame/combat/Formula.cpp
         TileGame/CombatUnit.cpp
         TileGame/Configuration.cpp
         TileGame/Entity.cpp

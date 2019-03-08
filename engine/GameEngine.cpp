@@ -149,8 +149,8 @@ namespace engine
             numFrames += 1;
             numSeconds += (double)dTime;
             framesPerSecond_ = numFrames / numSeconds;
-            if(dTime > 1.0f) // clamp maximum time elapsed to 1 second
-                dTime = 1.0f;
+            if(dTime > 0.2f) // clamp maximum time elapsed to N seconds
+                dTime = 0.2f;
             game.Update(dTime);
             glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
             game.Render(gc);

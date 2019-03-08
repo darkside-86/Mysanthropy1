@@ -143,3 +143,8 @@ bool Sprite::HasValidCollisionBox()
 {
     return collisionBox_.left != -1;
 }
+
+void Sprite::ReverseMovement(float dtime)
+{
+    position_ -= velocity_ * dtime;
+}

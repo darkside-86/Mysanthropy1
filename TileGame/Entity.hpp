@@ -25,32 +25,30 @@
 #include "PlayerCommand.hpp"
 #include "Sprite.hpp"
 
-struct ENTITY_TYPE 
-{
-    char* name = nullptr;
-    char* texturePath = nullptr;
+class EntityType 
+{ public:
+    std::string name;
+    std::string texturePath;
     int width = 0, height = 0;
     BOX collision = {0,0,0,0};
     int maxClicks = 0;
     float clickTime = 0.f; // in seconds!
-    struct ITEM_DROP
-    {
+    class ItemDrop
+    { public:
         float percentChance = 0.f;
         int amount = 0;
-        char* name = nullptr;
+        std::string name;
     };
-    int numDrops = 0;
-    ITEM_DROP* drops = nullptr;
-    int numOnDestroy = 0;
-    ITEM_DROP* onDestroy = nullptr;
-    struct FARM_INFO
-    {
-        ITEM_DROP drop;
+    std::vector<ItemDrop> drops;
+    std::vector<ItemDrop> onDestroy;
+    class FarmInfo
+    { public:
+        ItemDrop drop;
         unsigned int respawnTime = 1;
-        char* pendingTexture = nullptr;
+        std::string pendingTexture;
     };
-    char farmable = 0;
-    FARM_INFO farmInfo;
+    bool farmable = false;
+    FarmInfo farmInfo;
 };
 
 class ItemDropInfo { public: std::string name; int num; };
@@ -59,7 +57,7 @@ class ItemDropInfo { public: std::string name; int num; };
 class Entity : public Sprite 
 {
 public:
-    Entity(const ENTITY_TYPE& etype);
+    Entity(const EntityType& etype);
     virtual ~Entity();
 
     inline std::string GetName() const { return name_; }
@@ -71,7 +69,7 @@ public:
     std::vector<ItemDropInfo> OnInteract();
     std::vector<ItemDropInfo> OnDestroy();
     inline bool IsFarmable() const { return farmable_; }
-    inline bool IsReadyForPickup() const { return farmInfo_.readyForPickup; }
+    inline bool IsReadyForPickup() const { return farmEvent_.readyForPickup; }
     time_t FarmTimeRemaining() const;
     ItemDropInfo Farm();
     void SetFarmData(const FarmCommand& fc);
@@ -89,7 +87,7 @@ private:
     };
     std::vector<ItemDrop> onInteract_;
     std::vector<ItemDrop> onDestroy_;
-    class FarmInfo { public:
+    class FarmEvent { public:
         ItemDrop itemDrop;
         unsigned int respawnTimer;
         bool readyForPickup = true;
@@ -97,6 +95,6 @@ private:
         ogl::Texture* pendingTexture;
     };
     bool farmable_;
-    FarmInfo farmInfo_;
+    FarmEvent farmEvent_;
     ogl::Texture* swapTexture_ = nullptr; // store other anim0_ texture
 };

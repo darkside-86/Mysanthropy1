@@ -1,4 +1,4 @@
-// CombatAbilityLists.hpp
+// CombatFormula.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -16,21 +16,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#pragma once
 
-#include <string>
-#include <unordered_map>
+#include "engine/GameEngine.hpp"
+#include "Formula.hpp"
 
-#include "CombatUnit.hpp"
-
-// TODO: DEPRECATE in favor of Expression class built from Lua input
-class CombatAbilityLists
+namespace combat
 {
-public:
-    static const CombatAbilityLists& Get();
-    const std::unordered_map<std::string, CombatAbilityList>& GetLists() const { return lists_; }
-private:    
-    CombatAbilityLists();
-    ~CombatAbilityLists();
-    std::unordered_map<std::string, CombatAbilityList> lists_;
-};
+    float NumericRange::Next()
+    {
+        auto& rng = engine::GameEngine::Get().GetRNG();
+        if(lower > upper) // validate range ordering
+        {
+            float swap = upper;
+            upper = lower;
+            lower = swap;
+        }
+        float r = upper - lower;
+        float v = (float)rng() / (float)rng.max();
+        return lower + r * v;
+    }
+
+    Formula::Formula(const std::string& formulaText)
+    {
+
+    }
+}

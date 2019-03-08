@@ -32,7 +32,7 @@
 #include "ogl/VertexBuffer.hpp"
 #include "TileSet.hpp"
 
-struct Tile
+struct TILE
 {
     unsigned short ix=0;
     unsigned short iy=0;
@@ -40,21 +40,19 @@ struct Tile
 
 struct ENTITY_LOCATION
 {
+    static constexpr unsigned short INVALID_ENTITY_ID = (unsigned short)(-1);
     unsigned short entityID = 0;
     unsigned int x = 0, y = 0;
 };
 
-constexpr unsigned short INVALID_ENTITY_ID = (unsigned short)(-1);
-
 struct MOBSPAWNER_LOCATION
 {
+    static constexpr unsigned short INVALID_MOBTYPE_ID = (unsigned short)(-1);
     unsigned short spawnerID = 0;
     unsigned int x = 0, y = 0;
     float freq = 30.0f; // in seconds
     float chance = 100.0f; // 0.0 - 100.0
 };
-
-constexpr unsigned short INVALID_MOBTYPE_ID = (unsigned short)(-1);
 
 class TileMap
 {
@@ -71,11 +69,11 @@ public:
     void SetScriptPath(const std::string& path) { scriptPath_ = path; }
     int GetWidth() { return width_; }
     int GetHeight() { return height_; }
-    Tile GetTile(int ix, int iy, bool layer1 = false);
-    void SetTile(int ix, int iy, const Tile& tile, bool layer1=false);
+    TILE GetTile(int ix, int iy, bool layer1 = false);
+    void SetTile(int ix, int iy, const TILE& tile, bool layer1=false);
     // return true if tile at x,y is configured as "liquid"
     bool TileIsLiquid(int x, int y, bool layer1=false);
-    void FillWithTile(const Tile& tile, bool layer1=false);
+    void FillWithTile(const TILE& tile, bool layer1=false);
     unsigned char GetCollisionData(int ix, int iy);
     void SetCollisionData(int ix, int iy, unsigned char value);
     void RenderCollisionData(float x, float y, ogl::Program& program, float scaleX, float scaleY);
@@ -83,7 +81,7 @@ public:
     //  is destroyed so this should be called only once per map load.
     std::vector<Entity*> GenerateEntities();
     // Get an entity type from the list. tilemap retains pointer ownership
-    ENTITY_TYPE GetEntityType(int index);
+    EntityType GetEntityType(int index);
     // generate mobspawner vector, caller owns pointers
     std::vector<MobSpawner*> GenerateSpawners();
     // Get a mobtype from the list.
@@ -101,6 +99,7 @@ private:
     void SetupScripting();
     void CleanupEntities();
     void CleanupSpawners();
+    static TileMap* GetTileMapObject(lua_State* L);
     static int lua_Liquids(lua_State* L);
     static int lua_BeginEntity(lua_State* L);
     static int lua_UseTexture(lua_State* L);
@@ -134,8 +133,8 @@ private:
     std::string scriptPath_ = "";
     int width_ = 0;
     int height_ = 0;
-    Tile* layer0_ = nullptr;
-    Tile* layer1_ = nullptr;
+    TILE* layer0_ = nullptr;
+    TILE* layer1_ = nullptr;
     unsigned char* collisionLayer_ = nullptr;
     // layer 0
     ogl::VertexArray* vao_ = nullptr;
@@ -150,10 +149,10 @@ private:
     // for running entity scripting and map loading
     lua_State* scripting_ = nullptr;
     // tile ID configurations
-    std::vector<Tile> liquids_;
+    std::vector<TILE> liquids_;
     // entity index
-    std::vector<ENTITY_TYPE> entityTypes_;
-    ENTITY_TYPE currentEntityType_;
+    std::vector<EntityType> entityTypes_;
+    EntityType currentEntityType_;
     std::vector<ENTITY_LOCATION> mapEntities_;
     // mob spawners
     std::vector<MobType> mobTypes_;

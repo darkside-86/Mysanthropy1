@@ -46,6 +46,8 @@ class CombatEffect
     // TODO: ...
 };
 
+// formulas for ability damage/healing calculation
+
 // combat ability, damage, healing, or de/buffs.
 class CombatAbility
 { public:
@@ -83,11 +85,13 @@ public:
     inline std::string GetName() { return name_; }
     // get the stat sheet by reference
     inline StatSheet& GetStatSheet() { return statSheet_; }
+    // get location
+    inline glm::vec3 GetLocation() const { return location_; }
     // set location to determine ability range
     inline void SetLocation(const glm::vec3& loc) { location_ = loc; }
     // get current health
     inline int GetCurrentHealth() const { return currentHealth_; }
-    // set current health
+    // set current health. used by game to set health of player upon respawn
     inline void SetCurrentHealth(int h) { currentHealth_ = h; }
     // get max health.
     inline int GetMaxHealth() { maxHealth_ = statSheet_.GetMaxHealth(); return maxHealth_; }

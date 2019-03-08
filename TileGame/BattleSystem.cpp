@@ -45,6 +45,7 @@ void BattleSystem::AddMob(MobSprite* mobSprite)
 
 void BattleSystem::RemoveMob(MobSprite* mobSprite)
 {
+    // look for mob and remove if found
     auto found = std::find_if(mobSprites_.begin(), mobSprites_.end(), [mobSprite](const MobSprite* spr){
         return (spr == mobSprite);
     });
@@ -77,7 +78,7 @@ std::string BattleSystem::UsePlayerAbility(const std::string& abilityName, Targe
         return combatLogEntry;
     }
 
-    // check to see if this is a new target and then use the attack. if successfully used
+    // check to see if target is a mob and then use the attack. if successfully used
     // the mob is now "aggro"'d and should be added to battle table
     if(target.GetTargetSpriteType() == Target::SPRITE_TYPE::MOBSPR)
     {

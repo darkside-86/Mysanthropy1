@@ -29,8 +29,8 @@ TileMap::TileMap(int tileWidth, int tileHeight, const std::string& tilesetPath, 
     : width_(width), height_(height)
 {
     tileSet_ = new TileSet(tilesetPath, tileWidth, tileHeight);
-    layer0_ = new Tile [width_ * height_];
-    layer1_ = new Tile [width_ * height_];
+    layer0_ = new TILE [width_ * height_];
+    layer1_ = new TILE [width_ * height_];
     collisionLayer_ = new unsigned char [width_ * height_];
     memset(collisionLayer_, 0, width_ * height_);
     SetupRender();
@@ -58,7 +58,7 @@ TileMap::~TileMap()
     lua_close(scripting_);
 }
 
-Tile TileMap::GetTile(int ix, int iy, bool layer1)
+TILE TileMap::GetTile(int ix, int iy, bool layer1)
 {
     int index = iy*width_ + ix;
     if(index < 0 || ix >= width_ || iy >= height_)
@@ -66,7 +66,7 @@ Tile TileMap::GetTile(int ix, int iy, bool layer1)
     return !layer1? layer0_[index] : layer1_[index];
 }
 
-void TileMap::SetTile(int ix, int iy, const Tile& tile, bool layer1)
+void TileMap::SetTile(int ix, int iy, const TILE& tile, bool layer1)
 {
     int index = iy * width_ + ix;
     if(index < 0 || ix >= width_ || iy >= height_)
@@ -80,7 +80,7 @@ void TileMap::SetTile(int ix, int iy, const Tile& tile, bool layer1)
 
 bool TileMap::TileIsLiquid(int x, int y, bool layer1)
 {
-    Tile t = GetTile(x, y, layer1);
+    TILE t = GetTile(x, y, layer1);
     // check to see if t's ID value is in list of liquids
     for(auto each : liquids_)
     {
@@ -117,11 +117,11 @@ void TileMap::SaveToFile(const std::string& path)
     // TODO: write each array all at once
     for(int i=0; i < width_*height_; ++i)
     {
-        out.write((char*)&layer0_[i], sizeof(Tile));
+        out.write((char*)&layer0_[i], sizeof(TILE));
     }
     for(int i=0; i < width_ * height_; ++i)
     {
-        out.write((char*)&layer1_[i], sizeof(Tile));
+        out.write((char*)&layer1_[i], sizeof(TILE));
     }
     for(int i=0; i < width_ * height_; ++i)
     {
@@ -192,19 +192,19 @@ void TileMap::LoadFromFile(const std::string& path)
     // read width and height of map
     in.read((char*)&width_, sizeof(width_));
     in.read((char*)&height_, sizeof(height_));
-    layer0_ = new Tile[width_*height_];
-    layer1_ = new Tile[width_*height_];
+    layer0_ = new TILE[width_*height_];
+    layer1_ = new TILE[width_*height_];
     collisionLayer_ = new unsigned char[width_ * height_];
     // TODO: read each array all at once
     for(int i=0; i < width_*height_; ++i)
     {
-        Tile tile;
+        TILE tile;
         in.read((char*)&tile, sizeof(tile));
         layer0_[i] = tile;
     }
     for(int i=0; i < width_*height_; ++i)
     {
-        Tile tile;
+        TILE tile;
         in.read((char*)&tile, sizeof(tile));
         layer1_[i] = tile;
     }
@@ -401,7 +401,7 @@ std::vector<MobSpawner*> TileMap::GenerateSpawners()
     return spawners;
 }
 
-void TileMap::FillWithTile(const Tile& tile, bool layer1)
+void TileMap::FillWithTile(const TILE& tile, bool layer1)
 {
     for(int i=0; i < width_*height_; ++i)
     {
@@ -429,7 +429,7 @@ void TileMap::SetCollisionData(int ix, int iy, unsigned char value)
         collisionLayer_[index] = value;
 }
 
-ENTITY_TYPE TileMap::GetEntityType(int index)
+EntityType TileMap::GetEntityType(int index)
 {
     if(index >= 0 && index < entityTypes_.size())
     {
@@ -439,7 +439,8 @@ ENTITY_TYPE TileMap::GetEntityType(int index)
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
                 "%s: index out of range (%d)", __FUNCTION__, index);
-        ENTITY_TYPE blank;
+        EntityType blank;
+        blank.name = ""; // indicates invalid
         return blank;
     }
 }
@@ -470,7 +471,7 @@ bool TileMap::RemoveEntityLocation(unsigned short entityID, unsigned int x, unsi
 {
     auto it = std::find_if(mapEntities_.begin(), mapEntities_.end(), 
         [this, entityID, x, y](const ENTITY_LOCATION& loc){
-            ENTITY_TYPE t = GetEntityType(entityID);
+            EntityType t = GetEntityType(entityID);
             return loc.entityID == entityID && 
                 x >= loc.x && x <= loc.x + t.width &&
                 y >= loc.y && y <= loc.y + t.height;
@@ -496,7 +497,7 @@ unsigned short TileMap::GetEntityIDAtLocation(unsigned int x, unsigned int y)
 {
     auto it = std::find_if(mapEntities_.begin(), mapEntities_.end(), 
         [this, x, y](const ENTITY_LOCATION& loc){
-            ENTITY_TYPE t = GetEntityType(loc.entityID);
+            EntityType t = GetEntityType(loc.entityID);
             return x >= loc.x  && x <= loc.x + t.width &&
                 y >= loc.y && y <= loc.y + t.height;
         }
@@ -507,7 +508,7 @@ unsigned short TileMap::GetEntityIDAtLocation(unsigned int x, unsigned int y)
     }
     else 
     {
-        return INVALID_ENTITY_ID;
+        return ENTITY_LOCATION::INVALID_ENTITY_ID;
     }
 }
 
@@ -546,7 +547,7 @@ unsigned short TileMap::GetMobTypeIDAtLocation(unsigned int x, unsigned int y, f
         chance = it->chance;
         return it->spawnerID;
     }
-    return INVALID_MOBTYPE_ID;
+    return MOBSPAWNER_LOCATION::INVALID_MOBTYPE_ID;
 }
 
 void TileMap::SetupScripting()
@@ -620,23 +621,6 @@ void TileMap::SetupScripting()
 
 void TileMap::CleanupEntities()
 {
-    for(auto it = entityTypes_.begin(); it != entityTypes_.end(); ++it)
-    {
-        delete [] it->name;
-        delete [] it->texturePath;
-        for(int i=0; i < it->numDrops; ++i)
-        {
-            delete [] it->drops[i].name;
-        }
-        delete [] it->drops;
-        for(int i=0; i < it->numOnDestroy; ++i)
-        {
-            delete [] it->onDestroy[i].name;
-        }
-        delete [] it->onDestroy;
-        delete [] it->farmInfo.drop.name;
-        delete [] it->farmInfo.pendingTexture;
-    }
     entityTypes_.clear();
 }
 
@@ -645,14 +629,20 @@ void TileMap::CleanupSpawners()
     mobTypes_.clear();
 }
 
-// lua : LIQUIDS ( {ix,iy}... )
-int TileMap::lua_Liquids(lua_State* L)
+TileMap* TileMap::GetTileMapObject(lua_State* L)
 {
     // retrieve "this" object
     lua_pushstring(L, "TileMap");
     lua_gettable(L, LUA_REGISTRYINDEX);
     TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
     lua_pop(L, 1);
+    return tileMap;
+}
+
+// lua : LIQUIDS ( {ix,iy}... )
+int TileMap::lua_Liquids(lua_State* L)
+{
+    TileMap* tileMap = GetTileMapObject(L);
 
     int nargs = lua_gettop(L);
     for(int i = 1; i <= nargs; ++i)
@@ -672,56 +662,34 @@ int TileMap::lua_Liquids(lua_State* L)
 // lua : BEGIN_ENTITY(nameOfEnt)
 int TileMap::lua_BeginEntity(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
-    const char* nameOfEntity = lua_tostring(L, 1);
-    tileMap->currentEntityType_.name = new char[strlen(nameOfEntity)+1];
-    strcpy_s(tileMap->currentEntityType_.name, strlen(nameOfEntity)+1, nameOfEntity);
+    tileMap->currentEntityType_.name = lua_tostring(L, 1);
     return 0;
 }
 
 // lua  : USE_TEXTURE(path)
 int TileMap::lua_UseTexture(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
-    const char* pathToTexture = lua_tostring(L, 1);
-    tileMap->currentEntityType_.texturePath = new char[strlen(pathToTexture)+1];
-    strcpy_s(tileMap->currentEntityType_.texturePath, strlen(pathToTexture)+1, pathToTexture);
+    tileMap->currentEntityType_.texturePath = lua_tostring(L, 1);
     return 0;
 }
 
 // lua : END_ENTITY ()
 int TileMap::lua_EndEntity(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     tileMap->entityTypes_.push_back(tileMap->currentEntityType_);
-    ENTITY_TYPE et;
-    tileMap->currentEntityType_ = et;
-
+    tileMap->currentEntityType_ = EntityType();
     return 0;
 }
 
 int TileMap::lua_Width(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     tileMap->currentEntityType_.width = (int)lua_tonumber(L, 1);
     return 0;
@@ -729,11 +697,7 @@ int TileMap::lua_Width(lua_State* L)
 
 int TileMap::lua_Height(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     tileMap->currentEntityType_.height = (int)lua_tonumber(L, 1);
     return 0;
@@ -741,11 +705,7 @@ int TileMap::lua_Height(lua_State* L)
 
 int TileMap::lua_CollisionBox(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     BOX box;
     box.left = (float)lua_tonumber(L, 1);
@@ -759,11 +719,7 @@ int TileMap::lua_CollisionBox(lua_State* L)
 
 int TileMap::lua_MaxClicks(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     tileMap->currentEntityType_.maxClicks = (int)lua_tonumber(L, 1);
 
@@ -772,25 +728,16 @@ int TileMap::lua_MaxClicks(lua_State* L)
 
 int TileMap::lua_OnInteract(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
-    ENTITY_TYPE& et = tileMap->currentEntityType_;
-    et.numDrops = lua_gettop(L) / 3;
-    et.drops = new ENTITY_TYPE::ITEM_DROP [et.numDrops];
-    int itemDropCounter = 0;
-    for(int i = 1; i <= lua_gettop(L); i += 3)
+    EntityType& et = tileMap->currentEntityType_; // easier to type
+    for(int i=1; i < lua_gettop(L); i += 3)
     {
-        // percent chance, number, then name
-        et.drops[itemDropCounter].percentChance = (float)lua_tonumber(L, i);
-        et.drops[itemDropCounter].amount = (int)lua_tointeger(L, i+1);
-        const char* itemName = lua_tostring(L, i+2);
-        et.drops[itemDropCounter].name = new char [strlen(itemName)+1];
-        strcpy_s(et.drops[itemDropCounter].name, strlen(itemName)+1, itemName);
-        ++itemDropCounter;
+        EntityType::ItemDrop itemDrop;
+        itemDrop.percentChance = (float)lua_tonumber(L, i);
+        itemDrop.amount = (int)lua_tointeger(L, i+1);
+        itemDrop.name = lua_tostring(L, i+2);
+        et.drops.push_back(itemDrop);
     }
 
     return 0;
@@ -798,11 +745,7 @@ int TileMap::lua_OnInteract(lua_State* L)
 
 int TileMap::lua_ClickTime(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     tileMap->currentEntityType_.clickTime = (float)lua_tonumber(L, 1);
 
@@ -812,47 +755,32 @@ int TileMap::lua_ClickTime(lua_State* L)
 // FARMABLE ( chance, amount, name, timer, pendingTexture )
 int TileMap::lua_Farmable(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
-    tileMap->currentEntityType_.farmable = 1;
-    tileMap->currentEntityType_.farmInfo.drop.percentChance = (float)lua_tonumber(L, 1);
-    tileMap->currentEntityType_.farmInfo.drop.amount = (int)lua_tonumber(L, 2);
-    const char* name = lua_tostring(L, 3);
-    tileMap->currentEntityType_.farmInfo.drop.name = new char[strlen(name)+1];
-    strcpy_s(tileMap->currentEntityType_.farmInfo.drop.name, strlen(name)+1, name);
-    tileMap->currentEntityType_.farmInfo.respawnTime = (int)lua_tonumber(L, 4);
-    const char* texture = lua_tostring(L, 5);
-    tileMap->currentEntityType_.farmInfo.pendingTexture = new char[strlen(texture)+1];
-    strcpy_s(tileMap->currentEntityType_.farmInfo.pendingTexture, strlen(texture)+1, texture);
+    EntityType& et = tileMap->currentEntityType_;
+    et.farmable = true;
+    et.farmInfo.drop.percentChance = (float)lua_tonumber(L, 1);
+    et.farmInfo.drop.amount = (int)lua_tonumber(L, 2);
+    et.farmInfo.drop.name = lua_tostring(L, 3);
+    et.farmInfo.respawnTime = (int)lua_tonumber(L, 4);
+    et.farmInfo.pendingTexture = lua_tostring(L, 5);
 
     return 0;
 }
 
+// ON_DESTROY ( chance, num, name, ... )
 int TileMap::lua_OnDestroy(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
-    ENTITY_TYPE& et = tileMap->currentEntityType_;
-    et.numOnDestroy = lua_gettop(L) / 3;
-    et.onDestroy = new ENTITY_TYPE::ITEM_DROP [et.numOnDestroy];
-    int itemDropCounter = 0;
-    for(int i = 1; i <= lua_gettop(L); i += 3)
+    EntityType& et = tileMap->currentEntityType_;
+    for(int i=1; i <= lua_gettop(L); i += 3)
     {
-        // percent chance, number, then name
-        et.onDestroy[itemDropCounter].percentChance = (float)lua_tonumber(L, i);
-        et.onDestroy[itemDropCounter].amount = (int)lua_tointeger(L, i+1);
-        const char* itemName = lua_tostring(L, i+2);
-        et.onDestroy[itemDropCounter].name = new char [strlen(itemName)+1];
-        strcpy_s(et.onDestroy[itemDropCounter].name, strlen(itemName)+1, itemName);
-        ++itemDropCounter;
+        EntityType::ItemDrop itemDrop;
+        itemDrop.percentChance = (float)lua_tonumber(L, i);
+        itemDrop.amount = (int)lua_tointeger(L, i+1);
+        itemDrop.name = lua_tostring(L, i+2);
+        et.onDestroy.push_back(itemDrop);
     }
 
     return 0;
@@ -860,11 +788,7 @@ int TileMap::lua_OnDestroy(lua_State* L)
 
 int TileMap::lua_BeginMobType(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     const char* name = lua_tostring(L, 1);
     tileMap->currentMobType_.name = name;
@@ -873,11 +797,7 @@ int TileMap::lua_BeginMobType(lua_State* L)
 
 int TileMap::lua_LevelRange(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     int lower = (int)lua_tointeger(L, 1);
     int upper = (int)lua_tointeger(L, 2);
@@ -888,11 +808,8 @@ int TileMap::lua_LevelRange(lua_State* L)
 
 int TileMap::lua_DefaultAnimation(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     const char* defaultAnimation = lua_tostring(L, 1);
     tileMap->currentMobType_.defaultAnimation = defaultAnimation;
     return 0;  
@@ -900,11 +817,8 @@ int TileMap::lua_DefaultAnimation(lua_State* L)
 
 int TileMap::lua_FrAnimTextureList(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     tileMap->currentMobType_.frAnimTextureList.clear();
     for(int i=1; i <= lua_gettop(L); ++i)
     {
@@ -916,11 +830,8 @@ int TileMap::lua_FrAnimTextureList(lua_State* L)
 
 int TileMap::lua_BkAnimTextureList(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     tileMap->currentMobType_.bkAnimTextureList.clear();
     for(int i=1; i <= lua_gettop(L); ++i)
     {
@@ -932,11 +843,8 @@ int TileMap::lua_BkAnimTextureList(lua_State* L)
 
 int TileMap::lua_LfAnimTextureList(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     tileMap->currentMobType_.lfAnimTextureList.clear();
     for(int i=1; i <= lua_gettop(L); ++i)
     {
@@ -948,11 +856,8 @@ int TileMap::lua_LfAnimTextureList(lua_State* L)
 
 int TileMap::lua_RtAnimTextureList(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     tileMap->currentMobType_.rtAnimTextureList.clear();
     for(int i=1; i <= lua_gettop(L); ++i)
     {
@@ -964,11 +869,8 @@ int TileMap::lua_RtAnimTextureList(lua_State* L)
 
 int TileMap::lua_AnimSpeed(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     float animSpeed = (float)lua_tonumber(L, 1);
     tileMap->currentMobType_.animSpeed = animSpeed;
     return 0;
@@ -976,11 +878,8 @@ int TileMap::lua_AnimSpeed(lua_State* L)
 
 int TileMap::lua_MobWidth(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     int width = (int)lua_tointeger(L, 1);
     tileMap->currentMobType_.width = width;
     return 0;
@@ -988,11 +887,8 @@ int TileMap::lua_MobWidth(lua_State* L)
 
 int TileMap::lua_MobHeight(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     int height = (int)lua_tointeger(L, 1);
     tileMap->currentMobType_.height = height;
     return 0;
@@ -1000,11 +896,7 @@ int TileMap::lua_MobHeight(lua_State* L)
 
 int TileMap::lua_MobSpeed(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
 
     float speed = (float)lua_tonumber(L, 1);
     tileMap->currentMobType_.speed = speed;
@@ -1014,11 +906,8 @@ int TileMap::lua_MobSpeed(lua_State* L)
 
 int TileMap::lua_MobLeash(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     float leash = (float)lua_tonumber(L, 1);
     tileMap->currentMobType_.leash = leash;
     return 0;
@@ -1026,11 +915,8 @@ int TileMap::lua_MobLeash(lua_State* L)
 
 int TileMap::lua_MobCollisionBox(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     BOX box = {
         (float)lua_tonumber(L, 1), (float)lua_tonumber(L, 2),
         (float)lua_tonumber(L, 3), (float)lua_tonumber(L, 4)
@@ -1041,11 +927,8 @@ int TileMap::lua_MobCollisionBox(lua_State* L)
 
 int TileMap::lua_MobAggroType(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     const char* aggro = lua_tostring(L, 1);
     if(strcmp(aggro,"hostile")==0)
     {
@@ -1060,11 +943,7 @@ int TileMap::lua_MobAggroType(lua_State* L)
     
 int TileMap::lua_CombatAbilityList(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
     
     const char* abilityListName = lua_tostring(L, 1);
     const auto& lists = CombatAbilityLists::Get().GetLists();
@@ -1083,11 +962,8 @@ int TileMap::lua_CombatAbilityList(lua_State* L)
 
 int TileMap::lua_LootTable(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+
     // arguments are "name", count, chance...
     for(int i=1; i <= lua_gettop(L); i += 3)
     {
@@ -1102,11 +978,8 @@ int TileMap::lua_LootTable(lua_State* L)
 
 int TileMap::lua_EndMobType(lua_State* L)
 {
-    // retrieve "this" object
-    lua_pushstring(L, "TileMap");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileMap* tileMap = (TileMap*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileMap* tileMap = GetTileMapObject(L);
+    
     // push back the current object.
     tileMap->mobTypes_.push_back(tileMap->currentMobType_);
     return 0;

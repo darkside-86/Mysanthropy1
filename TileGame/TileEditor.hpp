@@ -53,6 +53,7 @@ private:
     void RemoveSpawner(int index, int x, int y);
     void UpdateEntitySelection(int index);
     void UpdateSpawnerSelection(int index, float freq, float chance);
+    static TileEditor* GetTileEditorObject(lua_State* L);
     static int lua_SaveMap(lua_State* L);
     static int lua_LoadMap(lua_State* L);
     static int lua_NewMap(lua_State* L);

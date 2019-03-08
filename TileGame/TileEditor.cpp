@@ -144,7 +144,7 @@ bool TileEditor::Initialize()
                 // search entire entity list for mouse collision
                 unsigned short foundID = tileMap_->GetEntityIDAtLocation(
                     clickedX - cameraX_, clickedY - cameraY_);
-                if(foundID != INVALID_ENTITY_ID)
+                if(foundID != ENTITY_LOCATION::INVALID_ENTITY_ID)
                 {
                     UpdateEntitySelection(foundID);
                     clickAction_ = CLICK_ACTION::NONE;
@@ -179,7 +179,7 @@ bool TileEditor::Initialize()
                 float freq=0.f, ch=0.f;
                 unsigned short foundID = tileMap_->GetMobTypeIDAtLocation(clickedX - cameraX_, 
                     clickedY - cameraY_, freq, ch);
-                if(foundID != INVALID_MOBTYPE_ID)
+                if(foundID != MOBSPAWNER_LOCATION::INVALID_MOBTYPE_ID)
                 {
                     UpdateSpawnerSelection(foundID, freq, ch);
                     clickAction_ = CLICK_ACTION::NONE;
@@ -392,8 +392,8 @@ void TileEditor::UpdateMapName(const std::string& name)
 
 void TileEditor::SetupSelection(int index)
 {
-    ENTITY_TYPE et = tileMap_->GetEntityType(index);
-    if(et.name == nullptr)
+    EntityType et = tileMap_->GetEntityType(index);
+    if(et.name == "")
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
                 "%s: Invalid entity type index %d", __FUNCTION__, index);
@@ -497,13 +497,19 @@ void TileEditor::UpdateSpawnerSelection(int index, float freq, float chance)
     }
 }
 
-int TileEditor::lua_SaveMap(lua_State* L)
+TileEditor* TileEditor::GetTileEditorObject(lua_State* L)
 {
     // get TileEditor
     lua_pushstring(L, "TileEditor");
     lua_gettable(L, LUA_REGISTRYINDEX);
     TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
     lua_pop(L, 1);
+    return te;
+}
+
+int TileEditor::lua_SaveMap(lua_State* L)
+{
+    TileEditor* te = GetTileEditorObject(L);
 
     const char* path = luaL_checkstring(L, 1);
     te->tileMap_->SaveToFile(path);
@@ -513,11 +519,7 @@ int TileEditor::lua_SaveMap(lua_State* L)
 
 int TileEditor::lua_LoadMap(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     const char* path = luaL_checkstring(L, 1);
     te->CleanupEntities();
@@ -530,11 +532,7 @@ int TileEditor::lua_LoadMap(lua_State* L)
 // tileWidth, tileHeight, tilesetPath, mapWidth, mapHeight
 int TileEditor::lua_NewMap(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     int tileWidth = (int)lua_tonumber(L, 1);
     int tileHeight = (int)lua_tonumber(L, 2);
@@ -551,11 +549,7 @@ int TileEditor::lua_NewMap(lua_State* L)
 
 int TileEditor::lua_FillWithSelection(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     te->tileMap_->FillWithTile({(unsigned short)te->selectedIX_,(unsigned short)te->selectedIY_}, 
             te->selectedLayer_);
@@ -565,11 +559,7 @@ int TileEditor::lua_FillWithSelection(lua_State* L)
 
 int TileEditor::lua_SetSelectedLayer(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     int layer = (int)lua_tonumber(L, 1) == 0 ? 0 : 1;
     te->selectedLayer_ = layer;
@@ -579,11 +569,7 @@ int TileEditor::lua_SetSelectedLayer(lua_State* L)
 
 int TileEditor::lua_SetCollisionLayer(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     bool toggle = lua_toboolean(L, 1);
     te->collisionLayerSelected_ = toggle;
@@ -593,11 +579,7 @@ int TileEditor::lua_SetCollisionLayer(lua_State* L)
 
 int TileEditor::lua_GetScriptPath(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     std::string scriptPath = te->tileMap_->GetScriptPath();
     lua_pushstring(L, scriptPath.c_str());
@@ -607,11 +589,7 @@ int TileEditor::lua_GetScriptPath(lua_State* L)
 
 int TileEditor::lua_SetScriptPath(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     const char* scriptPath = lua_tostring(L, 1);
     te->tileMap_->SetScriptPath(scriptPath);
@@ -622,11 +600,7 @@ int TileEditor::lua_SetScriptPath(lua_State* L)
 // TileEditor_PlaceEntity(iIndex)
 int TileEditor::lua_PlaceEntity(lua_State* L)
 {
-    // get TileEditor
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     int index = (int)lua_tonumber(L, 1);
     te->entityID_ = index;
@@ -637,10 +611,7 @@ int TileEditor::lua_PlaceEntity(lua_State* L)
 
 int TileEditor::lua_RemoveEntity(lua_State* L)
 {
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     int index = (int)lua_tonumber(L, 1);
     te->entityID_ = index;
@@ -651,10 +622,7 @@ int TileEditor::lua_RemoveEntity(lua_State* L)
 
 int TileEditor::lua_SelectEntity(lua_State* L)
 {
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
 
     te->clickAction_ = CLICK_ACTION::SELECTING_ENTITY;
     return 0;
@@ -663,10 +631,8 @@ int TileEditor::lua_SelectEntity(lua_State* L)
 // lua : PlaceSpawner(index, freq, chance)
 int TileEditor::lua_PlaceSpawner(lua_State* L)
 {
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
+
     int index = (int)lua_tointeger(L, 1);
     float freq = (float)lua_tonumber(L, 2);
     float chance = (float)lua_tonumber(L, 3);
@@ -679,10 +645,8 @@ int TileEditor::lua_PlaceSpawner(lua_State* L)
 // lua : RemoveSpawner(index)
 int TileEditor::lua_RemoveSpawner(lua_State* L)
 {
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
+
     int index = (int)lua_tointeger(L, 1);
     te->mobSpawnerID_ = index;
     te->clickAction_ = CLICK_ACTION::REMOVING_SPAWNER;
@@ -691,10 +655,8 @@ int TileEditor::lua_RemoveSpawner(lua_State* L)
 
 int TileEditor::lua_SelectSpawner(lua_State* L)
 {  
-    lua_pushstring(L, "TileEditor");
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    TileEditor* te = (TileEditor*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    TileEditor* te = GetTileEditorObject(L);
+
     te->clickAction_ = CLICK_ACTION::SELECTING_SPAWNER;
     return 0;
 }

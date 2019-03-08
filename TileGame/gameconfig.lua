@@ -25,7 +25,7 @@ BASE_MOB_EXP = 10
 -- the amount of experience per mob's level given by killing a non-elite mob
 BASE_MOB_EXP_SCALE = 1.25
 -- the experience penalty for killing lower level mobs per level difference
-MOB_EXP_PENALTY = 0.9
+MOB_EXP_PENALTY = 0.8
 
 -- Entries for all possible inventory items -----------------------------------
 -------------------------------------------------------------------------------

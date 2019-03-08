@@ -53,6 +53,8 @@ public:
     void GetCollisionBox(float &left, float& top, float &right, float &bottom);
     // return true if collision box is valid for checking anything
     bool HasValidCollisionBox();
+    // reverse movement based on time
+    void ReverseMovement(float dtime);
 protected:
     int width_ = 0, height_ = 0;
     ogl::Texture* anim0_;

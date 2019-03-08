@@ -30,16 +30,23 @@
 class BattleSystem
 {
 public:
+    // ctor
     BattleSystem();
+    // dtor
     virtual ~BattleSystem();
+    // Adds a mob to the list of in-combat mobs if mob not already in list
     void AddMob(MobSprite* mobSprite);
+    // Removes a mob from the combat list. 
     void RemoveMob(MobSprite* mobSprite);
+    // Sets the player sprite
     void AddPlayer(PlayerSprite* playerSprite);
     // returns combat log result
     std::string UsePlayerAbility(const std::string& abilityName, Target& target);
     // returns array of combat log results
     std::vector<std::string> CalculateMoves();
 private:
+    // list of all mobs engaged in combat with player
     std::vector<MobSprite*> mobSprites_;
+    // the player
     PlayerSprite* playerSprite_;
 };

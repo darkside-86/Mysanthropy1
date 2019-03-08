@@ -110,6 +110,10 @@ private:
     void SetupRenderList();
     // Perform one pass of a sort of sprites by Y value to emulate orthogonal view
     void RenderSortPass();
+    // Check tile collision on a sprite
+    void CheckTileCollision(Sprite* sprite);
+    // Check mobs for death and loot
+    void CheckMobDeaths();
     // Removes a sprite from the render list.
     void RemoveSpriteFromRenderList(const Sprite* sprite);
     // Check to see if a sprite is colliding with the collision box of an entity

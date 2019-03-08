@@ -282,10 +282,6 @@ void TileGame::Update(float dtime)
         uiSystem_->PlayerUnitFrame_SetHealth(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(), 
             playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
 
-        // tile collision detection.
-        float left, top, right, bottom;
-        playerSprite_->GetCollisionBox(left, top, right, bottom);
-
         // update entities.
         for(auto each : loadedEntities_)
         {
@@ -300,30 +296,17 @@ void TileGame::Update(float dtime)
         // check casting and update cast bar
         CheckHarvestCast(dtime);
 
-        // check each corner of sprite for being in a solid tile
-        bool collision = false;
-        int ix = (int)(left / (float)tileMap_->GetTileSet()->GetTileWidth());
-        int iy = (int)(top / (float)tileMap_->GetTileSet()->GetTileHeight());
-        if(tileMap_->GetCollisionData(ix, iy))  collision = true;
-        ix = (int)(right / (float)tileMap_->GetTileSet()->GetTileWidth());
-        iy = (int)(top / (float)tileMap_->GetTileSet()->GetTileHeight());
-        if(tileMap_->GetCollisionData(ix, iy))  collision = true;
-        ix = (int)(left / (float)tileMap_->GetTileSet()->GetTileWidth());
-        iy = (int)(bottom / (float)tileMap_->GetTileSet()->GetTileHeight());
-        if(tileMap_->GetCollisionData(ix, iy))  collision = true;
-        ix = (int)(right / (float)tileMap_->GetTileSet()->GetTileWidth());
-        iy = (int)(bottom / (float)tileMap_->GetTileSet()->GetTileHeight());
-        if(tileMap_->GetCollisionData(ix, iy))  collision = true;
-        // on collision just reset the sprite position. TODO: something a bit smoother
-        if(collision) 
-            playerSprite_->Update(-dtime);
-        // test player against entity collision
-        else if(EntityCollisionCheck(playerSprite_))
-            playerSprite_->Update(-dtime);
+        // check collisions with tiles
+        CheckTileCollision(playerSprite_);
+        CheckTileCollision(playerSprite_);
+        // check entity collisions
+        if (EntityCollisionCheck(playerSprite_))
+            playerSprite_->ReverseMovement(dtime);
         // update mobs
-        for(auto it : mobSprites_)
+        for(auto mob : mobSprites_)
         {
-            it->Update(dtime);
+            mob->Update(dtime);
+            CheckTileCollision(mob);
         }
         // update mob spawners.
         for(auto it : mobSpawners_)
@@ -382,52 +365,7 @@ void TileGame::Update(float dtime)
         }
 
         // pass through once to check for dead mobs and give EXP based on scale. TODO: loot table
-        auto mobIt = mobSprites_.begin();
-        for(;mobIt != mobSprites_.end(); ++mobIt)
-        {
-            if((*mobIt)->GetCombatUnit().GetCurrentHealth() == 0)
-            {
-                if((*mobIt)->KilledByPlayer())
-                {
-                    int level = (*mobIt)->GetCombatUnit().GetStatSheet().GetLevel();
-                    int BASE_MOB_EXP;
-                    configuration_.GetVar("BASE_MOB_EXP", BASE_MOB_EXP);
-                    float BASE_MOB_EXP_SCALE;
-                    configuration_.GetVar("BASE_MOB_EXP_SCALE", BASE_MOB_EXP_SCALE);
-                    float mult = pow(BASE_MOB_EXP_SCALE, (float)(level - 1));
-                    int expEarned = (int)(mult * BASE_MOB_EXP);
-                    bool dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(expEarned);
-                    uiSystem_->WriteLineToConsole(std::string("You gained ") + std::to_string(expEarned) +
-                        " exp!", 1.0f, 0.0f, 1.0f, 1.0f);
-                    UpdatePlayerExperience(dinged);
-                    // check loot table for possible loot
-                    const auto& lootTable = (*mobIt)->GetLootTable();
-                    for(const auto& entry : lootTable)
-                    {
-                        bool itemDrops = engine::GameEngine::Get().PercentChance(entry.chance);
-                        if(itemDrops)
-                        {
-                            uiSystem_->WriteLineToConsole(std::string("You looted ") +
-                                std::to_string(entry.count) + " " + entry.item);
-                            inventory_.AddItemByName(entry.item, entry.count);
-                            uiSystem_->BuildInventory();
-                        }
-                    }
-                }
-                break;
-            }
-        }
-        if(mobIt != mobSprites_.end())
-        {
-            RemoveSpriteFromRenderList(*mobIt);
-            if(target_.GetTargetSprite() == (Sprite*)(*mobIt))
-            {
-                ClearTarget();
-            }
-            battleSystem_->RemoveMob(*mobIt);
-            delete *mobIt;
-            mobSprites_.erase(mobIt);
-        }
+        CheckMobDeaths();
 
         // if player died reset to spawn point for now
         if(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth() == 0)
@@ -456,7 +394,7 @@ void TileGame::Update(float dtime)
         camera_.x = playerPos.x - scrW / 2.f;
         camera_.y = playerPos.y - scrH / 2.f;
 
-        // TODO: bound camera to map area if map dimensions are bigger than screen
+        // TODO: bound camera to map area if map dimensions are bigger than screen else center map
         /*if(camera_.x < 0.0f)
             camera_.x = 0.0f;
         if(camera_.y < 0.0f)
@@ -635,6 +573,7 @@ void TileGame::LoadGame()
     time_t currentTime = time(nullptr);
     time_t timeStamp = saveData_.GetTimeStamp();
     time_t secondsElapsed = currentTime - timeStamp;
+    // TODO: format this time string
     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
         "%ld seconds since last file save", (long)secondsElapsed);
 
@@ -816,6 +755,130 @@ void TileGame::RenderSortPass()
     }
 }
 
+void TileGame::CheckTileCollision(Sprite* sprite)
+{
+    auto pos = sprite->GetPosition();
+    float left, top, right, bottom;
+    sprite->GetCollisionBox(left, top, right, bottom);
+    float tileWidth = (float)tileMap_->GetTileSet()->GetTileWidth();
+    float tileHeight = (float)tileMap_->GetTileSet()->GetTileHeight();
+    //  check top left of sprite
+    int ix = (int)(left / tileWidth);
+    int iy = (int)(top / tileHeight);
+    // is sprite's top left in a solid tile? check bottom right point of tile
+    if(tileMap_->GetCollisionData(ix, iy))
+    {
+        float tileRight = (float)ix * tileWidth + tileWidth;
+        float tileBottom = (float)iy * tileHeight + tileHeight;
+        if(tileBottom - top >= tileRight - left) // x axis movement is smaller so do that
+            pos.x += tileRight - left;
+        else   // move along y axis because it's smaller difference
+            pos.y += tileBottom - top;
+        sprite->SetPosition(pos);
+    }
+    // check bottom left corner of sprite
+    ix = (int)(left / tileWidth);
+    iy = (int)(bottom / tileHeight);
+    // is sprite's bottom left in a solid tile? check top right of tile
+    if(tileMap_->GetCollisionData(ix, iy))
+    {
+        float tileRight = (float)ix * tileWidth + tileWidth;
+        float tileTop = (float)iy * tileHeight + 0;
+        if(tileRight - left >= bottom - tileTop) // y is smaller
+            pos.y -= bottom - tileTop; // move above tile
+        else 
+            pos.x += tileRight - left; // move right
+        sprite->SetPosition(pos);
+    }
+    // check top right of sprite
+    ix = (int)(right / tileWidth);
+    iy = (int)(top / tileHeight);
+    // is sprite's top right in a solid tile? check bottom left of tile
+    if(tileMap_->GetCollisionData(ix, iy))
+    {
+        float tileLeft = (float)ix * tileWidth + 0;
+        float tileBottom = (float)iy * tileHeight + tileHeight;
+        if(tileBottom - top >= right - tileLeft) // x is smaller
+            pos.x -= right - tileLeft; // so move left
+        else 
+            pos.y -= tileBottom - top; // move up
+        sprite->SetPosition(pos);
+    }
+    // check top right of sprite
+    ix = (int)(right / tileWidth);
+    iy = (int)(top / tileHeight);
+    // is sprite's top right in a solid tile? check bottom left of tile
+    if(tileMap_->GetCollisionData(ix, iy))
+    {
+        float tileLeft = (float)ix * tileWidth + 0;
+        float tileBottom = (float)iy * tileHeight + tileHeight;
+        if( right - tileLeft >= tileBottom - top) // y is smaller
+            pos.y += tileBottom - top;
+        else  
+            pos.x -= right - tileLeft;
+        sprite->SetPosition(pos);
+    }
+}
+
+void TileGame::CheckMobDeaths()
+{
+    auto mobIt = mobSprites_.begin();
+    for(;mobIt != mobSprites_.end(); ++mobIt)
+    {
+        if((*mobIt)->GetCombatUnit().GetCurrentHealth() == 0)
+        {
+            if((*mobIt)->KilledByPlayer())
+            {
+                int level = (*mobIt)->GetCombatUnit().GetStatSheet().GetLevel();
+                int levelDiff = playerSprite_->GetPlayerCombatUnit().GetStatSheet().GetLevel() - level;
+                int BASE_MOB_EXP;
+                configuration_.GetVar("BASE_MOB_EXP", BASE_MOB_EXP);
+                float BASE_MOB_EXP_SCALE;
+                configuration_.GetVar("BASE_MOB_EXP_SCALE", BASE_MOB_EXP_SCALE);
+                float mult = pow(BASE_MOB_EXP_SCALE, (float)(level - 1));
+                int expEarned = (int)(mult * BASE_MOB_EXP);
+                // apply level difference penalty if mob is lower level
+                if(levelDiff > 0)
+                {
+                    float MOB_EXP_PENALTY;
+                    configuration_.GetVar("MOB_EXP_PENALTY", MOB_EXP_PENALTY);
+                    float penaltyMult = pow(MOB_EXP_PENALTY, levelDiff);
+                    expEarned = (int)((float)expEarned * penaltyMult);
+                }
+                bool dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(expEarned);
+                uiSystem_->WriteLineToConsole(std::string("You gained ") + std::to_string(expEarned) +
+                    " exp!", 1.0f, 0.0f, 1.0f, 1.0f);
+                UpdatePlayerExperience(dinged);
+                // check loot table for possible loot
+                const auto& lootTable = (*mobIt)->GetLootTable();
+                for(const auto& entry : lootTable)
+                {
+                    bool itemDrops = engine::GameEngine::Get().PercentChance(entry.chance);
+                    if(itemDrops)
+                    {
+                        uiSystem_->WriteLineToConsole(std::string("You looted ") +
+                            std::to_string(entry.count) + " " + entry.item);
+                        inventory_.AddItemByName(entry.item, entry.count);
+                        uiSystem_->BuildInventory();
+                    }
+                }
+            }
+            break;
+        }
+    }
+    if(mobIt != mobSprites_.end())
+    {
+        RemoveSpriteFromRenderList(*mobIt);
+        if(target_.GetTargetSprite() == (Sprite*)(*mobIt))
+        {
+            ClearTarget();
+        }
+        battleSystem_->RemoveMob(*mobIt);
+        delete *mobIt;
+        mobSprites_.erase(mobIt);
+    }
+}
+
 void TileGame::RemoveSpriteFromRenderList(const Sprite* sprite)
 {
     auto it = std::find_if(renderList_.begin(), renderList_.end(), [sprite](const Sprite* spr){
@@ -946,7 +1009,10 @@ void TileGame::RemoveEntityFromLoaded(Entity* ent)
 void TileGame::CheckHarvestCast(float dtime)
 {
     if(!harvesting_)
+    {
+        uiSystem_->ToggleCastBar(false);
         return;
+    }
 
     currentCastTime_ += dtime;
     uiSystem_->SetCastBarValue(currentCastTime_ / maxCastTime_);
