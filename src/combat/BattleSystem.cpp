@@ -103,7 +103,7 @@ namespace combat
     {
         std::vector<std::string> combatLogEntries;
         // iterate through mobs and either attempt to move close enough to player for chosen attack
-        //  or use the attack. Mobs will always choose "attack" for now
+        //  or use the attack.
         game::MobSprite* markedForDeletion = nullptr;
         for(auto eachMob : mobSprites_)
         {
@@ -112,26 +112,30 @@ namespace combat
             {
                 markedForDeletion = eachMob;
             }
-            // check range of attack
-            else if(!eachMob->GetCombatUnit().AbilityInRange((CombatUnit)playerSprite_->GetPlayerCombatUnit(), "attack"))
-            {
-                // if out of range set velocity to move toward player.
-                eachMob->SetVelocity(playerSprite_->GetPosition() - eachMob->GetPosition());
-            }
             else 
             {
-                eachMob->SetVelocity({0.0f, 0.0f, 0.0f}); // no use moving if in range
-                // in range so check to see if global cooldown is off
-                if(eachMob->GetCombatUnit().GlobalCooldownIsOff())
+                // pick a random attack to try to use
+                const auto& ab = PickRandomAbility(eachMob->GetCombatUnit());
+                // if out of range set velocity to move toward player.
+                if(!eachMob->GetCombatUnit().AbilityInRange(playerSprite_->GetPlayerCombatUnit(), ab.name))
                 {
-                    // GCD is ready so check ability cooldown
-                    if(eachMob->GetCombatUnit().AbilityIsReady("attack"))
+                    eachMob->SetVelocity(playerSprite_->GetPosition() - eachMob->GetPosition());
+                }
+                else // check to see if random ability and GCD are off CD and use them if so
+                {
+                    eachMob->SetVelocity({0.0f, 0.0f, 0.0f}); // no use moving if in range
+                    // in range so check to see if global cooldown is off
+                    if(eachMob->GetCombatUnit().GlobalCooldownIsOff())
                     {
-                        // all conditions are met so use offensive attack on player
-                        std::string combatLogEntry;
-                        eachMob->GetCombatUnit().UseAbility(playerSprite_->GetPlayerCombatUnit(), false, 
-                            "attack", combatLogEntry);
-                        combatLogEntries.push_back(combatLogEntry);
+                        // GCD is ready so check ability cooldown
+                        if(eachMob->GetCombatUnit().AbilityIsReady(ab.name))
+                        {
+                            // all conditions are met so use offensive attack on player
+                            std::string combatLogEntry;
+                            eachMob->GetCombatUnit().UseAbility(playerSprite_->GetPlayerCombatUnit(), false, 
+                                ab.name, combatLogEntry);
+                            combatLogEntries.push_back(combatLogEntry);
+                        }
                     }
                 }
             }
@@ -156,6 +160,14 @@ namespace combat
             playerSprite_->GetPlayerCombatUnit().SetInCombat(false);
         // TODO: one pass of removing a mob from combat if distance from origin is greater than leash
         return combatLogEntries;
+    }
+
+    const Ability BattleSystem::PickRandomAbility(CombatUnit& unit)
+    {
+        const auto& abilityTable = unit.GetAbilities();
+        const std::vector<std::pair<std::string, Ability> > listView(abilityTable.begin(), abilityTable.end());
+        auto &rng = engine::GameEngine::Get().GetRNG();
+        return listView[rng() % listView.size()].second;
     }
 
 }

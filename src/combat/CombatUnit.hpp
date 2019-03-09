@@ -72,6 +72,8 @@ namespace combat
         // get/set in combat
         inline bool IsInCombat() const { return inCombat_; }
         inline void SetInCombat(bool b) { inCombat_ = b; }
+        // get abilities
+        inline const AbilityTable& GetAbilities() const { return abilities_; }
     private:
         //  name of unit for combat log
         std::string name_;

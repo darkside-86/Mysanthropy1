@@ -86,6 +86,7 @@ namespace combat
         AttributeInput attribute = AttributeInput::NIL;
     };
 
+    enum class WeaponRequired { Unarmed, Sword, Hammer, Axe, Staff }; // TODO: etc...
     // defines the output of the formula. Can be just flat damage or healing or applying a de/buff
     //  or even both. Stack allocated "polymorphism" ftwwtf
     class Output
@@ -121,6 +122,7 @@ namespace combat
         std::string effectName = ""; // optional for de/buffs, H/Dots
         std::string itemCostName = ""; // mostly unused but can be set
         int itemCostCount = 0; // mostly unused but can be set
+        std::vector<WeaponRequired> requiredWeapons;
         // C++ can't upcast inheritance trees of objects by value so...
         union 
         {
@@ -143,7 +145,6 @@ namespace combat
         };
     };
 
-    enum class WeaponRequired { Unarmed, Sword, Hammer, Axe, Staff }; // TODO: etc...
     // a formula can be any number of expression -> output
     class Expression
     { public:
@@ -156,6 +157,8 @@ namespace combat
         School outputSchool = School::Physical;
         std::vector<WeaponRequired> weaponsRequired;
         std::string outputName = "";
+        std::string outputItemRequired = "";
+        int outputItemCount = 0;
         // generic data to create each output
         int duration = 0; // good for buff or dots
         float multiplier = 1.0f; // buff
@@ -183,7 +186,7 @@ namespace combat
     // *** OUTPUT TYPE *** indicates whether flat damage or healing, DOT/HOT, buff/debuff.
     //      always comes after specifier in formula (it is the second char)
     //      '<' for flat damage, '>' for DOT/HOT, '?' for buff/debuff
-    // *** WEAPON REQUIRED *** indicated by '~' and then one of the following chars for the weapon
+    // *** WEAPON REQUIRED *** opt. indicated by '~' and then one of the following chars for the weapon
     //      h - hammer, f - unarmed/fist weapon, s - sword, a - axe, t - staff. b - bow, g - gun
     //      can be or'd together such as ~sa for sword OR axe requirement.
     // *** BUFF/DEBUFF OR DOT/HOT NAME *** optional, specified as string in {}

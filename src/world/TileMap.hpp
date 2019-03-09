@@ -23,7 +23,7 @@
 
 #include <lua/lua.hpp>
 
-#include "combat/CombatAbilityLists.hpp"
+#include "combat/AbilityTables.hpp"
 #include "game/Entity.hpp"
 #include "game/MobSpawner.hpp"
 #include "ogl/Program.hpp"

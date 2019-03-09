@@ -23,7 +23,7 @@
 
 #include <glm/glm.hpp>
 
-#include "combat/CombatAbilityLists.hpp"
+#include "combat/AbilityTables.hpp"
 #include "combat/CombatUnit.hpp"
 #include "Configuration.hpp"
 #include "engine/GameEngine.hpp"

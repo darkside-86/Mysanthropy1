@@ -17,6 +17,8 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
+#include "combat/AbilityTables.hpp"
+#include "engine/GameEngine.hpp"
 #include "PlayerSprite.hpp"
 
 namespace game
@@ -25,17 +27,21 @@ namespace game
     PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy) 
             : Sprite(texture,w,h), isBoy_(isBoy)
     {
-        combat::AbilityTable playerAbilities;
-        /*combat::Expression expr(combat::Output::Type::Direct, combat::Output::Target::Enemy,  
-            combat::School::Physical);
-        expr.terms = { {combat::NumericRange(1.0f, 1.0f), combat::AttributeInput::MAP }};*/
+        /*combat::AbilityTable playerAbilities;
         combat::Formula playerAttackFormula("!<(1,1.1)MAP,Physical;");
-        // playerAttackFormula.expressions.push_back(expr);
-        // a simple test ability. TODO: a data-driven attack system
-        playerAbilities["attack"] = combat::Ability(0, 32, true, 1.0f, false, combat::Ability::CastType::Instant,
-            0.0f, playerAttackFormula); 
-        combatUnit_ = new combat::PlayerCombatUnit(level, exp, playerAbilities);
-
+        // a simple test ability. TODO: read player abilities from a lua file. And level reqs for abilities
+        playerAbilities["attack"] = combat::Ability("attack", 0, 32, 
+            true, 1.0f, false, combat::Ability::CastType::Instant,
+            0.0f, playerAttackFormula);*/
+        
+        const auto& lists = combat::AbilityTables::Get().GetLists();
+        const auto& found = lists.find("player_survivalist");
+        if(found == lists.end())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
+                "Unable to locate player abilities!");
+        }
+        combatUnit_ = new combat::PlayerCombatUnit(level, exp, found->second);
     }
 
     PlayerSprite::~PlayerSprite()

@@ -949,7 +949,7 @@ namespace world
         TileMap* tileMap = GetTileMapObject(L);
         
         const char* abilityListName = lua_tostring(L, 1);
-        const auto& lists = combat::CombatAbilityLists::Get().GetLists();
+        const auto& lists = combat::AbilityTables::Get().GetLists();
         const auto found = lists.find(abilityListName);
         if(found != lists.end())
         {
@@ -957,8 +957,8 @@ namespace world
         }
         else 
         {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
-                "%s: CombatAbilityList not set because it (%s) wasn't found", __FUNCTION__, abilityListName);
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
+                "%s: AbilityTable not set because it (%s) wasn't found", __FUNCTION__, abilityListName);
         }
         return 0;
     }

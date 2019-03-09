@@ -29,10 +29,13 @@ namespace combat
     { public:
         enum class CastType { Instant, Casted, Channeled };
         // convenient constructor function
-        Ability(int mr, int mxr, bool of, float cd, bool ong, CastType ct, float ctm, const Formula& f)
-            : minRange(mr), maxRange(mxr), offensive(of), cooldown(cd), onGCD (ong), castType(ct),
-              castTime(ctm), formula(f) {}
+        Ability(const std::string& nm, int mr, int mxr, bool of, float cd, bool ong, 
+                CastType ct, float ctm, const Formula& f)
+          : name(nm), minRange(mr), maxRange(mxr), offensive(of), cooldown(cd), onGCD (ong), 
+            castType(ct), castTime(ctm), formula(f) {}
         Ability() {}
+        // name. Redundant but super-helpful
+        std::string name = "";
         // the minimum distance in logical pixels for the ability to be performed on a unit
         int minRange = 0;
         // the maximum distance allowed for an ability to be performed

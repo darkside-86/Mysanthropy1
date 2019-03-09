@@ -89,8 +89,8 @@ set (
 
 add_executable ( 
     TileMapEditor
+        combat/AbilityTables.cpp
         combat/AttributeSheet.cpp
-        combat/CombatAbilityLists.cpp
         combat/Formula.cpp
         combat/CombatUnit.cpp
         editor/TileEditor.cpp
@@ -108,9 +108,9 @@ add_executable (
 
 add_executable ( 
     RPG
+        combat/AbilityTables.cpp
         combat/AttributeSheet.cpp
         combat/BattleSystem.cpp
-        combat/CombatAbilityLists.cpp
         combat/CombatUnit.cpp
         combat/Formula.cpp
         combat/PlayerCombatUnit.cpp

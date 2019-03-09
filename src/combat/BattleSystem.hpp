@@ -47,6 +47,8 @@ namespace combat
         std::string UsePlayerAbility(const std::string& abilityName, game::Target& target);
         // returns array of combat log results
         std::vector<std::string> CalculateMoves();
+        // pick random attack
+        const Ability PickRandomAbility(CombatUnit& unit);
     private:
         // list of all mobs engaged in combat with player
         std::vector<game::MobSprite*> mobSprites_;

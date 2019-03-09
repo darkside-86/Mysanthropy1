@@ -182,23 +182,46 @@ namespace combat
                 data.push_back({term.coefficient.Next(), term.variable});
             }
         }
+        Output o;        
+        o.target = outputTarget;
+        o.school = outputSchool;
+        o.type = outputType;
+        o.itemCostName = outputItemRequired;
+        o.itemCostCount = outputItemCount;
+        for(const auto& wpn : weaponsRequired)
+        {
+            o.requiredWeapons.push_back(wpn);
+        }
         // the expression describes the type of output to create and return.
         switch(outputType)
         {
         case Output::Type::Direct:
-            return Output::Direct(outputTarget, outputSchool, (int)sum);
+            o.direct.amount = (int)sum;
             break;
         case Output::Type::OverTime:
-            return Output::OverTime(outputTarget, outputSchool, (int)sum, duration);
+            // return Output::OverTime(outputTarget, outputSchool, (int)sum, duration);
+            o.overTime.amount = (int)sum;
+            o.overTime.duration = duration;
             break;
         case Output::Type::StatusEffect:
-            return Output::StatusEffect(outputTarget, outputSchool, data);
+            // return Output::StatusEffect(outputTarget, outputSchool, data);
+            o.statusEffect.duration = duration;
+            for(int i=0; i < data.size(); ++i)
+            {
+                if(i >= Output::MAX_STATUS_EFFECTS)
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                        "Ran out of status effect slots for output");
+                    break;
+                }
+                o.statusEffect.data[i] = data[i];
+            }
             break;
         default:
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
                 "%s: Invalid/no output specified for expression result", __FUNCTION__);
         }
-        return *(Output*)nullptr; // never reached due to FATAL but here to satisfy compiler
+        return o;
     }
 
     // a basic tokenizer. Formula handles the meaning of each token as well as validty of numerical
@@ -235,7 +258,7 @@ namespace combat
 
         static bool IsCharName(const char ch)
         {
-            return (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch == ' ');
+            return (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch == ' ' || ch == '_');
         }
 
         char GetNextChar()
@@ -424,8 +447,6 @@ namespace combat
             }
             
             // Get the coefficient var pairs separated by +
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
-                "Compiler: Token right before loop is `%s'", token.c_str());
             while(token != "," && token != ";" && token != "")
             {
                 // can't create the numeric range until we get both lower and upper
@@ -434,8 +455,6 @@ namespace combat
                 // try to read a '(' or single number
                 if(token == "(")
                 {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
-                        "Compiler: Got to the '('");
                     // parse "(lower,upper)" for the numeric range
                     token = parser.GetNextToken();
                     if(!StringIsAValidNumber(token))
@@ -444,8 +463,6 @@ namespace combat
                             "%s: Invalid number `%s' for lower range", __FUNCTION__, token.c_str());
                     }
                     lower = (float)atof(token.c_str());
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
-                        "Compiler: Lower=%f", lower);
                     token = parser.GetNextToken(); 
                     // can either be , or ) to indicate lower=upper
                     if(token == ",")
@@ -500,7 +517,10 @@ namespace combat
                 // now we reach a '+' indicating to continue this loop to read another term or the while condition
                 // will break upon finding a ',' for the school or ';' to end the expression
                 if(token == "+")
+                {
+                    token = parser.GetNextToken();
                     continue;
+                }
             }
             // check to see if a ',' school indicator was found
             if(token == ",")
@@ -511,7 +531,7 @@ namespace combat
                 token = parser.GetNextToken();
                 // expect a ';' immediately after school. indicated end of expression. 
             }
-            // a duration can go last after school
+            // a duration can go after school
             if(token == ":")
             {
                 token = parser.GetNextToken();
@@ -523,6 +543,21 @@ namespace combat
                 // parser does not distinguish between ints and floats so just cast to int
                 currentExpression.duration = (int)atof(token.c_str());
                 // read the next token (hopefully a ';')
+                token = parser.GetNextToken();
+            }
+            // an optional item consumption field is last
+            if(token == "[")
+            {
+                token = parser.GetNextToken();
+                if(!StringIsAValidNumber(token))
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
+                        "%s: Invalid item count `%s' for item require", __FUNCTION__, token.c_str());
+                }
+                currentExpression.outputItemCount = (int)atof(token.c_str());
+                token = parser.GetNextToken();
+                // the next token should be a string we hope, representing the item required
+                currentExpression.outputItemRequired = token;
                 token = parser.GetNextToken();
             }
             if(token == ";") 

@@ -1,4 +1,4 @@
-// CombatAbilityLists.hpp
+// AbilityTables.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -21,21 +21,29 @@
 #include <string>
 #include <unordered_map>
 
+#include <lua/lua.hpp>
+
 #include "CombatUnit.hpp"
 
 namespace combat
 {
 
-    // TODO: DEPRECATE in favor of Expression class built from Lua input
-    class CombatAbilityLists
+    // List of ability tables read from Lua file
+    class AbilityTables
     {
     public:
-        static const CombatAbilityLists& Get();
+        static const AbilityTables& Get();
         const std::unordered_map<std::string, AbilityTable>& GetLists() const { return lists_; }
     private:    
-        CombatAbilityLists();
-        ~CombatAbilityLists();
+        AbilityTables();
+        virtual ~AbilityTables();
+
+        static int lua_Ability(lua_State* L);
+        static int lua_AbilityTable(lua_State* L);
+        
+        AbilityTable allAbilities_;
         std::unordered_map<std::string, AbilityTable> lists_;
+        lua_State* script_;
     };
 
 }

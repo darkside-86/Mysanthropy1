@@ -95,11 +95,6 @@ namespace game
                         showingInventory_ = !showingInventory_;
                         uiSystem_->ShowInventory(showingInventory_);
                         return;
-                    case SDLK_1:
-                        // attempt to use "attack" on target.
-                        log = battleSystem_->UsePlayerAbility("attack", target_);
-                        uiSystem_->WriteLineToConsole(log);
-                        return;
                     case SDLK_ESCAPE:
                         uiSystem_->ShowMMPopup(true);
                         return;
@@ -171,30 +166,42 @@ namespace game
                     );
                     if(mobFound != mobSprites_.end())
                     {
-                        // Set up the target_ object data
-                        auto aggro = (*mobFound)->GetAggroType();
-                        Target::TARGET_TYPE tt = Target::TARGET_TYPE::FRIENDLY; // default value
-                        switch(aggro) 
-                        { 
-                            case MobType::AGGRO_TYPE::HOSTILE: tt=Target::TARGET_TYPE::HOSTILE; break; 
-                            case MobType::AGGRO_TYPE::NEUTRAL: tt=Target::TARGET_TYPE::NEUTRAL; break;
-                        }
-                        target_.SetTargetSprite(*mobFound, tt, Target::SPRITE_TYPE::MOBSPR);
-                        harvesting_ = false; // make sure harvest is interrupted upon aquiring new target
-                        // Set the unit frame data.
-                        //  not possible to use existing enums due to circular dependencies generating
-                        //  arcane compile errors so we just send strings as argument
-                        uiSystem_->TargetUnitFrame_SetNameAndLevel((*mobFound)->GetCombatUnit().GetName(), 
-                            (*mobFound)->GetCombatUnit().GetAttributeSheet().GetLevel());
-                        std::string hostility = "friendly"; // default value
-                        switch(tt)
+                        // if we clicked a mob already being targeted, use the right hand attack on it
+                        // (or at least try to)
+                        //
+                        if((Sprite*)*mobFound == target_.GetTargetSprite())
                         {
-                            case Target::TARGET_TYPE::HOSTILE: hostility = "hostile"; break;
-                            case Target::TARGET_TYPE::NEUTRAL: hostility = "neutral"; break;
+                            std::string log = battleSystem_->UsePlayerAbility("unarmed_right", target_);
+                            uiSystem_->WriteLineToConsole(log);
                         }
-                        uiSystem_->TargetUnitFrame_SetHealth((*mobFound)->GetCombatUnit().GetCurrentHealth(), 
-                            (*mobFound)->GetCombatUnit().GetMaxHealth(), hostility);
-                        uiSystem_->TargetUnitFrame_Toggle(true);
+                        else
+                        {
+                            // Set up the target_ object data
+                            auto aggro = (*mobFound)->GetAggroType();
+                            Target::TARGET_TYPE tt = Target::TARGET_TYPE::FRIENDLY; // default value
+                            switch(aggro) 
+                            { 
+                                case MobType::AGGRO_TYPE::HOSTILE: tt=Target::TARGET_TYPE::HOSTILE; break; 
+                                case MobType::AGGRO_TYPE::NEUTRAL: tt=Target::TARGET_TYPE::NEUTRAL; break;
+                            }
+                            target_.SetTargetSprite(*mobFound, tt, Target::SPRITE_TYPE::MOBSPR);
+                            harvesting_ = false; // make sure harvest is interrupted upon aquiring new target
+                            // Set the unit frame data.
+                            //  not possible to use existing enums due to circular dependencies generating
+                            //  arcane compile errors so we just send strings as argument
+                            uiSystem_->TargetUnitFrame_SetNameAndLevel((*mobFound)->GetCombatUnit().GetName(), 
+                                (*mobFound)->GetCombatUnit().GetAttributeSheet().GetLevel());
+                            std::string hostility = "friendly"; // default value
+                            switch(tt)
+                            {
+                                case Target::TARGET_TYPE::HOSTILE: hostility = "hostile"; break;
+                                case Target::TARGET_TYPE::NEUTRAL: hostility = "neutral"; break;
+                            }
+                            uiSystem_->TargetUnitFrame_SetHealth(
+                                (*mobFound)->GetCombatUnit().GetCurrentHealth(), 
+                                (*mobFound)->GetCombatUnit().GetMaxHealth(), hostility);
+                            uiSystem_->TargetUnitFrame_Toggle(true);
+                        }
                     }
                     else
                     {
@@ -243,6 +250,13 @@ namespace game
                             ClearTarget();
                         }
                     }
+                }
+                else if(e.button == 3)
+                {
+                    // use our left hand ability on the target. (Targeting can only be done with
+                    // primary mouse button)
+                    std::string log = battleSystem_->UsePlayerAbility("unarmed_left", target_);
+                    uiSystem_->WriteLineToConsole(log);
                 }
             }
         });
