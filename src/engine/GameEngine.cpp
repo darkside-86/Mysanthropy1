@@ -123,6 +123,8 @@ namespace engine
                 {
                 case SDL_QUIT:
                     quit = true;
+                    for(auto eachListener : quitListeners_)
+                        quit = quit && eachListener(e.quit);
                     break;
                 case SDL_WINDOWEVENT:
                     if(e.window.event == SDL_WINDOWEVENT_RESIZED)

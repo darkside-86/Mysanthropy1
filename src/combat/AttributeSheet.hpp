@@ -38,26 +38,49 @@ namespace combat
         // accessor methods for displaying stats in a character sheet, not for combat calculation
         inline int GetLevel() const { return level_; }
         inline int GetStrength() const { return strength_; }
+        inline int GetAgility() const { return agility_; }
+        inline int GetIntellect() const { return intellect_; }
+        inline int GetDexterity() const { return dexterity_; }
+        inline int GetWisdom() const { return wisdom_; }
+        inline int GetKnowledge() const { return knowledge_; }
         inline int GetVitality() const { return vitality_; }
 
         // core and other attribute calculation function
         void SetLevel(int level);
 
         // derived attribute calculators
-        int GetMeleeAttackPower();
-        int GetRangedAttackPower();
-        int GetMaxHealth();
+        int GetMeleeAttackPower() const;
+        int GetRangedAttackPower() const;
+        // TODO: GetDodgeRating
+        // TODO: GetMaxMagic
+        // TODO: GetMeleeCritRating
+        // TODO: GetHitRating
+        // TODO: GetRangedCritRating
+        // TODO: GetSpellCritRating
+        // TODO: GetSpellPower
+        // TODO: GetMagicRegen (MP per second)
+        int GetMaxHealth() const;
+
+        // gear/buff only stats
+        // TODO: GetArmorRating
+        // TODO: GetMagicResistance (each school)
 
         // determines what is core or other stat
-        bool IsCoreAttribute(const Attribute attr);
+        bool IsCoreAttribute(const Attribute attr) const;
     private:
+        // indicates the level which determines base stats
         int level_;
+        // whether or not attribute sheet belongs to player
         bool player_;
+        // primary attributes (built in to character sheet)
         int strength_;
         int agility_;
+        int intellect_;
+        int dexterity_;
+        int wisdom_;
+        int knowledge_;
         int vitality_;
         std::vector<Attribute> coreAttributes_;
-        std::vector<Attribute> otherAttributes_;
     };
 
 }

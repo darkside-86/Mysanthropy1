@@ -62,6 +62,11 @@ namespace engine
         {
             mouseMotionListeners_.push_back(mml);
         }
+        // Adds an event listener for when attempt to quit is made. Callbacks return true to quit
+        inline void AddQuitListener(QuitListener ql)
+        {
+            quitListeners_.push_back(ql);
+        }
         // Returns the logical width of the game screen
         inline int GetWidth() { return width_; }
         // Returns the logical height of the game screen
@@ -107,6 +112,8 @@ namespace engine
         std::vector<MouseButtonListener> mouseButtonListeners_;
         // List of mouse motion event listeners
         std::vector<MouseMotionListener> mouseMotionListeners_;
+        // List of quit event listeners
+        std::vector<QuitListener> quitListeners_;
         // Logical dimensions of the game "screen." On PC, this is the initial non maximized window size.
         //  When the window is resized, the game scales the pixels.
         int width_, height_;

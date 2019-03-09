@@ -56,16 +56,16 @@ namespace std { template <> struct hash<game::ENT_COORDS> {
 
 namespace game
 {
-    // TileGame class. See docs/* and README.md for details.
-    class TileGame : public engine::Game 
+    // IsleGame class. See docs/* and README.md for details.
+    class IsleGame : public engine::Game 
     {
     public:
         // determines what Update and Render does
         enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
         // constructor
-        TileGame();
+        IsleGame();
         // destructor
-        ~TileGame();
+        ~IsleGame();
         // initializes the main menu UI and SDL event callbacks
         bool Initialize();
         // writes the save game to file unless game is exited at main menu
@@ -158,7 +158,7 @@ namespace game
         world::TileMap* tileMap_ = nullptr;
         // Represents the location and image of the player in the world  
         PlayerSprite* playerSprite_ = nullptr;
-        // Inventory (shared across all playable chars)
+        // Inventory (shared across playable classes)
         Inventory inventory_;
         // Places a swim filter over sprites that are swimming
         SwimFilter* swimFilter_ = nullptr;

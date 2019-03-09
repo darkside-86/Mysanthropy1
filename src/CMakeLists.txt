@@ -127,7 +127,7 @@ add_executable (
         game/Sprite.cpp
         game/SwimFilter.cpp
         game/Target.cpp
-        game/TileGame.cpp
+        game/IsleGame.cpp
         world/TileMap.cpp
         world/TileSet.cpp
         game/UISystem.cpp

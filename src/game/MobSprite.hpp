@@ -23,6 +23,7 @@
 
 #include <glm/glm.hpp>
 
+#include "combat/CombatAbilityLists.hpp"
 #include "combat/CombatUnit.hpp"
 #include "Configuration.hpp"
 #include "engine/GameEngine.hpp"
@@ -70,7 +71,7 @@ namespace game
         // loot table
         std::vector<LootEntry> lootTable;
         // list of abilities mob will be able to use
-        combat::CombatAbilityList combatAbilityList;
+        combat::AbilityTable combatAbilityList;
         // TODO: much more!!!
 
         int GenerateLevel() const {

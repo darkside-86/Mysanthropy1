@@ -22,7 +22,7 @@
 
 namespace combat
 {
-    PlayerCombatUnit::PlayerCombatUnit(int level, int exp, const CombatAbilityList& abilities)
+    PlayerCombatUnit::PlayerCombatUnit(int level, int exp, const AbilityTable& abilities)
         : CombatUnit(true, level, abilities, "player")
     {
         SetLevel(level);

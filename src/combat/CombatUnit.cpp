@@ -23,12 +23,17 @@
 namespace combat
 {
 
-    CombatUnit::CombatUnit(bool player, int level, const CombatAbilityList& abilities, 
+    CombatUnit::CombatUnit(bool player, int level, const AbilityTable& abilities, 
                             const std::string& name)
         : abilities_(abilities), name_(name), attributeSheet_(level, player)
     {
         maxHealth_ = attributeSheet_.GetMaxHealth();
         currentHealth_ = maxHealth_;
+        // spells are ready upon combat unit creation.
+        for(const auto& eachAbility : abilities_)
+        {
+            cooldowns_.push_back({eachAbility.first, eachAbility.second.cooldown});
+        }
     }
 
     CombatUnit::~CombatUnit()
@@ -42,7 +47,7 @@ namespace combat
         auto found = abilities_.find(abilityName);
         if(found != abilities_.end())
         {
-            CombatAbility &ab = found->second;
+            Ability &ab = found->second;
             // check target and ability friendliness
             if((ab.offensive && targetIsFriendly) || (!ab.offensive && !targetIsFriendly)  )
             {
@@ -56,10 +61,24 @@ namespace combat
                 return false;
             }
             // check ability's cooldown in the CD table
-            if(ab.timer < ab.cooldown)
+            auto abTimer = std::find_if(cooldowns_.begin(), cooldowns_.end(), [found](const Cooldown& cd){
+                return found->first == cd.name;
+            });
+            if(abTimer != cooldowns_.end())
             {
-                combatLogEntry = abilityName + " is still on cooldown for " + std::to_string(ab.cooldown - ab.timer)
-                    + " more seconds.";
+                if(abTimer->counter < ab.cooldown)
+                {
+                    combatLogEntry = abilityName + " is still on cooldown for " + 
+                        std::to_string(ab.cooldown - abTimer->counter) + " more seconds.";
+                    return false;
+                }
+            }
+            else
+            {
+                // because of how cooldown table is created, THIS should never happen.
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                    "Invalid ability `%s' for %s", abilityName.c_str(), name_.c_str());
+                combatLogEntry = "<ERROR>";
                 return false;
             }
             // check range
@@ -75,33 +94,57 @@ namespace combat
                 return false;
             }
             // TODO: account for target's armor and resistances and chances to miss/dodge/parry
-            Damage damageOrHealing = ab.calculateBaseDamage(*this);
-            other.currentHealth_ -= damageOrHealing.amount;
-            if(ab.offensive)
+            auto outputs = ab.formula.CalculateResults(*this);
+            // apply all the outputs to either self or target depending on nature of output
+            for(const auto& output : outputs)
             {
-                combatLogEntry = name_ + "'s " + abilityName + " hit " + other.name_ + " for "
-                    + std::to_string(damageOrHealing.amount) + " damage";
-            }
-            else 
-            {
-                combatLogEntry = name_ + "'s " + abilityName + " healed " + other.name_ + " for " 
-                    + std::to_string(damageOrHealing.amount) + " healing";
+                switch(output.type)
+                {
+                case Output::Type::Direct:
+                    if(output.target == Output::Target::Enemy)
+                    {
+                        other.currentHealth_ -= output.direct.amount;
+                        combatLogEntry = this->name_ + "'s " + found->first + " hit " + other.name_ +
+                            " for " + std::to_string(output.direct.amount) + " " + 
+                            SchoolToString(output.school);
+                    }
+                    else if(output.target == Output::Target::Friendly)
+                    {
+                        other.currentHealth_ += output.direct.amount;
+                        combatLogEntry = this->name_ + "'s" + found->first + " healed " + other.name_ +
+                            " for " + std::to_string(output.direct.amount) + " " +
+                            SchoolToString(output.school);
+                    }
+                    // TODO: something self
+                    break;
+                case Output::Type::OverTime:
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                        "%s: Can't handle DOT/HOTs yet!", __FUNCTION__);
+                    break;
+                case Output::Type::StatusEffect:
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
+                        "%s: Can't handle buffs/debuffs yet!", __FUNCTION__);
+                    break;
+                }
             }
             // set the cooldown of the ability to 0
-            ab.timer = 0.0f;
+            abTimer->counter = 0.0f;
             // set the global cooldown timer
-            globalCooldownCounter_ = 0.0f;
+            if(ab.onGCD)
+                globalCooldownCounter_ = 0.0f;
             // determine overkill or overheal amount if any
-            int overkillOrHeal;
+            int overKillOrHeal;
             if(other.currentHealth_ > other.maxHealth_)
             {
-                overkillOrHeal = -(other.currentHealth_ - other.maxHealth_);
+                overKillOrHeal = -(other.currentHealth_ - other.maxHealth_);
                 other.currentHealth_ = other.maxHealth_;
+                combatLogEntry += " (" + std::to_string(overKillOrHeal) + " overheal)";
             }
             else if(other.currentHealth_ < 0)
             {
-                overkillOrHeal = -other.currentHealth_;
+                overKillOrHeal = -other.currentHealth_;
                 other.currentHealth_ = 0;
+                combatLogEntry += " (" + std::to_string(overKillOrHeal) + " overkill)";
             }
             // todo: add overheal or overkill to log
             return true;
@@ -120,7 +163,7 @@ namespace combat
         auto found = abilities_.find(abilityName);
         if(found != abilities_.end())
         {
-            CombatAbility &ab = found->second;
+            Ability &ab = found->second;
             return !(distance < ab.minRange || distance > ab.maxRange);
         }
         else
@@ -133,8 +176,22 @@ namespace combat
     {
         auto found = abilities_.find(abilityName);
         if(found == abilities_.end())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Unable to find `%s' in ability table!", __FUNCTION__, abilityName.c_str());
             return false; // "NULL" ability is never ready
-        return found->second.timer >= found->second.cooldown;
+        }
+        std::string abName = found->first;
+        for(const auto& eachCooldown : cooldowns_)
+        {
+            if(abName == eachCooldown.name)
+            {
+                return eachCooldown.counter >= found->second.cooldown;
+            }
+        }
+        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+            "%s: Cooldown table entry `%s' is missing!", __FUNCTION__, abilityName.c_str());
+        return false;
     }
 
     bool CombatUnit::GlobalCooldownIsOff()
@@ -149,13 +206,13 @@ namespace combat
         if(globalCooldownCounter_ > GCD)
             globalCooldownCounter_ = GCD;
         // individual ability's cooldowns
-        for(auto each = abilities_.begin(); each != abilities_.end(); ++each)
+        for(auto& eachCd : cooldowns_)
         {
-            each->second.timer += dtime;
-            if(each->second.timer > each->second.cooldown)
-                each->second.timer = each->second.cooldown;
+            eachCd.counter += dtime;
+            // todo: check for near max float value? realistically CD counters shouldn't reach that
+            // high of a number in one play session.
         }
-        // recovery if out of combat (clear aggro table)
+        // recovery if out of combat (a clear aggro table)
         if(!inCombat_)
         {
             if(currentHealth_ < maxHealth_)

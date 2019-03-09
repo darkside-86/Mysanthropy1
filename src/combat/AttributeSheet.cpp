@@ -39,6 +39,14 @@ namespace combat
                     coreAttributes_.push_back(Attribute::Strength);
                 else if(eachStat == "Agility")
                     coreAttributes_.push_back(Attribute::Agility);
+                else if(eachStat == "Intellect")
+                    coreAttributes_.push_back(Attribute::Intellect);
+                else if(eachStat == "Dexterity")
+                    coreAttributes_.push_back(Attribute::Dexterity);
+                else if(eachStat == "Wisdom")
+                    coreAttributes_.push_back(Attribute::Wisdom);
+                else if(eachStat == "Knowledge")
+                    coreAttributes_.push_back(Attribute::Knowledge);
                 else if(eachStat == "Vitality")
                     coreAttributes_.push_back(Attribute::Vitality);
             }
@@ -97,22 +105,22 @@ namespace combat
         }
     }
 
-    int AttributeSheet::GetMeleeAttackPower()
+    int AttributeSheet::GetMeleeAttackPower() const
     {
         return strength_ + (level_ - 1); // for now
     }
 
-    int AttributeSheet::GetRangedAttackPower()
+    int AttributeSheet::GetRangedAttackPower() const
     {
         return agility_ + (level_ - 1); // for now
     }
 
-    int AttributeSheet::GetMaxHealth()
+    int AttributeSheet::GetMaxHealth() const
     {
         return 5 * vitality_ + (level_ - 1); // for now
     }
 
-    bool AttributeSheet::IsCoreAttribute(const Attribute attr)
+    bool AttributeSheet::IsCoreAttribute(const Attribute attr) const
     {
         for(int i=0; i < coreAttributes_.size(); ++i)
         {

@@ -31,11 +31,11 @@ namespace combat
     {
     public:
         static const CombatAbilityLists& Get();
-        const std::unordered_map<std::string, CombatAbilityList>& GetLists() const { return lists_; }
+        const std::unordered_map<std::string, AbilityTable>& GetLists() const { return lists_; }
     private:    
         CombatAbilityLists();
         ~CombatAbilityLists();
-        std::unordered_map<std::string, CombatAbilityList> lists_;
+        std::unordered_map<std::string, AbilityTable> lists_;
     };
 
 }

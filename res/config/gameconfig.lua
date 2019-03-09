@@ -7,6 +7,9 @@ BOY_SURV = "man1"
 -- The "Girl" LG sprite name
 GIRL_SURV = "wmn2"
 
+-- Chance (0-100) per second of time between saves a fully destroyed object has to regenerate
+ENT_REGEN_CHANCE = 0.00005
+
 -- The amount of experience required per level increase
 EXPERIENCE_SCALE = 1.33
 -- the amount of exp to increase from level 1 to level 2

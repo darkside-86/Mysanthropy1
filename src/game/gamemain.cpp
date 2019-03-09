@@ -19,15 +19,15 @@
 #include <iostream>
 
 #include "engine/GameEngine.hpp"
-#include "game/TileGame.hpp"
+#include "game/IsleGame.hpp"
 
 int main(int argc, char* argv[])
 {
     engine::GameEngine& ge = engine::GameEngine::Get();
     engine::Logger& logger = ge.GetLogger();
-    bool ok = ge.Initialize("Tile Game", 1024, 576);
+    bool ok = ge.Initialize("Despacito Island", 1024, 576);
     {
-        game::TileGame game;
+        game::IsleGame game;
         ok = ok && game.Initialize();
         if(!ok)
         {

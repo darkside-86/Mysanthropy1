@@ -26,13 +26,13 @@
 
 namespace game
 {
-    class TileGame; // forward declaration.
+    class IsleGame; // forward declaration.
     
     class UISystem
     {
     public:
         // ctor - Sets up lua state and then bindings
-        UISystem(TileGame& tileGame);
+        UISystem(IsleGame& isleGame);
         // dtor - Cleans up bindings and then lua state
         virtual ~UISystem();
         // writes an unwrapped colored line to console
@@ -78,8 +78,8 @@ namespace game
         lua_State* script_;
         // bindings to UI library
         engine::ui::LuaBindings* luaBindings_;
-        // reference to the TileGame, set in constructor
-        TileGame& game_;
+        // reference to the IsleGame, set in constructor
+        IsleGame& game_;
     };
 
 }

@@ -25,61 +25,22 @@
 
 #include <glm/glm.hpp>
 
-#include "game/Configuration.hpp"
+#include "Ability.hpp"
 #include "AttributeSheet.hpp"
 
 namespace combat
 {
-    class CombatUnit; // forward decl
-
-    // Damage types
-    class Damage 
+    class Cooldown
     { public:
-        enum DAMAGE_TYPE { PHYSICAL };
-        DAMAGE_TYPE type;
-        int amount;
+        std::string name;
+        float counter;
     };
-
-    // buffs/debuffs
-    class CombatEffect
-    { public:
-        float maxDuration; // in seconds
-        float currentDuration; // in seconds
-        // TODO: ...
-    };
-
-    // formulas for ability damage/healing calculation
-
-    // combat ability, damage, healing, or de/buffs.
-    class CombatAbility
-    { public:
-        // TODO: add name field
-
-        // the minimum distance in logical pixels for the ability to be performed on a unit
-        int minRange;
-        // the maximum distance allowed for an ability to be performed
-        int maxRange;
-        // whether or not ability can be used on hostile/neutral targets
-        bool offensive;
-        // cooldown in seconds
-        float cooldown;
-        // timer
-        float timer;
-        // whether or not subject to GCD
-        bool onGCD;
-        // function that calculates the amount of damage, or negative numbers for healing
-        std::function<Damage(CombatUnit&)> calculateBaseDamage;
-        // TODO: handle buffs/debuffs
-    };
-
-    // TODO: reimplement as vector
-    typedef std::unordered_map<std::string,CombatAbility> CombatAbilityList;
 
     class CombatUnit
     {
     public:
         // ctor
-        CombatUnit(bool player, int level, const CombatAbilityList& abilities, 
+        CombatUnit(bool player, int level, const AbilityTable& abilities, 
                 const std::string& name);
         // dtor
         virtual ~CombatUnit();
@@ -131,11 +92,13 @@ namespace combat
         // determines if unit is in combat
         bool inCombat_ = false;
         // list of abilities that can be performed
-        CombatAbilityList abilities_;
+        AbilityTable abilities_;
         // GCD
         static constexpr float GCD = 1.0f;
         // GCD counter
         float globalCooldownCounter_ = 0.0f;
+        // ability cooldown tracker
+        std::vector<Cooldown> cooldowns_;
     };
 
 }

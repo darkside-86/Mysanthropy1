@@ -25,7 +25,7 @@ namespace combat
     class PlayerCombatUnit : public CombatUnit 
     {
     public:
-        PlayerCombatUnit(int level, int exp, const CombatAbilityList& abilities);
+        PlayerCombatUnit(int level, int exp, const AbilityTable& abilities);
         virtual ~PlayerCombatUnit();
         // calculate stats for level
         void SetLevel(int level);

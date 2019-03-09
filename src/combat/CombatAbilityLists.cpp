@@ -31,12 +31,13 @@ namespace combat
     CombatAbilityLists::CombatAbilityLists()
     {
         // here construct all combat ability lists for all mobs.
-        CombatAbilityList redcrab;
-        redcrab["attack"] = { 0, 32, true, 0.0f, 0.0f, true, 
-            [](CombatUnit& cu) -> Damage { 
-                return { Damage::DAMAGE_TYPE::PHYSICAL, cu.GetAttributeSheet().GetMeleeAttackPower() / 2 }; 
-            } 
-        };
+        AbilityTable redcrab;
+        Expression expr(Output::Type::Direct, Output::Target::Enemy, School::Physical);
+        expr.terms = { {NumericRange(0.5f, 0.5f), AttributeInput::MAP }};
+        Formula redcrab_attack_formula;
+        redcrab_attack_formula.expressions.push_back(expr);
+        redcrab["attack"] = Ability(0, 32, true, 1.0f, false, Ability::CastType::Instant, 0.0f, 
+            redcrab_attack_formula);
         lists_["redcrab"] = redcrab;
     }
 

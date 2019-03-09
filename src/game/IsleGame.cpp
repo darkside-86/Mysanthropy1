@@ -24,12 +24,12 @@
 
 #include "engine/GameEngine.hpp"
 #include "engine/ui/Root.hpp"
-#include "TileGame.hpp"
+#include "IsleGame.hpp"
 
 namespace game
 {
 
-    TileGame::TileGame() : configuration_(Configuration::Get())
+    IsleGame::IsleGame() : configuration_(Configuration::Get())
     { 
         // process inventory configuration. The item database remains the same across games
         // only the number is cleared between saving and loading different save games.
@@ -42,12 +42,12 @@ namespace game
         }
     }
 
-    TileGame::~TileGame()
+    IsleGame::~IsleGame()
     {
 
     }
 
-    bool TileGame::Initialize()
+    bool IsleGame::Initialize()
     {
         // initialize UIRoot first always    
         engine::ui::Root::Get()->Initialize();
@@ -247,15 +247,35 @@ namespace game
             }
         });
 
+        engine::GameEngine::Get().AddQuitListener([this](const SDL_QuitEvent& e)->bool{
+            // if returning to menu or on splash, nothing to check
+            if(gameState_ == GAME_STATE::RETURNING_TO_MENU || gameState_ == GAME_STATE::SPLASH)
+                return true;
+            // otherwise have to check for things like in combat
+            if(gameState_ == GAME_STATE::PLAYING)
+            {
+                if(playerSprite_ != nullptr)
+                {
+                    if(playerSprite_->GetPlayerCombatUnit().IsInCombat())
+                    {
+                        uiSystem_->WriteLineToConsole("Cannot exit game while in combat.", 
+                            1.0f, 0.0f, 0.0f, 1.0f);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+
         return true;
     }
 
-    void TileGame::Cleanup()
+    void IsleGame::Cleanup()
     {
         EndGame();
     }
 
-    void TileGame::Update(float dtime)
+    void IsleGame::Update(float dtime)
     {
         // transition splash states if needed
         if(splashScreen_)
@@ -418,7 +438,7 @@ namespace game
         engine::ui::Root::Get()->Update(dtime);
     }
 
-    void TileGame::Render(engine::GraphicsContext& gc)
+    void IsleGame::Render(engine::GraphicsContext& gc)
     {
         // disable for 2D rendering with semi-transparent data
         glDisable(GL_STENCIL_TEST);
@@ -465,7 +485,7 @@ namespace game
         engine::ui::Root::Get()->Render(gc);
     }
 
-    void TileGame::StartGame()
+    void IsleGame::StartGame()
     {
         // Change the game state
         gameState_ = GAME_STATE::PLAYING;
@@ -519,7 +539,7 @@ namespace game
         uiSystem_->SetFoodstuffBarData(inventory_.GetItemAmount("foodstuff"));
     }
 
-    void TileGame::LoadGame()
+    void IsleGame::LoadGame()
     {
         bool loaded = saveData_.ReadFromFile(saveSlot_);
         if(!loaded) // the main menu should generally prevent loading invalid files
@@ -602,7 +622,7 @@ namespace game
         saveData_.ClearData();
     }
 
-    void TileGame::SaveGame()
+    void IsleGame::SaveGame()
     {
         auto pos = playerSprite_->GetPosition();
         saveData_.SetLocationCommand(LocationCommand((int)pos.x, (int)pos.y));
@@ -630,7 +650,7 @@ namespace game
         saveData_.WriteToFile(saveSlot_);
     }
 
-    void TileGame::NewGame(bool boy)
+    void IsleGame::NewGame(bool boy)
     {
         int ix, iy;
         std::vector<int> SPAWN_POINT;
@@ -653,7 +673,7 @@ namespace game
         inventory_.ClearItems();
     }
 
-    void TileGame::EndGame()
+    void IsleGame::EndGame()
     {
         auto &sm = engine::GameEngine::Get().GetSoundManager();
         if(gameState_ != GAME_STATE::SPLASH)
@@ -685,14 +705,14 @@ namespace game
         sm.StopMusic();
     }
 
-    void TileGame::ReturnToMainMenu()
+    void IsleGame::ReturnToMainMenu()
     {
         splashScreen_ = new SplashScreen();
         splashScreen_->Initialize();
         gameState_ = GAME_STATE::SPLASH;
     }
 
-    PlayerSprite* TileGame::LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp)
+    PlayerSprite* IsleGame::LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp)
     {
         auto& tm = engine::GameEngine::Get().GetTextureManager();
         const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
@@ -713,7 +733,7 @@ namespace game
         return sprite;
     }
 
-    void TileGame::UnloadPlayerLGSpr(PlayerSprite*& sprite, const std::string& name)
+    void IsleGame::UnloadPlayerLGSpr(PlayerSprite*& sprite, const std::string& name)
     {
         auto& tm = engine::GameEngine::Get().GetTextureManager();
         const std::string path = std::string("res/textures/sprites/last-guardian-sprites/") + name;
@@ -730,7 +750,7 @@ namespace game
         sprite = nullptr;
     }
 
-    bool TileGame::SpriteIsSwimming(Sprite* sprite)
+    bool IsleGame::SpriteIsSwimming(Sprite* sprite)
     {
         // calculate the bottom center of sprite in world coordinates.
         auto pos = sprite->GetPosition();
@@ -746,7 +766,7 @@ namespace game
         return isSwimming;
     }
 
-    void TileGame::CleanupLoadedEntities()
+    void IsleGame::CleanupLoadedEntities()
     {
         for(auto it=loadedEntities_.begin(); it != loadedEntities_.end(); ++it)
         {
@@ -755,7 +775,7 @@ namespace game
         loadedEntities_.clear();
     }
 
-    void TileGame::CleanupMobSpawners()
+    void IsleGame::CleanupMobSpawners()
     {
         for(auto it=mobSpawners_.begin(); it != mobSpawners_.end(); ++it)
         {
@@ -764,7 +784,7 @@ namespace game
         mobSpawners_.clear();
     }
 
-    void TileGame::SetupRenderList()
+    void IsleGame::SetupRenderList()
     {
         renderList_.clear();
         renderList_.push_back(playerSprite_);
@@ -774,7 +794,7 @@ namespace game
         }
     }
 
-    void TileGame::RenderSortPass()
+    void IsleGame::RenderSortPass()
     {
         // one pass of sorting. The larger the Y-base position, the later rendered
         for(int i=0; i < renderList_.size() - 1; ++i)
@@ -790,7 +810,7 @@ namespace game
         }
     }
 
-    void TileGame::CheckTileCollision(Sprite* sprite)
+    void IsleGame::CheckTileCollision(Sprite* sprite)
     {
         auto pos = sprite->GetPosition();
         float left, top, right, bottom;
@@ -855,7 +875,7 @@ namespace game
         }
     }
 
-    void TileGame::CheckMobDeaths()
+    void IsleGame::CheckMobDeaths()
     {
         auto mobIt = mobSprites_.begin();
         for(;mobIt != mobSprites_.end(); ++mobIt)
@@ -914,7 +934,7 @@ namespace game
         }
     }
 
-    void TileGame::RemoveSpriteFromRenderList(const Sprite* sprite)
+    void IsleGame::RemoveSpriteFromRenderList(const Sprite* sprite)
     {
         auto it = std::find_if(renderList_.begin(), renderList_.end(), [sprite](const Sprite* spr){
             return sprite == spr;
@@ -923,7 +943,7 @@ namespace game
             renderList_.erase(it);
     }
 
-    Entity* TileGame::FindEntityByLocation(int x, int y)
+    Entity* IsleGame::FindEntityByLocation(int x, int y)
     {
         for(auto ent : loadedEntities_)
         {
@@ -934,7 +954,7 @@ namespace game
         return nullptr;
     }
 
-    bool TileGame::EntityCollisionCheck(Sprite* sprite)
+    bool IsleGame::EntityCollisionCheck(Sprite* sprite)
     {
         // given a sprite check collision (for now) for all entities.
         float spriteLeft, spriteTop, spriteRight, spriteBottom;
@@ -959,12 +979,12 @@ namespace game
         return false;
     }
 
-    bool TileGame::CheckPoint(float x, float y, float left, float top, float right, float bottom)
+    bool IsleGame::CheckPoint(float x, float y, float left, float top, float right, float bottom)
     {
         return (x >= left && x <= right && y >= top && y <= bottom);
     }
 
-    void TileGame::InteractWithEntity(Entity* ent)
+    void IsleGame::InteractWithEntity(Entity* ent)
     {
         if(ent->IsFarmable() && !ent->IsReadyForPickup() 
         && ent->GetMaxClicks() == -1)
@@ -1005,7 +1025,7 @@ namespace game
         }
     }
 
-    void TileGame::StopHarvestSound()
+    void IsleGame::StopHarvestSound()
     {
         if(harvestSoundChannel_ != -1)
         {
@@ -1014,13 +1034,13 @@ namespace game
         }
     }
 
-    void TileGame::ClearTarget()
+    void IsleGame::ClearTarget()
     {   
         target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
         uiSystem_->TargetUnitFrame_Toggle(false);
     }
 
-    void TileGame::RemoveEntityFromLoaded(Entity* ent)
+    void IsleGame::RemoveEntityFromLoaded(Entity* ent)
     {
         // first take it out of vector
         auto found = std::find_if(loadedEntities_.begin(), loadedEntities_.end(), 
@@ -1041,7 +1061,7 @@ namespace game
         delete ent;
     }
 
-    void TileGame::CheckHarvestCast(float dtime)
+    void IsleGame::CheckHarvestCast(float dtime)
     {
         if(!harvesting_)
         {
@@ -1142,7 +1162,7 @@ namespace game
         }
     }
 
-    void TileGame::UpdatePlayerExperience(bool dinged)
+    void IsleGame::UpdatePlayerExperience(bool dinged)
     {
         if(dinged)
         {
@@ -1162,7 +1182,7 @@ namespace game
             "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);
     }
 
-    void TileGame::SetHarvestCommand(int x, int y, int clicks)
+    void IsleGame::SetHarvestCommand(int x, int y, int clicks)
     {
         auto found = harvestCommands_.find({x,y});
         if(found != harvestCommands_.end())
@@ -1175,7 +1195,7 @@ namespace game
         }
     }
 
-    void TileGame::SetFarmCommand(int x, int y, const FarmCommand& fc)
+    void IsleGame::SetFarmCommand(int x, int y, const FarmCommand& fc)
     {
         auto found = farmCommands_.find({x,y});
         if(found != farmCommands_.end())
@@ -1188,14 +1208,14 @@ namespace game
         }
     }
 
-    void TileGame::RemoveFarmCommand(int x, int y)
+    void IsleGame::RemoveFarmCommand(int x, int y)
     {
         auto found = farmCommands_.find({x,y});
         if(found != farmCommands_.end())
             farmCommands_.erase(found);
     }
         
-    std::vector<HarvestCommand> TileGame::GetHarvestCommands()
+    std::vector<HarvestCommand> IsleGame::GetHarvestCommands()
     {
         std::vector<HarvestCommand> hc;
         for(auto it = harvestCommands_.begin(); it != harvestCommands_.end(); ++it)
@@ -1205,7 +1225,7 @@ namespace game
         return hc;
     }
 
-    std::vector<FarmCommand> TileGame::GetFarmCommands()
+    std::vector<FarmCommand> IsleGame::GetFarmCommands()
     {
         std::vector<FarmCommand> commands;
         for(auto it = farmCommands_.begin(); it != farmCommands_.end(); ++it)

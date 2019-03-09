@@ -25,13 +25,15 @@ namespace game
     PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy) 
             : Sprite(texture,w,h), isBoy_(isBoy)
     {
-        combat::CombatAbilityList playerAbilities;
+        combat::AbilityTable playerAbilities;
+        combat::Expression expr(combat::Output::Type::Direct, combat::Output::Target::Enemy,  
+            combat::School::Physical);
+        expr.terms = { {combat::NumericRange(1.0f, 1.0f), combat::AttributeInput::MAP }};
+        combat::Formula playerAttackFormula;
+        playerAttackFormula.expressions.push_back(expr);
         // a simple test ability. TODO: a data-driven attack system
-        playerAbilities["attack"] = { 0, 32, true, 0.0f, 0.0f, true, 
-            [](combat::CombatUnit& cu) -> combat::Damage { 
-                return {combat::Damage::DAMAGE_TYPE::PHYSICAL, cu.GetAttributeSheet().GetMeleeAttackPower()}; 
-            }
-        };
+        playerAbilities["attack"] = combat::Ability(0, 32, true, 1.0f, false, combat::Ability::CastType::Instant,
+            0.0f, playerAttackFormula); 
         combatUnit_ = new combat::PlayerCombatUnit(level, exp, playerAbilities);
 
     }

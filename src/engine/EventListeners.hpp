@@ -32,4 +32,6 @@ namespace engine
     typedef std::function<void(const SDL_MouseButtonEvent&)> MouseButtonListener;
     // defines a function signature for handling SDL_MouseMotionEvents
     typedef std::function<void(const SDL_MouseMotionEvent&)> MouseMotionListener;
+    // defines a functions signature for handling SDL_Quit events. returns true to confirm exit
+    typedef std::function<bool(const SDL_QuitEvent&)> QuitListener;
 }

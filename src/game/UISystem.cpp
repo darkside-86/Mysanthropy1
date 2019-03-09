@@ -21,12 +21,12 @@
 
 #include "engine/GameEngine.hpp"
 #include "UISystem.hpp"
-#include "TileGame.hpp"
+#include "IsleGame.hpp"
 
 namespace game
 {
 
-    UISystem::UISystem(TileGame& tileGame) : game_(tileGame)
+    UISystem::UISystem(IsleGame& isleGame) : game_(isleGame)
     {
         script_ = luaL_newstate();
         luaL_openlibs(script_);
@@ -267,7 +267,7 @@ namespace game
     {
         UISystem* uiSystem = GetUISystem(L);
 
-        uiSystem->game_.SetGameState(TileGame::GAME_STATE::RETURNING_TO_MENU);
+        uiSystem->game_.SetGameState(IsleGame::GAME_STATE::RETURNING_TO_MENU);
         
         return 0;
     }
