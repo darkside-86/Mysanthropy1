@@ -243,7 +243,7 @@ namespace combat
             {
             case '!': case '@': case '#': case '<': case '>': case '?':
             case '~': case '{': case '}': case '(': case ')': case ',':
-            case '+': case '/': case '[': case ']': case ';': case ':':
+            case '+': case '/': case ';': case ':':
             case   0:
                 return true;
             }
@@ -548,27 +548,6 @@ namespace combat
                 // parser does not distinguish between ints and floats so just cast to int
                 currentExpression.duration = (int)atof(token.c_str());
                 // read the next token (hopefully a ';')
-                token = parser.GetNextToken();
-            }
-            // an optional item consumption field is last
-            if(token == "[")
-            {
-                token = parser.GetNextToken();
-                if(!StringIsAValidNumber(token))
-                {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                        "%s: Invalid item count `%s' for item require", __FUNCTION__, token.c_str());
-                }
-                currentExpression.outputItemCount = (int)atof(token.c_str());
-                token = parser.GetNextToken();
-                // the next token should be a string we hope, representing the item required
-                currentExpression.outputItemRequired = token;
-                token = parser.GetNextToken();
-                if(token != "]") // for readability expect a ']'
-                {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                        "%s: Expecting a `]' got `%s'", __FUNCTION__, token.c_str());
-                }
                 token = parser.GetNextToken();
             }
             if(token == ";") 

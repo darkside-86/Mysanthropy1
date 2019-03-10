@@ -62,6 +62,8 @@ namespace combat
         {
             delete texture;
         }
+
+        engine::GameEngine::Get().GetSoundManager().UnloadSound(sound_);
     }
 
     void AnimationEntry::Render(int camX, int camY, ogl::Program& prog,

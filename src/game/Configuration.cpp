@@ -43,8 +43,8 @@ namespace game
         lua_settable(scripting_, LUA_REGISTRYINDEX);
 
         // global functions
-        lua_pushcfunction(scripting_, Configuration::lua_ItemEntry);
-        lua_setglobal(scripting_, "ITEM_ENTRY");
+        // lua_pushcfunction(scripting_, Configuration::lua_ItemEntry);
+        // lua_setglobal(scripting_, "ITEM_ENTRY");
 
         // run configuration file
         int ok = luaL_dofile(scripting_, configFilePath.c_str());
@@ -60,50 +60,4 @@ namespace game
     {
         lua_close(scripting_);
     }
-
-    int Configuration::lua_ItemEntry(lua_State *L)
-    {
-        // get "this" pointer
-        lua_pushstring(L, "Configuration");
-        lua_gettable(L, LUA_REGISTRYINDEX);
-        Configuration* config = (Configuration*)lua_touserdata(L, -1);
-        lua_pop(L, 1);
-
-        ItemEntry luaItemEntry;
-
-        // read name field
-        lua_pushstring(L, "name");
-        lua_gettable(L, 1);
-        luaItemEntry.name = lua_tostring(L, -1);
-        lua_pop(L, 1);
-        // read hidden field
-        lua_pushstring(L, "hidden");
-        lua_gettable(L, 1);
-        if(lua_isnil(L, -1))
-        {
-            luaItemEntry.hidden = false; // default to false if no value listed
-            // which is the default behavior of nil to boolean but here is it explicit
-            // for clarity.
-        }
-        else
-        { 
-            luaItemEntry.hidden = lua_toboolean(L, -1);
-        }
-        lua_pop(L, 1);
-        // read texture field
-        lua_pushstring(L, "texture");
-        lua_gettable(L, 1);
-        luaItemEntry.texture = lua_tostring(L, -1);
-        lua_pop(L, 1);
-        // read foodstuff field
-        lua_pushstring(L, "foodstuff");
-        lua_gettable(L, 1);
-        luaItemEntry.foodstuff = (int)lua_tointeger(L, -1); // nil as 0 is fine and expected
-        lua_pop(L, 1);
-
-        config->itemEntries_.push_back(luaItemEntry);
-
-        return 0;
-    }
-
 }

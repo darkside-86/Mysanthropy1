@@ -211,9 +211,7 @@ namespace combat
     // *** DURATION *** duration of effect is ':' then a number indicating the amount of seconds
     // *** COOLDOWN *** The cooldown of abilities is configured separately and not a part of the formula
     // *** CAST TIME *** The cast time of abilities, or that they are instant/channeled, are configured separately
-    // *** ITEM CONSUME *** The ability can consume an inventory item of any amount. This is specified with 
-    //     '[' followed by the number of items then the item name then ']' to close. For example, shoot may require
-    //      an arrow so will have [1arrow]
+    // *** ITEM CONSUME *** Configured separately
     // *** TERMINATOR CHAR *** A semi-colon ";" is placed at the end to indicate the end of the expression
     //      This separates multiple expressions.
     //-------------------------------------------------------------------------

@@ -24,7 +24,26 @@ namespace game
 {
     Inventory::Inventory() 
     {
+        // create lua state
+        script_ = luaL_newstate();
+        // set *this in registry
+        lua_pushstring(script_, "Inventory");
+        lua_pushlightuserdata(script_, this);
+        lua_settable(script_, LUA_REGISTRYINDEX);
+        // set global(s)
+        lua_pushcfunction(script_, lua_ItemEntry);
+        lua_setglobal(script_, "ITEM_ENTRY");
+        // read database file to fill in all possible item entries
+        int ok = luaL_dofile(script_, "res/config/inventory.lua");
+        // report any possible errors
+        if(ok != LUA_OK)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
+                "%s: Failed to read item database -- %s", __FUNCTION__, lua_tostring(script_, -1));
+            lua_pop(script_, 1);
+        }
 
+        lua_close(script_);
     }
 
     Inventory::~Inventory()
@@ -161,4 +180,50 @@ namespace game
         SetItemAmount("foodstuff", GetItemAmount("foodstuff") + totalFoodstuff);
         return true;
     }
+
+    // argument is a lua table with appropriate fields for defining an item
+    int Inventory::lua_ItemEntry(lua_State *L)
+    {
+        // get "this" pointer
+        lua_pushstring(L, "Inventory");
+        lua_gettable(L, LUA_REGISTRYINDEX);
+        Inventory* inventory = (Inventory*)lua_touserdata(L, -1);
+        lua_pop(L, 1);
+
+        // information needed to construct an item entry.
+        std::string name;
+        std::string texturePath;
+        bool hidden = false;
+        int foodstuff = 0;
+
+        // read name field
+        lua_pushstring(L, "name");
+        lua_gettable(L, 1);
+        name = lua_tostring(L, -1);
+        lua_pop(L, 1);
+        // read hidden field
+        lua_pushstring(L, "hidden");
+        lua_gettable(L, 1);
+        if(lua_isnil(L, -1))
+            hidden = false; // default to false if no value listed
+        else
+            hidden = lua_toboolean(L, -1);
+        lua_pop(L, 1);
+        // read texture field
+        lua_pushstring(L, "texture");
+        lua_gettable(L, 1);
+        texturePath = lua_tostring(L, -1) != nullptr ? lua_tostring(L, -1) : "";
+        lua_pop(L, 1);
+        // read foodstuff field
+        lua_pushstring(L, "foodstuff");
+        lua_gettable(L, 1);
+        foodstuff = (int)lua_tointeger(L, -1); // nil as 0 is fine and expected
+        lua_pop(L, 1);
+
+        ogl::Texture* texture = engine::GameEngine::Get().GetTextureManager().GetTexture(texturePath);
+        inventory->AddItemEntry(name, texture, hidden, foodstuff);
+
+        return 0;
+    }
+
 }

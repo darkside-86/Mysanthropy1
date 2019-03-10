@@ -21,6 +21,8 @@
 #include <functional>
 #include <unordered_map>
 
+#include <lua/lua.hpp>
+
 #include "Item.hpp"
 
 namespace game
@@ -47,7 +49,9 @@ namespace game
         int GetItemAmount(const std::string& name);
         bool ConvertItemToFoodstuff(const std::string& name, int amount);
     private:
-        // owns ItemEntry.item pointer
+        static int lua_ItemEntry(lua_State *L);
+        // owns ItemEntry::item pointer
         std::unordered_map<std::string,ItemEntry> items_;
+        lua_State* script_ = nullptr;
     };
 }

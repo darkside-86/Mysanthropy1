@@ -32,19 +32,8 @@ namespace game
     class Configuration
     {
     public:
-        class ItemEntry
-        { public:
-            std::string name;
-            bool hidden = false;
-            std::string texture;
-            int foodstuff = 0;
-        };
-
         // Get singleton
         static Configuration& Get();
-
-        // Inventory should call this and clear the vector once entries are built
-        std::vector<ItemEntry>& GetItemEntries() { return itemEntries_; }
 
         // direct var access
         template <typename T>
@@ -158,9 +147,6 @@ namespace game
     private:
         Configuration();
         virtual ~Configuration();
-
-        static int lua_ItemEntry(lua_State *L);
-        std::vector<ItemEntry> itemEntries_;
         lua_State* scripting_ = nullptr;
     };
 }

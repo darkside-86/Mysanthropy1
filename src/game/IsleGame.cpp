@@ -31,15 +31,7 @@ namespace game
 
     IsleGame::IsleGame() : configuration_(Configuration::Get())
     { 
-        // process inventory configuration. The item database remains the same across games
-        // only the number is cleared between saving and loading different save games.
-        const auto& items = configuration_.GetItemEntries();
-        auto& tm = engine::GameEngine::Get().GetTextureManager();
-        for(const auto& eachItem : items)
-        {
-            inventory_.AddItemEntry(eachItem.name, tm.GetTexture(eachItem.texture),
-                eachItem.hidden, eachItem.foodstuff);
-        }
+
     }
 
     IsleGame::~IsleGame()

@@ -39,7 +39,7 @@ ABILITY {
     onGCD = true,
     castType = "instant",
     castTime = 0,
-    formula = "!<(0.2)RAP,Earth[1stone];!?0.5SPD,Earth:8;",
+    formula = "!<(0.2)RAP,Earth;!?0.5SPD,Earth:8;",
     level = 5
     -- TODO: animation
 }
