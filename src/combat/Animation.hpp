@@ -41,6 +41,8 @@ namespace combat
         void Render(int cameraX, int cameraY, ogl::Program& program);
         // check if animation is finished running
         bool IsFinished() const;
+        // play sound associated with if any
+        void PlaySound() const;
         // get source
         inline const CombatUnit& GetSource() const { return source_; }
         // get target 

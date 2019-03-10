@@ -107,6 +107,12 @@ namespace combat
             return projectileReachedDestination_;
     }
 
+    void Animation::PlaySound() const
+    {
+        if(entry_.GetSound() != "")
+            engine::GameEngine::Get().GetSoundManager().PlaySound(entry_.GetSound());
+    }
+
     void Animation::InvalidateSource(const CombatUnit& src)
     {
         if(&source_ == &src)

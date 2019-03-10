@@ -50,8 +50,8 @@ namespace combat
 
         // Constructor
         AnimationEntry(const std::string& name, const int width, const int height, 
-                const std::vector<std::string>& frames, 
-                const Type type, const float speed, const float duration);
+                const std::vector<std::string>& frames, const Type type, const float speed, 
+                const float duration, const std::string& sound);
         
         // Destructor
         virtual ~AnimationEntry();
@@ -72,6 +72,9 @@ namespace combat
         // Get duration
         inline float GetDuration() const { return duration_; }
 
+        // Get the sound file path
+        inline std::string GetSound() const { return sound_; }
+
     private:
     // database entry fields //
         // database name
@@ -88,6 +91,8 @@ namespace combat
         float speed_; 
         // duration in seconds for how long animation should run
         float duration_;
+        // sound to play upon starting animation
+        std::string sound_;
 
     // objects to be built //
         std::vector<ogl::Texture*> frameTextures_;

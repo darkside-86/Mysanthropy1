@@ -47,7 +47,9 @@ namespace combat
                 "%s: Unable to find animation `%s'", __FUNCTION__, animName.c_str());
             return;
         }
-        animations_.push_back(new Animation(*(itEntry->second), src, tgt, srcRadius));
+        Animation* newAnimation = new Animation(*(itEntry->second), src, tgt, srcRadius);
+        newAnimation->PlaySound();
+        animations_.push_back(newAnimation);
     }
 
     void AnimationSystem::InvalidateAnimationSource(const CombatUnit& src)

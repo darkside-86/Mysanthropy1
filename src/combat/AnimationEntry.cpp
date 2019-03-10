@@ -27,10 +27,10 @@ namespace combat
 {
 
     AnimationEntry::AnimationEntry(const std::string& name, const int width, const int height, 
-            const std::vector<std::string>& frames, 
-            const Type type, const float speed, const float duration)
+            const std::vector<std::string>& frames, const Type type, const float speed, 
+            const float duration, const std::string& sound)
     : name_(name), width_(width), height_(height), type_(type), 
-        speed_(speed), duration_(duration)
+      speed_(speed), duration_(duration), sound_(sound)
     {
         // construct opengl objects
         float w = (float)width_;
@@ -52,6 +52,8 @@ namespace combat
         {
             frameTextures_.push_back(new ogl::Texture(fr));
         }
+        // load the sound
+        engine::GameEngine::Get().GetSoundManager().LoadSound(sound_);
     }
 
     AnimationEntry::~AnimationEntry()
@@ -74,8 +76,6 @@ namespace combat
         // glm::vec3 position((float)x - w/2.0f, (float)y - h/2.0f, 0.0f);
         glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
         prog.SetUniform("u_model", model);
-        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
-            "I want to render the animation at {%f,%f,%f}", position.x, position.y, position.z);
         // select the frame texture to bind based on elapsed time.
         int maxFrames = (int)frameTextures_.size();
         int numFramesPassed = (int)(timeElapsed / speed_);

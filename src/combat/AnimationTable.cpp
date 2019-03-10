@@ -74,6 +74,8 @@ namespace combat
 
         // argument is a table with fields: name : string, width : int, height : int,
         //  frames : array<string>, type : string, speed : float, duration : float
+        // sound : string
+        //
         lua_pushstring(L, "name");
         lua_gettable(L, 1);
         std::string name = lua_tostring(L, -1);
@@ -115,10 +117,17 @@ namespace combat
         float duration = (float)lua_tonumber(L, -1);
         lua_pop(L, 1);
 
+        lua_pushstring(L, "sound");
+        lua_gettable(L, 1);
+        std::string sound = "";
+        if(!lua_isnil(L, -1))
+            sound = lua_tostring(L, -1);
+        lua_pop(L, 1);
+
         if(at->entries_.count("name") == 0)
         {
             at->entries_.insert({name, new AnimationEntry(name, width, height,
-                frames, type, speed, duration)});
+                frames, type, speed, duration, sound)});
         }
         else
         {

@@ -144,6 +144,9 @@ namespace combat
                             std::string combatLogEntry;
                             eachMob->GetCombatUnit().UseAbility(playerSprite_->GetPlayerCombatUnit(), false, 
                                 ab.name, combatLogEntry);
+                            // play the associated animation.
+                            animationSystem_.AddAndStartNewAnimation(ab.animation, eachMob->GetCombatUnit(),
+                                playerSprite_->GetPlayerCombatUnit(), eachMob->GetWidth());
                             combatLogEntries.push_back(combatLogEntry);
                         }
                     }
