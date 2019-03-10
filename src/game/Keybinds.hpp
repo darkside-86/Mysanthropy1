@@ -1,4 +1,4 @@
-// SwimFilter.hpp
+// Keybinds.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,32 +18,22 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <glm/glm.hpp>
+#include <functional>
+#include <unordered_map>
 
-#include "ogl/Program.hpp"
-#include "ogl/Texture.hpp"
-#include "ogl/Vertex.hpp"
-#include "ogl/VertexArray.hpp"
-#include "ogl/VertexBuffer.hpp"
-#include "Sprite.hpp"
+#include <SDL/SDL_keycode.h>
 
-namespace game
+typedef std::function<void(void)> Keybind;
+
+class Keybinds
 {
+public:
+    Keybinds();
+    virtual ~Keybinds();
 
-    class SwimFilter
-    {
-    public:
-        SwimFilter();
-        virtual ~SwimFilter();
-        void Render(const glm::vec2& camera, ogl::Program& program);
-        // set the dimensions of the vao object and location based on a sprite
-        void SetSpriteData(const Sprite* sprite);
-    private:
-        glm::vec2 location_;
-        ogl::Vertex vertices_[6];
-        ogl::Texture* texture_;
-        ogl::VertexArray vao_;
-        ogl::VertexBuffer vbo_;
-    };
-
-}
+    void AddKeybind(int keycode, const Keybind& kb);
+    void RunKeybind(int keycode);
+    void Clear();
+private:
+    std::unordered_map<int, Keybind> keybindCallbacks_;
+};

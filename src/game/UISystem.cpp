@@ -53,7 +53,7 @@ namespace game
             "ui/lib/fonts.lua", 
             "ui/lib/keycodes.lua", 
             "ui/lib/Window.lua", 
-            "ui/TileGame.lua" // main UI code
+            "ui/IsleGame.lua" // main UI code
         };
         
         int errCode = 0;
@@ -74,6 +74,8 @@ namespace game
 
     void UISystem::WriteLineToConsole(const std::string& line, float r, float g, float b, float a)
     {
+        if(line == "")
+            return; // nothing to write, don't generate blank lines wasting console space
         lua_getglobal(script_, "WriteLineToConsole");
         lua_pushstring(script_, line.c_str());
         lua_pushnumber(script_, r);
@@ -192,6 +194,24 @@ namespace game
     {
         lua_getglobal(script_, "TargetUnitFrame_Toggle");
         lua_pushboolean(script_, show);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK)
+            PrintLuaError(script_);
+    }
+
+    void UISystem::LeftHandFrame_SetValue(float value)
+    {
+        lua_getglobal(script_, "LeftHandFrame_SetValue");
+        lua_pushnumber(script_, value);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK)
+            PrintLuaError(script_);
+    }
+       
+    void UISystem::RightHandFrame_SetValue(float value)
+    {
+        lua_getglobal(script_, "RightHandFrame_SetValue");
+        lua_pushnumber(script_, value);
         int ok = lua_pcall(script_, 1, 0, 0);
         if(ok != LUA_OK)
             PrintLuaError(script_);

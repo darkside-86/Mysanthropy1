@@ -85,7 +85,7 @@ namespace game
     {
     public:
         // todo: Set up stat sheet upon creation
-        MobSprite(const MobType& mobType, const glm::vec3& origPos);
+        MobSprite(const MobType& mobType, const glm::vec2& origPos);
         // dtor
         virtual ~MobSprite();
         // update. 
@@ -116,7 +116,7 @@ namespace game
         // loot table
         std::vector<LootEntry> lootTable_;
         // pre-aggro position
-        glm::vec3 originalPosition_;
+        glm::vec2 originalPosition_;
         // the combat unit
         combat::CombatUnit* combatUnit_;
         // the aggro type

@@ -297,3 +297,38 @@ function TargetUnitFrame_Toggle(show)
     targetUnitFrame:SetVisible(show)
 end
 TargetUnitFrame_Toggle(false) -- hide until C++ code shows it
+
+-- Build the action bar -------------------------------------------------------
+-------------------------------------------------------------------------------
+actionBar1Panel = UIFrame.New(nil, 10, 10, 10, 10, TEXTURE_UIBLANK)
+-- set the dimensions now
+actionBar1Panel:SetXPos(consoleFrame:GetXPos() + consoleFrame:GetWidth()+8)
+actionBar1Panel:SetWidth(12 * 32)
+actionBar1Panel:SetHeight(32)
+actionBar1Panel:SetYPos(experienceBar:GetYPos() - actionBar1Panel:GetHeight() - 8)
+actionBar1Panel:SetColor(0.5, 0.5, 0.5, 0.2)
+
+--- Build the left and right hand CD indicators -------------------------------
+-------------------------------------------------------------------------------
+leftHandFrame = UIFrame.New(nil, 16, 32, 0, 0, TEXTURE_UIBLANK)
+leftHandFrame:SetXPos(actionBar1Panel:GetXPos() - leftHandFrame:GetWidth() )
+leftHandFrame:SetYPos(actionBar1Panel:GetYPos())
+leftHandFrame:SetColor(0.1, 0.1, 0.1, 1)
+leftHandFrame.fill = UIFrame.New(leftHandFrame, 16, 32, 0, 0, TEXTURE_UIBLANK)
+leftHandFrame.fill:SetColor(0.7, 0.7, 0.1, 1)
+function LeftHandFrame_SetValue(value)
+    leftHandFrame.fill:SetHeight(value * leftHandFrame:GetHeight())
+    leftHandFrame.fill:SetYPos(leftHandFrame:GetHeight() - leftHandFrame.fill:GetHeight())
+end
+
+rightHandFrame = UIFrame.New(nil, 16, 32, 0, 0, TEXTURE_UIBLANK)
+rightHandFrame:SetXPos(actionBar1Panel:GetXPos() + actionBar1Panel:GetWidth())
+rightHandFrame:SetYPos(actionBar1Panel:GetYPos())
+rightHandFrame:SetColor(0.1, 0.1, 0.1, 1)
+rightHandFrame.fill = UIFrame.New(rightHandFrame, 16, 32, 0, 0, TEXTURE_UIBLANK)
+rightHandFrame.fill:SetColor(0.7, 0.7, 0.1, 1)
+function RightHandFrame_SetValue(value)
+    rightHandFrame.fill:SetHeight(value * rightHandFrame:GetHeight())
+    rightHandFrame.fill:SetYPos(rightHandFrame:GetHeight() - rightHandFrame.fill:GetHeight())
+end
+

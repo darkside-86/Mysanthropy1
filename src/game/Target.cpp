@@ -127,16 +127,16 @@ namespace game
         }
     }
 
-    void Target::Render(const glm::vec3 camera, ogl::Program& prog)
+    void Target::Render(const glm::vec2& camera, ogl::Program& prog)
     {
         if(target_ == nullptr)
             return;
 
         // first render the base circle
-        glm::vec3 pos = target_->GetPosition();
+        glm::vec2 pos = target_->position;
         pos.y = pos.y + 3.f * (float)target_->GetHeight() / 4.f;
         pos += camera;
-        glm::mat4 model = glm::translate(glm::mat4(1.f), pos);
+        glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(pos.x, pos.y, 0.0f));
         prog.Use();
         prog.SetUniform("u_model", model);
         baseVao_.Bind();
@@ -166,10 +166,10 @@ namespace game
                 (float)mob->GetCombatUnit().GetMaxHealth();
             newX = value * (float)mob->GetWidth();
         }
-        pos = target_->GetPosition();
+        pos = target_->position;
         pos.y -= 4.0f;
         pos += camera;
-        model = glm::translate(glm::mat4(1.f), pos);
+        model = glm::translate(glm::mat4(1.f), glm::vec3(pos.x, pos.y, 0.0f));
         prog.SetUniform("u_model", model);
         blankHealthVao_.Bind();
         blankHealthTexture_->Bind();

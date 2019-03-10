@@ -30,9 +30,9 @@ namespace combat
         enum class CastType { Instant, Casted, Channeled };
         // convenient constructor function
         Ability(const std::string& nm, int mr, int mxr, bool of, float cd, bool ong, 
-                CastType ct, float ctm, const Formula& f)
+                CastType ct, float ctm, const Formula& f, int lvl)
           : name(nm), minRange(mr), maxRange(mxr), offensive(of), cooldown(cd), onGCD (ong), 
-            castType(ct), castTime(ctm), formula(f) {}
+            castType(ct), castTime(ctm), formula(f), level(lvl) {}
         Ability() {}
         // name. Redundant but super-helpful
         std::string name = "";
@@ -52,7 +52,8 @@ namespace combat
         float castTime = 0.0f;
         // function that calculates the amount of damage, or negative numbers for healing
         Formula formula;
-        // TODO: handle buffs/debuffs
+        // level requirement of unit to use ability
+        int level = 1;
     };
 
     // TODO: reimplement as vector

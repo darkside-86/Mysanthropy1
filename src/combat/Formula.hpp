@@ -1,4 +1,4 @@
-// CombatUnit.hpp
+// Formula.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -66,6 +66,8 @@ namespace combat
         STR, AGI, INT, DEX, WIS, KNO, VIT,
         // derived stats Melee AP, Ranged AP, health
         MAP, RAP, HP, // ..., etc.
+        // equipment
+        ARM, SPD, 
         // level
         LVL //, ..., etc.
     };
@@ -186,6 +188,9 @@ namespace combat
     // *** OUTPUT TYPE *** indicates whether flat damage or healing, DOT/HOT, buff/debuff.
     //      always comes after specifier in formula (it is the second char)
     //      '<' for flat damage, '>' for DOT/HOT, '?' for buff/debuff
+    // *** EFFECT CANCELLATION *** If a channeled attack should do damage during cast only, this could be
+    //      indicated with / after the '>' or '?'. This would have no meaning for spells that are instant 
+    //      anyway.
     // *** WEAPON REQUIRED *** opt. indicated by '~' and then one of the following chars for the weapon
     //      h - hammer, f - unarmed/fist weapon, s - sword, a - axe, t - staff. b - bow, g - gun
     //      can be or'd together such as ~sa for sword OR axe requirement.
@@ -209,9 +214,6 @@ namespace combat
     // *** ITEM CONSUME *** The ability can consume an inventory item of any amount. This is specified with 
     //     '[' followed by the number of items then the item name then ']' to close. For example, shoot may require
     //      an arrow so will have [1arrow]
-    // *** EFFECT CANCELLATION *** If a channeled attack should do damage during cast only, this could be
-    //      indicated with / after the '>' to indicate buff/debuff. This would have no meaning for spells
-    //      that are instant anyway.
     // *** TERMINATOR CHAR *** A semi-colon ";" is placed at the end to indicate the end of the expression
     //      This separates multiple expressions.
     //-------------------------------------------------------------------------

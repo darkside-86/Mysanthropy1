@@ -29,7 +29,7 @@ namespace game
     class MobSpawner
     {
     public:
-        MobSpawner(const MobType& mt, float frequency, const glm::vec3 &pos, float percentChance=100.0f);
+        MobSpawner(const MobType& mt, float frequency, const glm::vec2 &pos, float percentChance=100.0f);
         virtual ~MobSpawner();
         // caller takes ownership of non-null pointer
         void Update(float dtime, MobSprite*& spawned, Configuration& config, std::vector<MobSprite*>& existingMobs);
@@ -38,15 +38,15 @@ namespace game
         inline void SetFrequency(float f) { frequency_ = f; }
         inline float GetPercentChance() const { return percentChance_; }
         inline void SetPercentChance(float c) { percentChance_ = c; }
-        inline glm::vec3 GetPosition() const { return position_; }
-        inline void SetPosition(const glm::vec3& pos) { position_ = pos; }
+        inline glm::vec2 GetPosition() const { return position_; }
+        inline void SetPosition(const glm::vec2& pos) { position_ = pos; }
     private:
         MobType mobType_;
         float frequency_;
         float timer_ = 0.0f;
         float percentChance_;
         // position of spawner on map. determines location of mobs that are spawned
-        glm::vec3 position_; 
+        glm::vec2 position_; 
     };
 
 }

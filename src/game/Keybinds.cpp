@@ -1,4 +1,4 @@
-// SwimFilter.hpp
+// Keybinds.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -16,34 +16,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
-#pragma once
 
-#include <glm/glm.hpp>
+#include "Keybinds.hpp"
 
-#include "ogl/Program.hpp"
-#include "ogl/Texture.hpp"
-#include "ogl/Vertex.hpp"
-#include "ogl/VertexArray.hpp"
-#include "ogl/VertexBuffer.hpp"
-#include "Sprite.hpp"
-
-namespace game
+Keybinds::Keybinds()
 {
 
-    class SwimFilter
-    {
-    public:
-        SwimFilter();
-        virtual ~SwimFilter();
-        void Render(const glm::vec2& camera, ogl::Program& program);
-        // set the dimensions of the vao object and location based on a sprite
-        void SetSpriteData(const Sprite* sprite);
-    private:
-        glm::vec2 location_;
-        ogl::Vertex vertices_[6];
-        ogl::Texture* texture_;
-        ogl::VertexArray vao_;
-        ogl::VertexBuffer vbo_;
-    };
+}
 
+Keybinds::~Keybinds()
+{
+
+}
+
+void Keybinds::AddKeybind(int keycode, const Keybind& kb)
+{
+    keybindCallbacks_[keycode] = kb;
+}
+
+void Keybinds::RunKeybind(int keycode)
+{
+    auto& found = keybindCallbacks_.find(keycode);
+    if(found != keybindCallbacks_.end())
+    {
+        found->second();
+    }
+}
+
+void Keybinds::Clear()
+{
+    keybindCallbacks_.clear();
 }

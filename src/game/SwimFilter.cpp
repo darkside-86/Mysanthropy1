@@ -44,10 +44,11 @@ namespace game
         delete texture_;
     }
 
-    void SwimFilter::Render(const glm::vec3& camera, ogl::Program& program)
+    void SwimFilter::Render(const glm::vec2& camera, ogl::Program& program)
     {
         program.Use();
-        glm::mat4 model = glm::translate(glm::mat4(1.f), camera+location_);
+        glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(camera.x, camera.y, 0.f)
+            + glm::vec3(location_.x, location_.y, 0.0f));
         program.SetUniform("u_model", model);
         texture_->Bind();
         vao_.Bind();
@@ -59,7 +60,7 @@ namespace game
         if(sprite == nullptr)
             return;
 
-        location_ = sprite->GetPosition();
+        location_ = sprite->position;
         float w = (float)sprite->GetWidth();
         float h = (float)sprite->GetHeight() / 2.0f;
         location_.y += h;

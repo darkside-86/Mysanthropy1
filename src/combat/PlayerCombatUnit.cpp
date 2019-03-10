@@ -59,4 +59,27 @@ namespace combat
         }
         return false;
     }
+
+    float PlayerCombatUnit::GetRemainingRightCooldownAsValue()
+    {
+        // TODO: when weapons are implemented, the attack name differs.
+        //  but for now "unarmed_right" is what were querying.
+        const auto& ab = GetAbilities().find("unarmed_right");
+        if(ab == GetAbilities().end())
+            return 0.0f;
+        if(ab->second.cooldown == 0.0f)
+            return 0.0f;
+        return AbilityCooldownRemaining("unarmed_right") / ab->second.cooldown;
+    }
+
+    float PlayerCombatUnit::GetRemainingLeftCooldownAsValue()
+    {
+        // see notes for get...rightcooldown
+        const auto& ab = GetAbilities().find("unarmed_left");
+        if(ab == GetAbilities().end())
+            return 0.0f;
+        if(ab->second.cooldown == 0.0f)
+            return 0.0f;
+        return AbilityCooldownRemaining("unarmed_left") / ab->second.cooldown;
+    }
 }

@@ -55,7 +55,11 @@ namespace combat
         else if(str == "MAP")
             return AttributeInput::MAP;
         else if(str == "RAP")
-            return AttributeInput::MAP;
+            return AttributeInput::RAP;
+        else if(str == "ARM")
+            return AttributeInput::ARM;
+        else if(str == "SPD")
+            return AttributeInput::SPD;
         else if(str == "HP")
             return AttributeInput::HP;
         else if(str == "LVL")
@@ -239,7 +243,8 @@ namespace combat
             {
             case '!': case '@': case '#': case '<': case '>': case '?':
             case '~': case '{': case '}': case '(': case ')': case ',':
-            case '+': case '/': case '[': case ']': case ';': case   0:
+            case '+': case '/': case '[': case ']': case ';': case ':':
+            case   0:
                 return true;
             }
             return false;
@@ -558,6 +563,12 @@ namespace combat
                 token = parser.GetNextToken();
                 // the next token should be a string we hope, representing the item required
                 currentExpression.outputItemRequired = token;
+                token = parser.GetNextToken();
+                if(token != "]") // for readability expect a ']'
+                {
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
+                        "%s: Expecting a `]' got `%s'", __FUNCTION__, token.c_str());
+                }
                 token = parser.GetNextToken();
             }
             if(token == ";") 

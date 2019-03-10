@@ -342,7 +342,6 @@ namespace world
         tileSet_->GetTexture()->Bind();
         glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(x, y, 0.f));    
         model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.f));
-        // model = glm::translate(model, glm::vec3(0.f, 0.f, 0.f));
         program.SetUniform<glm::mat4>("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 6 * width_ * height_);
         vao1_->Bind();
@@ -384,7 +383,7 @@ namespace world
         for(auto it=mapEntities_.begin(); it != mapEntities_.end(); ++it)
         {
             game::Entity* e = new game::Entity(GetEntityType(it->entityID));
-            e->SetPosition({(float)(it->x), (float)(it->y), 0.f});
+            e->position = {(float)(it->x), (float)(it->y)};
             entities.push_back(e);
         }
         // CleanupEntities(); keep these entries so that map can be modified
@@ -398,7 +397,7 @@ namespace world
         {
             // TODO: fix spawner location struct to include information provided by const literals here
             game::MobSpawner* ms = new game::MobSpawner(mobTypes_[it->spawnerID], it->freq, 
-                {(float)it->x, (float)it->y, 0.0f}, it->chance);
+                {(float)it->x, (float)it->y}, it->chance);
             spawners.push_back(ms);
         }
         return spawners;

@@ -61,6 +61,10 @@ namespace game
         void TargetUnitFrame_SetHealth(const int current, const int max, const std::string& hostility);
         // toggle visibility
         void TargetUnitFrame_Toggle(bool show);
+        // set the CD indicator of left hand weapon (or unarmed)
+        void LeftHandFrame_SetValue(float value);
+        // set the CD indicator of right hand weapon (or unarmed)
+        void RightHandFrame_SetValue(float value);
     private:
         // prints the Lua error and pops it after a bad pcall
         void PrintLuaError(lua_State* L);

@@ -63,8 +63,7 @@ namespace game
 
     void Sprite::Update(float dtime)
     {
-        position_ += dtime * velocity_;
-        velocity_ += dtime * acceleration_;
+        CalculatePosition(dtime);
         if(animating_)
         {
             currentTime_ += dtime;
@@ -83,10 +82,11 @@ namespace game
         }
     }
 
-    void Sprite::Render(const glm::vec3& camPos, ogl::Program& program)
+    void Sprite::Render(const glm::vec2& camPos, ogl::Program& program)
     {
         glm::mat4 model(1.f);
-        model = glm::translate(model, position_ + camPos);
+        model = glm::translate(model, glm::vec3(position.x, position.y, 0.f)
+            + glm::vec3(camPos.x, camPos.y, 0.f));
         program.Use();
         program.SetUniform("u_model", model);
         vao_.Bind();
@@ -136,10 +136,10 @@ namespace game
 
     void Sprite::GetCollisionBox(float &left, float& top, float &right, float &bottom)
     {
-        left = collisionBox_.left + position_.x;
-        top = collisionBox_.top + position_.y;
-        right = collisionBox_.right + position_.x;
-        bottom = collisionBox_.bottom + position_.y;
+        left = collisionBox_.left + position.x;
+        top = collisionBox_.top + position.y;
+        right = collisionBox_.right + position.x;
+        bottom = collisionBox_.bottom + position.y;
     }
 
     bool Sprite::HasValidCollisionBox()
@@ -149,7 +149,7 @@ namespace game
 
     void Sprite::ReverseMovement(float dtime)
     {
-        position_ -= velocity_ * dtime;
+        position -= velocity * dtime;
     }
 
 }

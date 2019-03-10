@@ -49,9 +49,9 @@ namespace combat
         // get the stat sheet by reference
         inline AttributeSheet& GetAttributeSheet() { return attributeSheet_; }
         // get location
-        inline glm::vec3 GetLocation() const { return location_; }
+        inline glm::vec2 GetLocation() const { return location_; }
         // set location to determine ability range
-        inline void SetLocation(const glm::vec3& loc) { location_ = loc; }
+        inline void SetLocation(const glm::vec2& loc) { location_ = loc; }
         // get current health
         inline int GetCurrentHealth() const { return currentHealth_; }
         // set current health. used by game to set health of player upon respawn
@@ -65,6 +65,8 @@ namespace combat
         bool AbilityInRange(CombatUnit& other, const std::string& abilityName);
         // return true if ability is ready
         bool AbilityIsReady(const std::string& abilityName);
+        // return cooldown remaining on an ability
+        float AbilityCooldownRemaining(const std::string& abilityName);
         // return true if GCD is off
         bool GlobalCooldownIsOff();
         // updates the cooldown timers and generates 1 health per second when out of combat
@@ -80,7 +82,7 @@ namespace combat
         // stat sheet
         AttributeSheet attributeSheet_;
         // determines whether or not an ability is in range
-        glm::vec3 location_ = {0.f, 0.f, 0.f};
+        glm::vec2 location_ = {0.f, 0.f};
         // the current health of the unit
         int currentHealth_ = 0;
         // the max health of the unit.

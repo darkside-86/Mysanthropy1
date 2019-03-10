@@ -52,7 +52,17 @@ namespace combat
     enum class SpecialAttribute
     {
         Armor, // rating or flat physical damage reduction? not sure yet
+        Speed, // increases movement speed
+        Mobility, // either 1 or 0. 1=not stunned. 0=stunned.
+        Luck, // affects crit, hit rates and loot drops by tiny amount
         MagicResistance,
-        // todo: add resistances for all
+        EarthResistance,
+        AirResistannce,
+        FireResistance,
+        FrostResistance,
+        ShadowResistance,
+        HolyResistance,
+        NatureResistance,
+        LifeResistance,
     };
 }

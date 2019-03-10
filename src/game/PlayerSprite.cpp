@@ -26,14 +26,7 @@ namespace game
 
     PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy) 
             : Sprite(texture,w,h), isBoy_(isBoy)
-    {
-        /*combat::AbilityTable playerAbilities;
-        combat::Formula playerAttackFormula("!<(1,1.1)MAP,Physical;");
-        // a simple test ability. TODO: read player abilities from a lua file. And level reqs for abilities
-        playerAbilities["attack"] = combat::Ability("attack", 0, 32, 
-            true, 1.0f, false, combat::Ability::CastType::Instant,
-            0.0f, playerAttackFormula);*/
-        
+    {      
         const auto& lists = combat::AbilityTables::Get().GetLists();
         const auto& found = lists.find("player_survivalist");
         if(found == lists.end())
@@ -53,7 +46,7 @@ namespace game
     {
         Sprite::Update(dtime);
         // todo: define combat location as exact center of sprite
-        combatUnit_->SetLocation(position_);
+        combatUnit_->SetLocation(position);
         combatUnit_->Update(dtime);
     }
 

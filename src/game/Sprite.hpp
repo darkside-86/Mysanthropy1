@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "engine/GameObject.hpp"
+#include "engine/GameObject2D.hpp"
 #include "ogl/Texture.hpp"
 #include "ogl/VertexArray.hpp"
 #include "ogl/VertexBuffer.hpp"
@@ -36,13 +36,13 @@ namespace game
                 right=0.f, bottom=0.f;
     };
 
-    class Sprite : public engine::GameObject
+    class Sprite : public engine::GameObject2D
     {
     public:
         Sprite(ogl::Texture* img, int width=0, int height=0);
         virtual ~Sprite();
         virtual void Update(float dtime) override;
-        virtual void Render(const glm::vec3& camPos, ogl::Program& program) override;
+        virtual void Render(const glm::vec2& camPos, ogl::Program& program) override;
         int GetWidth() const { return width_; }
         int GetHeight() const { return height_; }
         void SetCurrentAnim(const std::string& name, float maxTime);

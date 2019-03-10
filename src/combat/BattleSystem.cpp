@@ -71,8 +71,9 @@ namespace combat
 
     std::string BattleSystem::UsePlayerAbility(const std::string& abilityName, game::Target& target)
     {
+        std::string combatLogEntry = ""; // for clarity initialize to blank to indicate nothing gets printed
+                                         // in some cases (such as hitting button while on cooldown)
         // make sure there is a target.
-        std::string combatLogEntry = "???"; // return value should never be "???"
         if(target.GetTargetSprite() == nullptr)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
@@ -119,11 +120,11 @@ namespace combat
                 // if out of range set velocity to move toward player.
                 if(!eachMob->GetCombatUnit().AbilityInRange(playerSprite_->GetPlayerCombatUnit(), ab.name))
                 {
-                    eachMob->SetVelocity(playerSprite_->GetPosition() - eachMob->GetPosition());
+                    eachMob->velocity = playerSprite_->position - eachMob->position;
                 }
                 else // check to see if random ability and GCD are off CD and use them if so
                 {
-                    eachMob->SetVelocity({0.0f, 0.0f, 0.0f}); // no use moving if in range
+                    eachMob->velocity = {0.0f, 0.0f}; // no use moving if in range
                     // in range so check to see if global cooldown is off
                     if(eachMob->GetCombatUnit().GlobalCooldownIsOff())
                     {

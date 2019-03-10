@@ -43,7 +43,8 @@ namespace combat
         if(ok != LUA_OK)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                "%s: Problem parsing ability database", __FUNCTION__);
+                "%s: Problem parsing ability database: %s", __FUNCTION__, lua_tostring(script_, -1));
+            lua_pop(script_, 1);
         }
         
         lua_close(script_);
@@ -128,6 +129,11 @@ namespace combat
         lua_pushstring(L, "formula");
         lua_gettable(L, 1);
         ability.formula = Formula(lua_tostring(L, -1));
+        lua_pop(L, 1);
+    // level : int
+        lua_pushstring(L, "level");
+        lua_gettable(L, 1);
+        ability.level = (int)lua_tointeger(L, -1);
         lua_pop(L, 1);
 
         at->allAbilities_[name] = ability;

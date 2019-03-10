@@ -23,7 +23,7 @@
 namespace game
 {
 
-    MobSprite::MobSprite(const MobType& mobType, const glm::vec3& origPos) 
+    MobSprite::MobSprite(const MobType& mobType, const glm::vec2& origPos) 
         : Sprite(engine::GameEngine::Get().GetTextureManager().GetTexture(
             std::string("res/textures/sprites/mobs/") + mobType.name + "_"
             + mobType.defaultAnimation), 
@@ -67,7 +67,7 @@ namespace game
     {
         Sprite::Update(dtime);
         // set combat unit
-        combatUnit_->SetLocation(position_);
+        combatUnit_->SetLocation(position);
         combatUnit_->Update(dtime);
         // TODO: check leash among many other things
         patrolTimer_ += dtime;
@@ -75,28 +75,28 @@ namespace game
         {
             patrolTimer_ -= PATROL_TIME;
             auto& rng = engine::GameEngine::Get().GetRNG();
-            velocity_.x = speed_;
-            velocity_.y = 0.0f;
+            velocity.x = speed_;
+            velocity.y = 0.0f;
             float rAngle = (float)(rng() % 360);
-            engine::GameEngine::Get().Rotate2DVector(velocity_.x, velocity_.y, rAngle);
+            engine::GameEngine::Get().Rotate2DVector(velocity.x, velocity.y, rAngle);
         }
         // check animation
-        if(velocity_.x < 0)
+        if(velocity.x < 0)
         {
             if(GetCurrentAnim() != "left_walk")
                 SetCurrentAnim("left_walk", animSpeed_);
         }
-        else if(velocity_.x > 0)
+        else if(velocity.x > 0)
         {
             if(GetCurrentAnim() != "right_walk")
                 SetCurrentAnim("right_walk", animSpeed_);
         }
-        else if(velocity_.y < 0)
+        else if(velocity.y < 0)
         {
             if(GetCurrentAnim() != "back_walk")
                 SetCurrentAnim("back_walk", animSpeed_);
         }
-        else if(velocity_.y > 0)
+        else if(velocity.y > 0)
         {
             if(GetCurrentAnim() != "front_walk")
                 SetCurrentAnim("front_walk", animSpeed_);

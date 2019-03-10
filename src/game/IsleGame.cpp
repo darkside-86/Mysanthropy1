@@ -66,8 +66,8 @@ namespace game
             if(e.type == SDL_KEYDOWN)
             {
                 std::string combatLog;
-                // TODO: create a customizable keybind system using unordered_map and UI commands
-                glm::vec3 vel = playerSprite_->GetVelocity();
+                // TODO: customize keybinds with UI (except movement keys and mouse btns)
+                glm::vec2 vel = playerSprite_->velocity;
                 std::string log;
                 switch(e.keysym.sym)
                 {
@@ -91,14 +91,8 @@ namespace game
                             playerSprite_->SetCurrentAnim("front_walk", 0.2f); 
                         vel.y = 1.f; 
                         break;
-                    case SDLK_i:
-                        showingInventory_ = !showingInventory_;
-                        uiSystem_->ShowInventory(showingInventory_);
-                        return;
-                    case SDLK_ESCAPE:
-                        uiSystem_->ShowMMPopup(true);
-                        return;
                     default:
+                        keybinds_.RunKeybind(e.keysym.sym);
                         // without this the entire screen except UI goes black......
                         // TODO: fix weird velocity bug?
                         return;
@@ -126,19 +120,18 @@ namespace game
                     if(vel.x != 0)
                         vel.x /= glm::abs(vel.x); // set to 1 or -1
                     vel = glm::normalize(vel) * PLAYER_SPEED;
-                    // determine if player sprite is swimming and cut speed in half if so
                 }
-                playerSprite_->SetVelocity(vel);
+                playerSprite_->velocity = vel;
                 if(SpriteIsSwimming(playerSprite_))
                 {
-                    playerSprite_->SetVelocity(playerSprite_->GetVelocity() / 2.0f);
+                    playerSprite_->velocity /= 2.0f;
                 }
             }
             else 
             {
                 // todo: stop movement based on key up
                 playerSprite_->PauseAnimation();
-                playerSprite_->SetVelocity({0.f,0.f,0.f});
+                playerSprite_->velocity = {0.f,0.f};
             }
         });
 
@@ -158,7 +151,7 @@ namespace game
                         [this, clickedX, clickedY](const MobSprite* mob) {
                             float x = camera_.x + (float)clickedX;
                             float y = camera_.y + (float)clickedY;
-                            auto pos = mob->GetPosition();
+                            auto pos = mob->position;
                             float w = (float)mob->GetWidth();
                             float h = (float)mob->GetHeight();
                             return (x > pos.x && x < pos.x + w && y > pos.y && y < pos.y + h);
@@ -213,15 +206,16 @@ namespace game
                                 float x = camera_.x + (float)clickedX;
                                 float y = camera_.y + (float)clickedY;
                                 return (
-                                    x > ent->GetPosition().x && x < ent->GetPosition().x + (float)ent->GetWidth() &&
-                                    y > ent->GetPosition().y && y < ent->GetPosition().y + (float)ent->GetHeight()
+                                    x > ent->position.x && x < ent->position.x + (float)ent->GetWidth() &&
+                                    y > ent->position.y && y < ent->position.y + (float)ent->GetHeight()
                                 );
                             }
                         );
                         // if we found one, set it as the target and begin interacting with it
                         if(found != loadedEntities_.end())
                         {
-                            target_.SetTargetSprite(*found, Target::TARGET_TYPE::FRIENDLY, Target::SPRITE_TYPE::ENTSPR);
+                            target_.SetTargetSprite(*found, Target::TARGET_TYPE::FRIENDLY, 
+                                Target::SPRITE_TYPE::ENTSPR);
                             // TODO: print more information about the entity to console
                             if((*found)->GetMaxClicks() != -1)
                             {
@@ -334,7 +328,7 @@ namespace game
                 // discard previous farm commands once an entity becomes ready for pick up.
                 if(each->IsFarmable() && each->IsReadyForPickup())
                 {
-                    RemoveFarmCommand((int)each->GetPosition().x, (int)each->GetPosition().y);
+                    RemoveFarmCommand((int)each->position.x, (int)each->position.y);
                 }
             }
 
@@ -379,8 +373,8 @@ namespace game
             auto eachMobIt = mobSprites_.begin();
             for (; eachMobIt != mobSprites_.end(); ++eachMobIt)
             {
-                auto mobPos = (*eachMobIt)->GetPosition();
-                auto playerPos = playerSprite_->GetPosition();
+                auto mobPos = (*eachMobIt)->position;
+                auto playerPos = playerSprite_->position;
                 float distance = glm::distance(mobPos, playerPos);
                 if(distance > MAX_DISTANCE)
                 {
@@ -421,9 +415,8 @@ namespace game
                 configuration_.GetVar("SPAWN_POINT", SPAWN_POINT);
                 ix = SPAWN_POINT[0];
                 iy = SPAWN_POINT[1];
-                playerSprite_->SetPosition({ (float)(tileMap_->GetTileSet()->GetTileWidth() * ix),
-                    (float)(tileMap_->GetTileSet()->GetTileHeight() * iy), 0.0f
-                });
+                playerSprite_->position = { (float)(tileMap_->GetTileSet()->GetTileWidth() * ix),
+                    (float)(tileMap_->GetTileSet()->GetTileHeight() * iy) };
                 // and set health to 1/3 of max
                 playerSprite_->GetPlayerCombatUnit().SetCurrentHealth((int)(0.33 * 
                     (double)playerSprite_->GetPlayerCombatUnit().GetMaxHealth()));
@@ -431,13 +424,19 @@ namespace game
                 ClearTarget();
             }
 
+            // update cooldown indicators in uiSystem. For now left side = LMB, right side=RMB
+            //  even though that is slightly backwards. Maybe change the UI file?
+            uiSystem_->LeftHandFrame_SetValue( 1.0f -
+                playerSprite_->GetPlayerCombatUnit().GetRemainingRightCooldownAsValue());
+            uiSystem_->RightHandFrame_SetValue( 1.0f -
+                playerSprite_->GetPlayerCombatUnit().GetRemainingLeftCooldownAsValue());
 
             // todo: bound player to map area
 
             // calculate camera.
             float scrW = (float)engine::GameEngine::Get().GetWidth();
             float scrH = (float)engine::GameEngine::Get().GetHeight();
-            glm::vec3 playerPos = playerSprite_->GetPosition();
+            glm::vec2 playerPos = playerSprite_->position;
 
             camera_.x = playerPos.x - scrW / 2.f;
             camera_.y = playerPos.y - scrH / 2.f;
@@ -551,6 +550,8 @@ namespace game
             playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
         uiSystem_->BuildInventory();
         uiSystem_->SetFoodstuffBarData(inventory_.GetItemAmount("foodstuff"));
+        // setup keybinds
+        SetupKeybinds();
     }
 
     void IsleGame::LoadGame()
@@ -572,8 +573,8 @@ namespace game
                 GIRL_SURV, 32, 32, playerData.boy, 
                 playerData.level, playerData.experience );
             // process locate command
-            playerSprite_->SetPosition({(float)saveData_.GetLocationCommand().locationX,
-                (float)saveData_.GetLocationCommand().locationY,0.f});
+            playerSprite_->position = {(float)saveData_.GetLocationCommand().locationX,
+                (float)saveData_.GetLocationCommand().locationY};
         }
         // process harvest commands
         harvestCommands_.clear();
@@ -638,7 +639,7 @@ namespace game
 
     void IsleGame::SaveGame()
     {
-        auto pos = playerSprite_->GetPosition();
+        auto pos = playerSprite_->position;
         saveData_.SetLocationCommand(LocationCommand((int)pos.x, (int)pos.y));
         auto harvestCmds = GetHarvestCommands();
         for(auto each : harvestCmds)
@@ -676,11 +677,9 @@ namespace game
         configuration_.GetVar("GIRL_SURV", GIRL_SURV);
         playerSprite_ = LoadPlayerLGSpr(boy ? BOY_SURV :
             GIRL_SURV, 32, 32, boy, 1, 0);
-        playerSprite_->SetPosition({
+        playerSprite_->position = {
             (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
-            (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight(),
-            0.f
-        });
+            (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight() };
         // clear harvest and farm data
         harvestCommands_.clear();
         farmCommands_.clear();
@@ -696,6 +695,7 @@ namespace game
             battleSystem_ = nullptr;
             delete uiSystem_;
             uiSystem_ = nullptr;
+            keybinds_.Clear();
             SaveGame();
             std::string BOY_SURV, GIRL_SURV;
             configuration_.GetVar("BOY_SURV", BOY_SURV);
@@ -724,6 +724,18 @@ namespace game
         splashScreen_ = new SplashScreen();
         splashScreen_->Initialize();
         gameState_ = GAME_STATE::SPLASH;
+    }
+
+    void IsleGame::SetupKeybinds()
+    {
+        keybinds_.AddKeybind(SDLK_i, [this](){
+            showingInventory_ = !showingInventory_;
+            uiSystem_->ShowInventory(showingInventory_);
+        });
+
+        keybinds_.AddKeybind(SDLK_ESCAPE, [this](){
+            uiSystem_->ShowMMPopup(true);
+        });
     }
 
     PlayerSprite* IsleGame::LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp)
@@ -767,7 +779,7 @@ namespace game
     bool IsleGame::SpriteIsSwimming(Sprite* sprite)
     {
         // calculate the bottom center of sprite in world coordinates.
-        auto pos = sprite->GetPosition();
+        auto pos = sprite->position;
         pos.x += (float)sprite->GetWidth() / 2.f;
         pos.y += (float)sprite->GetHeight();
 
@@ -813,8 +825,8 @@ namespace game
         // one pass of sorting. The larger the Y-base position, the later rendered
         for(int i=0; i < renderList_.size() - 1; ++i)
         {
-            float y0 = renderList_[i]->GetPosition().y + (float)renderList_[i]->GetHeight();
-            float y1 = renderList_[i+1]->GetPosition().y + (float)renderList_[i+1]->GetHeight();
+            float y0 = renderList_[i]->position.y + (float)renderList_[i]->GetHeight();
+            float y1 = renderList_[i+1]->position.y + (float)renderList_[i+1]->GetHeight();
             if(y0 > y1)
             {
                 Sprite* swap = renderList_[i];
@@ -826,7 +838,7 @@ namespace game
 
     void IsleGame::CheckTileCollision(Sprite* sprite)
     {
-        auto pos = sprite->GetPosition();
+        auto pos = sprite->position;
         float left, top, right, bottom;
         sprite->GetCollisionBox(left, top, right, bottom);
         float tileWidth = (float)tileMap_->GetTileSet()->GetTileWidth();
@@ -843,7 +855,7 @@ namespace game
                 pos.x += tileRight - left;
             else   // move along y axis because it's smaller difference
                 pos.y += tileBottom - top;
-            sprite->SetPosition(pos);
+            sprite->position = pos;
         }
         // check bottom left corner of sprite
         ix = (int)(left / tileWidth);
@@ -857,7 +869,7 @@ namespace game
                 pos.y -= bottom - tileTop; // move above tile
             else 
                 pos.x += tileRight - left; // move right
-            sprite->SetPosition(pos);
+            sprite->position = pos;
         }
         // check top right of sprite
         ix = (int)(right / tileWidth);
@@ -871,7 +883,7 @@ namespace game
                 pos.x -= right - tileLeft; // so move left
             else 
                 pos.y -= tileBottom - top; // move up
-            sprite->SetPosition(pos);
+            sprite->position = pos;
         }
         // check top right of sprite
         ix = (int)(right / tileWidth);
@@ -885,7 +897,7 @@ namespace game
                 pos.y += tileBottom - top;
             else  
                 pos.x -= right - tileLeft;
-            sprite->SetPosition(pos);
+            sprite->position = pos;
         }
     }
 
@@ -961,7 +973,7 @@ namespace game
     {
         for(auto ent : loadedEntities_)
         {
-            auto pos = ent->GetPosition();
+            auto pos = ent->position;
             if((int)pos.x == x && (int)pos.y == y)
                 return ent;
         }
@@ -1010,10 +1022,10 @@ namespace game
 
         // check to see if we are in MAX_DISTANCE units of bottom center of targeted entity.
         const float MAX_DISTANCE = 48.f;
-        glm::vec3 bottomCenter = ent->GetPosition();
+        glm::vec2 bottomCenter = ent->position;
         bottomCenter.x += (float)ent->GetWidth() / 2.f;
         bottomCenter.y += (float)ent->GetHeight();
-        glm::vec3 playerCenter = playerSprite_->GetPosition();
+        glm::vec2 playerCenter = playerSprite_->position;
         playerCenter.x += (float)playerSprite_->GetWidth() / 2.f;
         playerCenter.y += (float)playerSprite_->GetHeight() / 2.f;
         float dist = glm::distance(bottomCenter, playerCenter);
@@ -1105,8 +1117,8 @@ namespace game
             {
                 // check farming
                 auto itemToAdd = targetedEntity->Farm();
-                SetFarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
-                    FarmCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y,
+                SetFarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y, 
+                    FarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y,
                         false, time(nullptr)));
                 inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
                 uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
@@ -1123,7 +1135,7 @@ namespace game
             {
                 // check harvest-clicking
                 targetedEntity->DecRemainingClicks();
-                SetHarvestCommand((int)targetedEntity->GetPosition().x, (int)targetedEntity->GetPosition().y, 
+                SetHarvestCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y, 
                     targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
                 // get the item(s) to add.
                 auto itemsToAdd = targetedEntity->OnInteract();

@@ -25,6 +25,7 @@
 #include "Configuration.hpp"
 #include "engine/Game.hpp"
 #include "Inventory.hpp"
+#include "Keybinds.hpp"
 #include "MobSpawner.hpp"
 #include "MobSprite.hpp"
 #include "ogl/Texture.hpp"
@@ -101,6 +102,8 @@ namespace game
         void EndGame();
         // Rebuilds splash screen object and sets game state back to SPLASH SCREEN
         void ReturnToMainMenu();
+        // Sets up keybinds based on ???
+        void SetupKeybinds();
 
         // load a sprite and animations from lost guardian folder
         PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp);
@@ -193,7 +196,7 @@ namespace game
         bool showingInventory_ = false;
         // Camera coordinates to determine where on screen objects are rendered. Render functions that take
         // a camera vector should receive a negated camera parameter.
-        glm::vec3 camera_ = {0.f,0.f,0.f};
+        glm::vec2 camera_ = {0.f,0.f};
         // list of all sprites to try to render including player. Does not own pointers
         std::vector<Sprite*> renderList_;
         // list of loaded map entities. Owns pointers
@@ -206,6 +209,8 @@ namespace game
         combat::BattleSystem* battleSystem_;
         // Lua ui system object
         UISystem* uiSystem_;
+        // Keybind object
+        Keybinds keybinds_;
     };
 
 }

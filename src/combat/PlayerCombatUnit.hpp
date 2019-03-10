@@ -34,6 +34,9 @@ namespace combat
         // access numbers for display
         inline int GetMaxExperience() const { return maxExperience_; }
         inline int GetCurrentExperience() const { return currentExperience_; }
+        // TODO: add generic ability cooldown percentage method
+        float GetRemainingRightCooldownAsValue();
+        float GetRemainingLeftCooldownAsValue();
     private:
         int maxExperience_;
         int currentExperience_;

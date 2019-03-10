@@ -68,8 +68,8 @@ namespace combat
             {
                 if(abTimer->counter < ab.cooldown)
                 {
-                    combatLogEntry = abilityName + " is still on cooldown for " + 
-                        std::to_string(ab.cooldown - abTimer->counter) + " more seconds.";
+                    //combatLogEntry = abilityName + " is still on cooldown for " + 
+                    //    std::to_string(ab.cooldown - abTimer->counter) + " more seconds.";
                     return false;
                 }
             }
@@ -192,6 +192,29 @@ namespace combat
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
             "%s: Cooldown table entry `%s' is missing!", __FUNCTION__, abilityName.c_str());
         return false;
+    }
+
+    float CombatUnit::AbilityCooldownRemaining(const std::string& abilityName)
+    {
+        const auto& found = abilities_.find(abilityName);
+        if(found == abilities_.end())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: Unable to query cooldown for `%s'", __FUNCTION__, abilityName.c_str());
+            return 0.0f;
+        }
+        const auto& cdEntry = std::find_if(cooldowns_.begin(), cooldowns_.end(), [found](const Cooldown& cd){
+            return cd.name == found->first;
+        });
+        if(cdEntry == cooldowns_.end())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Cooldown entry is missing for `%s'", __FUNCTION__, abilityName.c_str());
+        }
+        float remaining = found->second.cooldown - cdEntry->counter;
+        if(remaining < 0.0f)
+            remaining = 0.0f;
+        return remaining;
     }
 
     bool CombatUnit::GlobalCooldownIsOff()

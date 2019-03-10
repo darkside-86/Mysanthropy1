@@ -23,7 +23,7 @@
 namespace game
 {
 
-    MobSpawner::MobSpawner(const MobType& mt, float frequency, const glm::vec3 &pos, float percentChance)
+    MobSpawner::MobSpawner(const MobType& mt, float frequency, const glm::vec2 &pos, float percentChance)
         : mobType_(mt), frequency_(frequency), percentChance_(percentChance), position_(pos)
     {
         timer_ = frequency_ - 1.0f; // ready to spawn one second after creation
@@ -54,7 +54,7 @@ namespace game
                 const float RADIUS = 512.f;
                 for(auto eachMob : existingMobs)
                 {
-                    auto pos = eachMob->GetPosition();
+                    auto pos = eachMob->position;
                     float dist = glm::distance(position_, pos);
                     if(dist <= RADIUS)
                         num++;
@@ -62,7 +62,7 @@ namespace game
                 if(num < LIMIT)
                 {
                     spawned = new MobSprite(mobType_, position_);
-                    spawned->SetPosition(position_);
+                    spawned->position = position_;
                 }
                 else 
                 {

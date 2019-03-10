@@ -119,6 +119,7 @@ add_executable (
         game/gamemain.cpp
         game/Inventory.cpp
         game/Item.cpp
+        game/Keybinds.cpp
         game/MobSpawner.cpp
         game/MobSprite.cpp
         game/PlayerSprite.cpp

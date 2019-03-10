@@ -122,11 +122,9 @@ namespace editor
                 // first check to see if we need to place an entity
                 if(clickAction_ == CLICK_ACTION::PLACING_ENTITY && entityToPlace_ != nullptr)
                 {
-                    entityToPlace_->SetPosition({
+                    entityToPlace_->position = {
                         -(float)cameraX_ + (float)clickedX,
-                        -(float)cameraY_ + (float)clickedY,
-                        0.f
-                    });
+                        -(float)cameraY_ + (float)clickedY };
                     entities_.push_back(entityToPlace_);
                     entityToPlace_ = nullptr;
                     tileMap_->AddEntityLocation(entityID_, 
@@ -161,8 +159,8 @@ namespace editor
                 }
                 else if(clickAction_ == CLICK_ACTION::PLACING_SPAWNER && mobSpawnerToPlace_ != nullptr)
                 {
-                    mobSpawnerToPlace_->SetPosition({ (float)clickedX - (float)cameraX_, 
-                        (float)clickedY - (float)cameraY_, 0.0f});
+                    mobSpawnerToPlace_->SetPosition(glm::vec2((float)clickedX - (float)cameraX_, 
+                        (float)clickedY - (float)cameraY_));
                     mobSpawners_.push_back(mobSpawnerToPlace_);
                     tileMap_->AddSpawnerLocation(mobSpawnerID_, clickedX - cameraX_, clickedY - cameraY_, 
                         mobSpawnerToPlace_->GetFrequency(), mobSpawnerToPlace_->GetPercentChance());
@@ -291,15 +289,15 @@ namespace editor
         // draw the entities.
         for(auto it : entities_)
         {
-            it->Render(glm::vec3((float)cameraX_, (float)cameraY_, 0.f), program);
+            it->Render(glm::vec2((float)cameraX_, (float)cameraY_), program);
         }
 
         // draw all the mob spawners by rendering a skull at their location
         for(auto it : mobSpawners_)
         {
             auto pos = it->GetPosition();
-            skullIcon_->SetPosition(pos);
-            skullIcon_->Render({(float)cameraX_, (float)cameraY_, 0.0f}, program);
+            skullIcon_->position = pos;
+            skullIcon_->Render({(float)cameraX_, (float)cameraY_}, program);
         }
 
         // draw all tiles from the set across the top
@@ -415,7 +413,7 @@ namespace editor
                 "%s: Invalid mob type index %d", __FUNCTION__, index);
             return;
         }
-        mobSpawnerToPlace_ = new game::MobSpawner(t, freq, {0.0f,0.0f,0.0f}, chance);
+        mobSpawnerToPlace_ = new game::MobSpawner(t, freq, {0.0f,0.0f}, chance);
     }
 
     void TileEditor::CleanupEntities()
@@ -440,10 +438,10 @@ namespace editor
         for(; it != entities_.end(); ++it)
         {
             if( (*it)->GetName()==t.name 
-                && (float)x >= (*it)->GetPosition().x 
-                && (float)x <= (*it)->GetPosition().x + (float)(*it)->GetWidth()
-                && (float)y >= (*it)->GetPosition().y 
-                && (float)x <= (*it)->GetPosition().y + (float)(*it)->GetHeight() )
+                && (float)x >= (*it)->position.x 
+                && (float)x <= (*it)->position.x + (float)(*it)->GetWidth()
+                && (float)y >= (*it)->position.y 
+                && (float)x <= (*it)->position.y + (float)(*it)->GetHeight() )
             {
                 break;
             }
