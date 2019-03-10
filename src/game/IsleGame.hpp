@@ -23,6 +23,7 @@
 
 #include "combat/BattleSystem.hpp"
 #include "Configuration.hpp"
+#include "CraftingSystem.hpp"
 #include "engine/Game.hpp"
 #include "Inventory.hpp"
 #include "Keybinds.hpp"
@@ -163,7 +164,9 @@ namespace game
         PlayerSprite* playerSprite_ = nullptr;
         // Inventory (shared across playable classes)
         Inventory inventory_;
-        // Places a swim filter over sprites that are swimming
+        // Crafting system
+        CraftingSystem craftingSystem_;
+        // Places a swim filter over sprites that are swimming. TODO: should be configured by tile map
         SwimFilter* swimFilter_ = nullptr;
         // The complete target info
         Target target_;

@@ -1,7 +1,6 @@
 -- Entries for all possible inventory items -----------------------------------
 -------------------------------------------------------------------------------
 
-
 ITEM_ENTRY {
     name = "foodstuff",
     hidden = true,
@@ -59,4 +58,9 @@ ITEM_ENTRY {
 ITEM_ENTRY {
     name = "water",
     texture = "res/textures/items/water.png"
+}
+
+ITEM_ENTRY {
+    name = "rope",
+    texture = "res/textures/items/rope.png"
 }
