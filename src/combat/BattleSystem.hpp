@@ -21,15 +21,17 @@
 #include <string>
 #include <vector>
 
+#include "AnimationSystem.hpp"
 #include "game/MobSprite.hpp"
 #include "game/PlayerSprite.hpp"
 #include "game/Target.hpp"
+#include "ogl/Program.hpp"
 
 namespace combat
 {
 
     // determines what mobs are engaged in combat with player and runs AI to select moves
-    // against player
+    // against player. Also contains AnimationSystem for managing spell animations
     class BattleSystem
     {
     public:
@@ -37,6 +39,11 @@ namespace combat
         BattleSystem();
         // dtor
         virtual ~BattleSystem();
+        // update the animation
+        inline void UpdateAnimations(float dtime) { animationSystem_.Update(dtime); }
+        // render the animations
+        inline void RenderAnimations(int camX, int camY, ogl::Program& program)
+            { animationSystem_.Render(camX, camY, program); }
         // Adds a mob to the list of in-combat mobs if mob not already in list
         void AddMob(game::MobSprite* mobSprite);
         // Removes a mob from the combat list. 
@@ -54,6 +61,8 @@ namespace combat
         std::vector<game::MobSprite*> mobSprites_;
         // the player
         game::PlayerSprite* playerSprite_;
+        // animation system
+        AnimationSystem animationSystem_;
     };
 
 }

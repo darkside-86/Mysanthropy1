@@ -135,6 +135,14 @@ namespace combat
         lua_gettable(L, 1);
         ability.level = (int)lua_tointeger(L, -1);
         lua_pop(L, 1);
+    // animation : string
+        lua_pushstring(L, "animation");
+        lua_gettable(L, 1);
+        if(!lua_isnil(L, -1))
+            ability.animation = lua_tostring(L, -1);
+        else
+            ability.animation = "";
+        lua_pop(L, 1);
 
         at->allAbilities_[name] = ability;
 

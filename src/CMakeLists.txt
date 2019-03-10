@@ -109,6 +109,10 @@ add_executable (
 add_executable ( 
     RPG
         combat/AbilityTables.cpp
+        combat/Animation.cpp
+        combat/AnimationEntry.cpp
+        combat/AnimationSystem.cpp
+        combat/AnimationTable.cpp
         combat/AttributeSheet.cpp
         combat/BattleSystem.cpp
         combat/CombatUnit.cpp

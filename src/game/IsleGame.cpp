@@ -395,6 +395,9 @@ namespace game
                 mobSprites_.erase(eachMobIt);
             }
 
+            // update spell animations made last cycle
+            battleSystem_->UpdateAnimations(dtime);
+
             // calculate battle AI systems
             auto logs = battleSystem_->CalculateMoves();
             for(const auto& eachEntry : logs)
@@ -494,6 +497,7 @@ namespace game
                     swimFilter_->Render(-camera_, program);
                 }
             }
+            battleSystem_->RenderAnimations(-(int)(camera_.x), -(int)(camera_.y), program);
         }
         engine::ui::Root::Get()->Render(gc);
     }

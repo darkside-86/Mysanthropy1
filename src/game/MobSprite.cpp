@@ -67,7 +67,10 @@ namespace game
     {
         Sprite::Update(dtime);
         // set combat unit
-        combatUnit_->SetLocation(position);
+        combatUnit_->SetLocation({
+            position.x + (float)width_/2.f,
+            position.y + (float)height_/2.f
+        });
         combatUnit_->Update(dtime);
         // TODO: check leash among many other things
         patrolTimer_ += dtime;

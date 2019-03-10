@@ -30,9 +30,9 @@ namespace combat
         enum class CastType { Instant, Casted, Channeled };
         // convenient constructor function
         Ability(const std::string& nm, int mr, int mxr, bool of, float cd, bool ong, 
-                CastType ct, float ctm, const Formula& f, int lvl)
+                CastType ct, float ctm, const Formula& f, int lvl, const std::string& anim)
           : name(nm), minRange(mr), maxRange(mxr), offensive(of), cooldown(cd), onGCD (ong), 
-            castType(ct), castTime(ctm), formula(f), level(lvl) {}
+            castType(ct), castTime(ctm), formula(f), level(lvl), animation(anim) { }
         Ability() {}
         // name. Redundant but super-helpful
         std::string name = "";
@@ -54,6 +54,8 @@ namespace combat
         Formula formula;
         // level requirement of unit to use ability
         int level = 1;
+        // associated animation
+        std::string animation = "";
     };
 
     // TODO: reimplement as vector

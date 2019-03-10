@@ -76,7 +76,13 @@ namespace combat
         inline void SetInCombat(bool b) { inCombat_ = b; }
         // get abilities
         inline const AbilityTable& GetAbilities() const { return abilities_; }
+        // get an ability from unit's  ability table. if not found, returns an ability
+        //  object filled with default empty values such as name=""
+        Ability GetAbilityByName(const std::string& name);
     private:
+        // disable copy constructor
+        CombatUnit(const CombatUnit&);
+        void operator=(const CombatUnit&);
         //  name of unit for combat log
         std::string name_;
         // stat sheet

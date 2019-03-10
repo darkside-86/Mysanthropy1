@@ -12,7 +12,8 @@ ABILITY {
     castType = "instant",
     castTime = 0,
     formula = "!<(0.25,0.5)MAP+0.5LVL,Physical;", -- todo: add fist weapon damage
-    level = 1
+    level = 1,
+    animation = "unarmed_right"
 }
 
 ABILITY {
@@ -25,7 +26,8 @@ ABILITY {
     castType = "instant",
     castTime = 0,
     formula = "!<(0.2,0.4)MAP+0.5LVL,Physical;",
-    level = 1
+    level = 1,
+    animation = "unarmed_left"
 }
 
 ABILITY {
@@ -39,6 +41,7 @@ ABILITY {
     castTime = 0,
     formula = "!<(0.2)RAP,Earth[1stone];!?0.5SPD,Earth:8;",
     level = 5
+    -- TODO: animation
 }
 
 -- PLAYER CONFIGURATIONS ------------------------------------------------------
@@ -61,7 +64,8 @@ ABILITY {
     castType = "instant",
     castTime = 0,
     formula = "!<(0.2,0.4)MAP+0.5LVL,Physical;",
-    level = 1
+    level = 1,
+    animation = "basic_attack"
 }
 
 -- NPC CONFIGURATIONS ---------------------------------------------------------

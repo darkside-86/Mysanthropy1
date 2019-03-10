@@ -252,4 +252,11 @@ namespace combat
         }
     }
 
+    Ability CombatUnit::GetAbilityByName(const std::string& name)
+    {
+        // this works because of the empty parameter constructor of Ability and the fact
+        //  the table isn't stored internally as const
+        return abilities_[name];
+    }
+
 }

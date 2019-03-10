@@ -90,7 +90,16 @@ namespace combat
             bool hit =  playerSprite_->GetPlayerCombatUnit().UseAbility(targetedMob->GetCombatUnit(), false,
                 abilityName, combatLogEntry);
             if(hit)
+            {
                 AddMob(targetedMob);
+                // play the animation if mob was hit
+                const Ability ab = playerSprite_->GetPlayerCombatUnit().GetAbilityByName(abilityName);
+                if(ab.animation != "") // make sure there is an animation to actually play
+                {
+                    animationSystem_.AddAndStartNewAnimation(ab.name, playerSprite_->GetPlayerCombatUnit(), 
+                        targetedMob->GetCombatUnit(), playerSprite_->GetWidth());
+                }
+            }
         }
         else
         {
@@ -146,6 +155,10 @@ namespace combat
         {
             markedForDeletion->SetKilledByPlayer(true);
             RemoveMob(markedForDeletion);
+            // this mob might be somebody's spell animation target. 
+            animationSystem_.InvalidateAnimationTarget(markedForDeletion->GetCombatUnit());
+            // this mob might be the source unit for a target.
+            animationSystem_.InvalidateAnimationSource(markedForDeletion->GetCombatUnit());
         }
         // check to see if player died, and if so, clear out mob list (caller will manage player death)
         if(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth() == 0)
@@ -155,6 +168,10 @@ namespace combat
                 each->GetCombatUnit().SetInCombat(false);
             }
             mobSprites_.clear();
+            // the player is probably the source of a combat animation
+            animationSystem_.InvalidateAnimationSource(playerSprite_->GetPlayerCombatUnit());
+            // don't want projectiles following player to the spawn point
+            animationSystem_.InvalidateAnimationTarget(playerSprite_->GetPlayerCombatUnit());
         }
         // if no mobs are in list, set out of combat to true for player
         if(mobSprites_.size() == 0)

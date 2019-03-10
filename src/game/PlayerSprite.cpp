@@ -45,8 +45,10 @@ namespace game
     void PlayerSprite::Update(float dtime)
     {
         Sprite::Update(dtime);
-        // todo: define combat location as exact center of sprite
-        combatUnit_->SetLocation(position);
+        combatUnit_->SetLocation({
+            position.x + (float)width_ / 2.f,
+            position.y + (float)height_ / 2.f
+        });
         combatUnit_->Update(dtime);
     }
 
