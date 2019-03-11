@@ -33,7 +33,7 @@ namespace game
     class SwimFilter
     {
     public:
-        SwimFilter();
+        SwimFilter(const std::string& texturePath);
         virtual ~SwimFilter();
         void Render(const glm::vec2& camera, ogl::Program& program);
         // set the dimensions of the vao object and location based on a sprite

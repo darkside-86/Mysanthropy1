@@ -24,9 +24,9 @@
 namespace game
 {
 
-    SwimFilter::SwimFilter()
+    SwimFilter::SwimFilter(const std::string& texturePath)
     {
-        texture_ = new ogl::Texture("res/textures/swimming.png");
+        texture_ = new ogl::Texture(texturePath);
         vertices_[0] = {{0.f, 0.f, 0.f}, {255,255,255,255}, {0.f, 0.f}, {0.f, 0.f, 1.f}};
         vertices_[1] = {{0.f, 1.f, 0.f}, {255,255,255,255}, {0.f, 1.f}, {0.f, 0.f, 1.f}};
         vertices_[2] = {{1.f, 1.f, 0.f}, {255,255,255,255}, {1.f, 1.f}, {0.f, 0.f, 1.f}};

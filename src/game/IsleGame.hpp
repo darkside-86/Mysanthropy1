@@ -21,40 +21,23 @@
 #include <vector>
 #include <unordered_map>
 
-#include "combat/BattleSystem.hpp"
+#include "combat/Battle.hpp"
 #include "Configuration.hpp"
-#include "CraftingSystem.hpp"
+#include "Crafting.hpp"
 #include "engine/Game.hpp"
+#include "Harvesting.hpp"
 #include "Inventory.hpp"
 #include "Keybinds.hpp"
 #include "MobSpawner.hpp"
 #include "MobSprite.hpp"
 #include "ogl/Texture.hpp"
-#include "PlayerCommand.hpp"
 #include "PlayerSprite.hpp"
-#include "SaveData.hpp"
+#include "Persistence.hpp"
 #include "SplashScreen.hpp"
 #include "SwimFilter.hpp"
 #include "Target.hpp"
 #include "UISystem.hpp"
 #include "world/TileMap.hpp"
-
-namespace game
-{
-    struct ENT_COORDS
-    {
-        int x=0, y=0;
-        bool operator==(const ENT_COORDS& ec) const 
-            { return x==ec.x && y == ec.y; }
-    };
-}
-
-// needed to use ENT_COORDS as an unordered_map key
-namespace std { template <> struct hash<game::ENT_COORDS> {
-    size_t operator() (const game::ENT_COORDS& ec) const {
-        return ((size_t)ec.x<<32)|ec.y;
-    }
-}; }
 
 namespace game
 {
@@ -64,6 +47,17 @@ namespace game
     public:
         // determines what Update and Render does
         enum GAME_STATE { SPLASH, PLAYING, RETURNING_TO_MENU };
+        // what cast action the player is doing (only can do one at a time)
+        enum class PlayerAction 
+        { 
+            None, // no cast bar action going on
+            Harvesting, // includes "farm" type harvesting
+            Crafting, // when crafting an item 
+            Building, // attempting to place a building on the map
+            // Spell casting has to be handled by combat system because NPCs can also
+            //  cast spells. But there is only one cast bar and user can only do one.
+        };
+
         // constructor
         IsleGame();
         // destructor
@@ -77,8 +71,10 @@ namespace game
         // render either the main menu or game world depending on game state
         void Render(engine::GraphicsContext& gc);
 
-        // returns a reference to the inventory object
+        // returns a reference to the inventory object (not const because inventory list is always changing)
         inline Inventory& GetInventory() { return inventory_; }
+        // returns a reference to the crafting system (const because crafting database never changes0)
+        inline const Crafting& GetCrafting() const { return crafting_; }
         // sets the game state
         inline void SetGameState(GAME_STATE gs) { gameState_ = gs; }
         // get the playerSprite
@@ -116,7 +112,8 @@ namespace game
         void CleanupLoadedEntities();
         // Destroy mob spawners
         void CleanupMobSpawners();
-        // Sets up the renderList_ vector by filling it with entities and the player
+        // Sets up the renderList_ vector by filling it with entities and the player (mobs are added individually
+        //  as needed later)
         void SetupRenderList();
         // Perform one pass of a sort of sprites by Y value to emulate orthogonal view
         void RenderSortPass();
@@ -132,8 +129,8 @@ namespace game
         bool CheckPoint(float x, float y, float left, float top, float right, float bottom);
         // Checks the distance between player and targeted entity and begins click action
         void InteractWithEntity(Entity* ent);
-        // Stop playing harvesting sound
-        void StopHarvestSound();
+        // Stop playing action sound
+        void StopActionSound();
         // Clear target
         void ClearTarget();
         // Remove an entity from the list of loaded entities
@@ -143,18 +140,8 @@ namespace game
         Entity* FindEntityByLocation(int x, int y);
         // Sets the experience of the player_ object, checks for level up, and updates UI experience information
         void UpdatePlayerExperience(bool dinged);
-        // Checks if a harvesting cast is completed and acts accordingly
-        void CheckHarvestCast(float dtime);
-        // Sets a new harvest command in the list of harvest commands written to saved game
-        void SetHarvestCommand(int x, int y, int clicks);
-        // Sets a new farm command in the list of farm commands written to saved game
-        void SetFarmCommand(int x, int y, const FarmCommand& fc);
-        // Removes an individual farm command such as when a farmable is ready for pickup
-        void RemoveFarmCommand(int x, int y);
-        // convert harvestCommands_ to a vector of HarvestCommand and return the result
-        std::vector<HarvestCommand> GetHarvestCommands();
-        // convert farmCommands_ to a vector of FarmCommand and return the result
-        std::vector<FarmCommand> GetFarmCommands();
+        // Checks if an action cast is completed and acts accordingly
+        void CheckActionCast(float dtime);
 
         // Core game configuration
         Configuration& configuration_;
@@ -165,26 +152,23 @@ namespace game
         // Inventory (shared across playable classes)
         Inventory inventory_;
         // Crafting system
-        CraftingSystem craftingSystem_;
-        // Places a swim filter over sprites that are swimming. TODO: should be configured by tile map
+        Crafting crafting_;
+        // Places a swim filter over sprites that are swimming.
         SwimFilter* swimFilter_ = nullptr;
         // The complete target info
         Target target_;
-        // True if a casting sequence was started.
-        bool harvesting_ = false;
-        // The number of seconds that a cast must occur before being completed
+        // Player action enum to determine meaning of mouse clicks
+        PlayerAction playerAction_;
+        // The required amount of time for the current casting action
         float maxCastTime_ = 0.f;
         // Counts the number of seconds current cast attempt has been going
         float currentCastTime_ = 0.f;
-        // Sound channel harvest sound is being played on. Needed to cancel playback of sound. -1 indicates
-        //  an invalid channel and is ignored.
-        int harvestSoundChannel_ = -1;
-        // harvest commands. value is number of clicks
-        std::unordered_map<ENT_COORDS, int> harvestCommands_;
-        // farm commands
-        std::unordered_map<ENT_COORDS, FarmCommand> farmCommands_;
+        // Sound channel player action sound is being played on. Needed to cancel playback of sound. -1 indicates
+        //  an invalid channel and is ignored. TODO: a class to organize playing of different types of sounds
+        //  according to player action
+        int actionSoundChannel_ = -1;
         // Save game data.
-        SaveData saveData_;
+        Persistence saveData_;
         // State of game
         GAME_STATE gameState_ = GAME_STATE::SPLASH;
         // Autosave frequency
@@ -209,7 +193,9 @@ namespace game
         // list of mob sprites. Owns pointers
         std::vector<MobSprite*> mobSprites_;
         // Battle system to keep track of what is in combat and process moves
-        combat::BattleSystem* battleSystem_;
+        combat::Battle* battle_;
+        // Harvest system to keep track of map modifications
+        Harvesting* harvesting_;
         // Lua ui system object
         UISystem* uiSystem_;
         // Keybind object

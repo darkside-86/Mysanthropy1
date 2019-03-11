@@ -563,6 +563,8 @@ namespace world
 
         lua_pushcfunction(scripting_, TileMap::lua_Liquids);
         lua_setglobal(scripting_, "LIQUIDS");
+        lua_pushcfunction(scripting_, TileMap::lua_Swimming);
+        lua_setglobal(scripting_, "SWIMMING");
         lua_pushcfunction(scripting_, TileMap::lua_BeginEntity);
         lua_setglobal(scripting_, "BEGIN_ENTITY");
         lua_pushcfunction(scripting_, TileMap::lua_UseTexture);
@@ -661,7 +663,15 @@ namespace world
         return 0;
     }
 
-    // lua : BEGIN_ENTITY(nameOfEnt)
+    // lua : SWIMMING ( string_pathToSwimmingTexture )
+    int TileMap::lua_Swimming(lua_State* L)
+    {
+        TileMap* tileMap = GetTileMapObject(L);
+        tileMap->swimmingTexture_ = lua_tostring(L, 1);
+        return 0;
+    }
+
+    // lua : BEGIN_ENTITY(string_nameOfEnt)
     int TileMap::lua_BeginEntity(lua_State* L)
     {
         TileMap* tileMap = GetTileMapObject(L);

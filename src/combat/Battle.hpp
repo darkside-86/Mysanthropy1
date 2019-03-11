@@ -1,4 +1,4 @@
-// BattleSystem.hpp
+// Battle.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -32,13 +32,13 @@ namespace combat
 
     // determines what mobs are engaged in combat with player and runs AI to select moves
     // against player. Also contains AnimationSystem for managing spell animations
-    class BattleSystem
+    class Battle
     {
     public:
         // ctor
-        BattleSystem();
+        Battle();
         // dtor
-        virtual ~BattleSystem();
+        virtual ~Battle();
         // update the animation
         inline void UpdateAnimations(float dtime) { animationSystem_.Update(dtime); }
         // render the animations

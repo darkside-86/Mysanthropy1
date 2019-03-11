@@ -48,6 +48,10 @@ namespace game
         lua_setglobal(script_, "Game_GetSaveSlot");
         lua_pushcfunction(script_, lua_Game_GetPlayerLevel);
         lua_setglobal(script_, "Game_GetPlayerLevel");
+        lua_pushcfunction(script_, lua_Game_GetItemTexture);
+        lua_setglobal(script_, "Game_GetItemTexture");
+        lua_pushcfunction(script_, lua_Game_GetCraftables);
+        lua_setglobal(script_, "Game_GetCraftables");
         // load core lua UI libraries and the main UI file
         std::vector<const char*> CORE_UI_LIB = {
             "ui/lib/fonts.lua", 
@@ -217,6 +221,18 @@ namespace game
             PrintLuaError(script_);
     }
 
+    void UISystem::CraftingWindow_Toggle()
+    {
+        toggleCraftingWindow_ = !toggleCraftingWindow_;
+        lua_getglobal(script_, "CraftingWindow_Toggle");
+        lua_pushboolean(script_, toggleCraftingWindow_);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK)
+            PrintLuaError(script_);
+    }
+
+//-----------------------------------------------------------------------------
+
     void UISystem::PrintLuaError(lua_State* L)
     {
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
@@ -306,6 +322,73 @@ namespace game
         UISystem* uiSystem = GetUISystem(L);
         auto& playerSprite = uiSystem->game_.GetPlayerSprite();
         lua_pushinteger(L, playerSprite.GetPlayerCombatUnit().GetAttributeSheet().GetLevel());
+        return 1;
+    }
+
+    int UISystem::lua_Game_GetCraftables(lua_State* L)
+    {
+        UISystem* uiSystem = GetUISystem(L);
+        const auto& craftables = uiSystem->game_.GetCrafting().GetCraftables();
+        // build a Lua array of Lua tables with the fields specified by Craftable class
+        lua_newtable(L);
+        int luaArrayCounter = 1;
+        for(const auto& craftable : craftables)
+        {
+            lua_pushinteger(L, luaArrayCounter); // the array key
+            lua_newtable(L); // the array value
+             // name : string
+             lua_pushstring(L, "name");
+             lua_pushstring(L, craftable.name.c_str());
+             lua_settable(L, -3);
+             // required : array of { name="some item", count=howmanyareneeded}...
+             lua_pushstring(L, "required");
+             lua_newtable(L);
+             int requiredCounter = 1;
+             for(const auto& eachRequirement : craftable.required)
+             {
+                lua_pushinteger(L, requiredCounter);
+                lua_newtable(L);
+                 lua_pushstring(L, "name");
+                 lua_pushstring(L, eachRequirement.item.c_str());
+                 lua_settable(L, -3);
+                 lua_pushstring(L, "count");
+                 lua_pushinteger(L, eachRequirement.count);
+                 lua_settable(L, -3);
+                lua_settable(L, -3);
+                ++requiredCounter;
+             }
+             lua_settable(L, -3);
+             // time : integer
+             lua_pushstring(L, "time");
+             lua_pushinteger(L, craftable.time);
+             lua_settable(L, -3);
+             // building : string
+             lua_pushstring(L, "building");
+             lua_pushstring(L, craftable.building.c_str());
+             lua_settable(L, -3);
+             // level : integer
+             lua_pushstring(L, "level");
+             lua_pushinteger(L, craftable.level);
+             lua_settable(L, -3);
+            lua_settable(L, -3);
+            ++luaArrayCounter;
+        }
+        return 1;
+    }
+
+    int UISystem::lua_Game_GetItemTexture(lua_State* L)
+    {
+        UISystem* uiSystem = GetUISystem(L);
+        std::string itemName = luaL_checkstring(L, 1);
+        auto item = uiSystem->game_.GetInventory().GetItemEntryByName(itemName).item;
+        if(item == nullptr)
+        {
+            luaL_error(L, "%s: Item `%s' is not valid!", __FUNCTION__, itemName.c_str());
+        }
+
+        std::string texturePath = item->GetTexturePath();
+        lua_pushstring(L, texturePath.c_str());        
+        
         return 1;
     }
 

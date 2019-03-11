@@ -91,26 +91,29 @@ namespace game
                 }
                 if(vel.length() != 0)
                 {
-                    // first check harvesting cast. TODO: check other casts.
-                    // because vel.length is 0, indicates movement so cancel cast.
-                    if(harvesting_)
+                    // movement interrupts any type of cast
+                    // TODO: handle spell casting separately because sound will be based on
+                    //  animation and ability info.
+                    if(playerAction_ != PlayerAction::None)
                     {
-                        harvesting_ = false;
+                        playerAction_ = PlayerAction::None;
                         uiSystem_->ToggleCastBar(false);
-                        uiSystem_->WriteLineToConsole("Harvest interrupted by player", 1.f, 0.f, 0.f, 0.9f);
-                        if(harvestSoundChannel_ != -1)
+                        uiSystem_->WriteLineToConsole("Action interrupted by player", 1.f, 0.f, 0.f, 0.9f);
+                        if(actionSoundChannel_ != -1)
                         {
-                            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-                            harvestSoundChannel_ = -1;
+                            engine::GameEngine::Get().GetSoundManager().HaltSound(actionSoundChannel_);
+                            actionSoundChannel_ = -1;
                         }
                     }
                     float PLAYER_SPEED = 50.0f; // sane default
                     configuration_.GetVar("PLAYER_SPEED", PLAYER_SPEED);
                     playerSprite_->StartAnimation();
+                    // TODO: find out if the velocity bug is caused by an almost zero non-zero here?
                     if(vel.y != 0)
                         vel.y /= glm::abs(vel.y); // set to 1 or -1
                     if(vel.x != 0)
                         vel.x /= glm::abs(vel.x); // set to 1 or -1
+                    // TODO: account for buffs/debuffs (multipliers against SPD stat)
                     vel = glm::normalize(vel) * PLAYER_SPEED;
                 }
                 playerSprite_->velocity = vel;
@@ -121,7 +124,7 @@ namespace game
             }
             else 
             {
-                // todo: stop movement based on key up
+                // TODO: stop movement based on key up
                 playerSprite_->PauseAnimation();
                 playerSprite_->velocity = {0.f,0.f};
             }
@@ -156,7 +159,8 @@ namespace game
                         //
                         if((Sprite*)*mobFound == target_.GetTargetSprite())
                         {
-                            std::string log = battleSystem_->UsePlayerAbility("unarmed_right", target_);
+                            // TODO: generic right-hand weapon calls instead of direct ability name
+                            std::string log = battle_->UsePlayerAbility("unarmed_right", target_);
                             uiSystem_->WriteLineToConsole(log);
                         }
                         else
@@ -170,7 +174,8 @@ namespace game
                                 case MobType::AGGRO_TYPE::NEUTRAL: tt=Target::TARGET_TYPE::NEUTRAL; break;
                             }
                             target_.SetTargetSprite(*mobFound, tt, Target::SPRITE_TYPE::MOBSPR);
-                            harvesting_ = false; // make sure harvest is interrupted upon aquiring new target
+                            // player actions are interrupted by switching targets except for spell casting
+                            playerAction_ = PlayerAction::None;
                             // Set the unit frame data.
                             //  not possible to use existing enums due to circular dependencies generating
                             //  arcane compile errors so we just send strings as argument
@@ -230,9 +235,10 @@ namespace game
                             InteractWithEntity(*found);
                             return;
                         }
-                        else // no target was found so cancel harvest and clear existing target
+                        // TODO: else-if statement here to handle buildings?
+                        else // no target was found so cancel action and clear existing target
                         {
-                            harvesting_ = false;
+                            playerAction_ = PlayerAction::None;
                             ClearTarget();
                         }
                     }
@@ -241,7 +247,8 @@ namespace game
                 {
                     // use our left hand ability on the target. (Targeting can only be done with
                     // primary mouse button)
-                    std::string log = battleSystem_->UsePlayerAbility("unarmed_left", target_);
+                    // TODO: implement function that uses generic left hand ability of equipped weapon 
+                    std::string log = battle_->UsePlayerAbility("unarmed_left", target_);
                     uiSystem_->WriteLineToConsole(log);
                 }
             }
@@ -320,12 +327,12 @@ namespace game
                 // discard previous farm commands once an entity becomes ready for pick up.
                 if(each->IsFarmable() && each->IsReadyForPickup())
                 {
-                    RemoveFarmCommand((int)each->position.x, (int)each->position.y);
+                    harvesting_->RemoveFarmCommand((int)each->position.x, (int)each->position.y);
                 }
             }
 
-            // check casting and update cast bar
-            CheckHarvestCast(dtime);
+            // check player action casting and update cast bar
+            CheckActionCast(dtime);
 
             // check collisions with tiles
             CheckTileCollision(playerSprite_);
@@ -361,6 +368,7 @@ namespace game
             }
 
             // run one pass of despawning at least one out of range mobsprite.
+            // TODO: overworld despawn distance should be configuration data
             const float MAX_DISTANCE = 2048.0f;
             auto eachMobIt = mobSprites_.begin();
             for (; eachMobIt != mobSprites_.end(); ++eachMobIt)
@@ -380,7 +388,7 @@ namespace game
                 // remove from render list
                 RemoveSpriteFromRenderList(*eachMobIt);
                 // remove from battle system
-                battleSystem_->RemoveMob(*eachMobIt);
+                battle_->RemoveMob(*eachMobIt);
                 // delete the pointer
                 delete *eachMobIt;
                 // finally remove from iterator list
@@ -388,17 +396,17 @@ namespace game
             }
 
             // update spell animations made last cycle
-            battleSystem_->UpdateAnimations(dtime);
+            battle_->UpdateAnimations(dtime);
 
             // calculate battle AI systems
-            auto logs = battleSystem_->CalculateMoves();
+            auto logs = battle_->CalculateMoves();
             for(const auto& eachEntry : logs)
             {
                 // TODO: different combat text color than white?
                 uiSystem_->WriteLineToConsole(eachEntry);
             }
 
-            // pass through once to check for dead mobs and give EXP based on scale. TODO: loot table
+            // pass through once to check for dead mobs and give EXP based on scale. 
             CheckMobDeaths();
 
             // if player died reset to spawn point for now
@@ -426,7 +434,7 @@ namespace game
             uiSystem_->RightHandFrame_SetValue( 1.0f -
                 playerSprite_->GetPlayerCombatUnit().GetRemainingLeftCooldownAsValue());
 
-            // todo: bound player to map area
+            // TODO: bound player to map area
 
             // calculate camera.
             float scrW = (float)engine::GameEngine::Get().GetWidth();
@@ -462,7 +470,7 @@ namespace game
         {
             program.Use();
 
-            // colors are texture data only
+            // colors are from texture data only
             program.SetUniform<int>("u_useTexture", true);
             program.SetUniform<int>("u_useColorBlending", false);
             // model view projection matrices
@@ -475,7 +483,7 @@ namespace game
             program.SetUniform<glm::mat4>("u_view", view);
             program.SetUniform<glm::mat4>("u_model", model);
             // rendering with camera takes negative camera coordinates
-            // TODO: fix glitchy tile movement
+            // NOTE: unpolished tile edges look glitchy
             tileMap_->Render(-camera_.x,-camera_.y, program);
             // render the visual target before the actual sprites being targeted
             target_.Render(-camera_, program);
@@ -489,7 +497,7 @@ namespace game
                     swimFilter_->Render(-camera_, program);
                 }
             }
-            battleSystem_->RenderAnimations(-(int)(camera_.x), -(int)(camera_.y), program);
+            battle_->RenderAnimations(-(int)(camera_.x), -(int)(camera_.y), program);
         }
         engine::ui::Root::Get()->Render(gc);
     }
@@ -499,9 +507,13 @@ namespace game
         // Change the game state
         gameState_ = GAME_STATE::PLAYING;
         // Load map and set up entities
-        tileMap_ = new world::TileMap("res/tilemaps/island.bin");
+        std::string STARTING_MAP;
+        configuration_.GetVar("STARTING_MAP", STARTING_MAP);
+        tileMap_ = new world::TileMap(STARTING_MAP);
         loadedEntities_ = tileMap_->GenerateEntities();
         mobSpawners_ = tileMap_->GenerateSpawners();
+        // create harvest system
+        harvesting_ = new Harvesting();
         // clear target
         target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
         // get menu information to determine save or load game data then destroy 
@@ -526,19 +538,22 @@ namespace game
         playerSprite_->SetCurrentAnim("front_stand", 0.2f);
         playerSprite_->StartAnimation();
         // Setup swim filter
-        swimFilter_ = new SwimFilter();
+        swimFilter_ = new SwimFilter(tileMap_->GetSwimmingTexture());
         // Setup render list
         SetupRenderList();
         // Update experience bar to reflect current xp levels
         UpdatePlayerExperience(false);
         // load sounds
         auto& sm = engine::GameEngine::Get().GetSoundManager();
-        sm.LoadSound("res/sounds/chopping.wav");
+        //  TODO: differentiate action types and sounds in configuration
+        std::string ACTION_SOUND;
+        configuration_.GetVar("ACTION_SOUND", ACTION_SOUND);
+        sm.LoadSound(ACTION_SOUND);
         // start looping background music. TODO: fix SoundManager to get more song variety
         sm.PlayMusic("res/music/island1.ogg", -1);
         // setup battle system
-        battleSystem_ = new combat::BattleSystem();
-        battleSystem_->AddPlayer(playerSprite_);
+        battle_ = new combat::Battle();
+        battle_->AddPlayer(playerSprite_);
         // set UI information
         uiSystem_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
             playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel());
@@ -573,7 +588,6 @@ namespace game
                 (float)saveData_.GetLocationCommand().locationY};
         }
         // process harvest commands
-        harvestCommands_.clear();
         saveData_.ForEachHarvestCommand([this](const HarvestCommand& cmd){
             Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
             if(ent == nullptr)
@@ -584,6 +598,7 @@ namespace game
             }
             else
             {
+                // TODO: make a constant for -1 indicating that it means non-harvestable
                 if(ent->GetMaxClicks() != -1)
                 {
                     ent->SetRemainingClicks(ent->GetMaxClicks() - cmd.count);
@@ -593,11 +608,10 @@ namespace game
                         RemoveEntityFromLoaded(ent);
                     }
                 }
-                SetHarvestCommand(cmd.targetX, cmd.targetY, cmd.count);
+                harvesting_->SetHarvestCommand(cmd.targetX, cmd.targetY, cmd.count);
             }
         });
         // process farm commands
-        farmCommands_.clear();
         saveData_.ForEachFarmCommand([this](const FarmCommand& cmd){
             Entity* ent = FindEntityByLocation(cmd.targetX, cmd.targetY);
             if(ent == nullptr)
@@ -609,7 +623,7 @@ namespace game
             else
             {
                 ent->SetFarmData(cmd);
-                SetFarmCommand(cmd.targetX, cmd.targetY, FarmCommand(cmd.targetX, 
+                harvesting_->SetFarmCommand(cmd.targetX, cmd.targetY, FarmCommand(cmd.targetX, 
                     cmd.targetY, cmd.readyToFarm, cmd.farmedTime));
             }
         });
@@ -637,12 +651,12 @@ namespace game
     {
         auto pos = playerSprite_->position;
         saveData_.SetLocationCommand(LocationCommand((int)pos.x, (int)pos.y));
-        auto harvestCmds = GetHarvestCommands();
+        auto harvestCmds = harvesting_->GetHarvestCommands();
         for(auto each : harvestCmds)
         {
             saveData_.AddHarvestCommand(each);
         }
-        auto farmCmds = GetFarmCommands();
+        auto farmCmds = harvesting_->GetFarmCommands();
         for(auto each : farmCmds)
         {
             saveData_.AddFarmCommand(each);
@@ -676,9 +690,7 @@ namespace game
         playerSprite_->position = {
             (float)ix * (float)tileMap_->GetTileSet()->GetTileWidth(),
             (float)iy * (float)tileMap_->GetTileSet()->GetTileHeight() };
-        // clear harvest and farm data
-        harvestCommands_.clear();
-        farmCommands_.clear();
+        // clear inventory data
         inventory_.ClearItems();
     }
 
@@ -687,12 +699,15 @@ namespace game
         auto &sm = engine::GameEngine::Get().GetSoundManager();
         if(gameState_ != GAME_STATE::SPLASH)
         {
-            delete battleSystem_;
-            battleSystem_ = nullptr;
+            delete battle_;
+            battle_ = nullptr;
             delete uiSystem_;
             uiSystem_ = nullptr;
             keybinds_.Clear();
             SaveGame();
+            // destroy Harvesting object
+            delete harvesting_;
+            harvesting_ = nullptr;
             std::string BOY_SURV, GIRL_SURV;
             configuration_.GetVar("BOY_SURV", BOY_SURV);
             configuration_.GetVar("GIRL_SURV", GIRL_SURV);
@@ -732,8 +747,14 @@ namespace game
         keybinds_.AddKeybind(SDLK_ESCAPE, [this](){
             uiSystem_->ShowMMPopup(true);
         });
+
+        keybinds_.AddKeybind(SDLK_c, [this]() {
+            uiSystem_->CraftingWindow_Toggle();
+        });
     }
 
+    // TODO: make a Lua utility function for this in the configuration file and make the 
+    // player sprite selections fully data driven not hard coded like this
     PlayerSprite* IsleGame::LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp)
     {
         auto& tm = engine::GameEngine::Get().GetTextureManager();
@@ -755,6 +776,7 @@ namespace game
         return sprite;
     }
 
+    // TODO: See above function
     void IsleGame::UnloadPlayerLGSpr(PlayerSprite*& sprite, const std::string& name)
     {
         auto& tm = engine::GameEngine::Get().GetTextureManager();
@@ -930,6 +952,7 @@ namespace game
                     const auto& lootTable = (*mobIt)->GetLootTable();
                     for(const auto& entry : lootTable)
                     {
+                        // TODO: handle "exp" as a special case item for mobs that drop bonus exp
                         bool itemDrops = engine::GameEngine::Get().PercentChance(entry.chance);
                         if(itemDrops)
                         {
@@ -950,7 +973,7 @@ namespace game
             {
                 ClearTarget();
             }
-            battleSystem_->RemoveMob(*mobIt);
+            battle_->RemoveMob(*mobIt);
             delete *mobIt;
             mobSprites_.erase(mobIt);
         }
@@ -1012,7 +1035,7 @@ namespace game
         && ent->GetMaxClicks() == -1)
         {
             // the target is not interactive except when farmable or clickable
-            StopHarvestSound();
+            StopActionSound();
             return; 
         }
 
@@ -1028,31 +1051,34 @@ namespace game
         if(dist > MAX_DISTANCE)
         {
             uiSystem_->WriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
-            StopHarvestSound();
+            StopActionSound();
         }
         else 
         {
             // if already harvesting and clicked, then just ignore
-            if(harvesting_)
+            if(playerAction_ == PlayerAction::Harvesting)
                 return;
             // in range so we can play the sound and set the harvesting flag for checking
             // during update intervals as well as show the harvesting cast bar
             maxCastTime_ = ent->GetClickTime();
             currentCastTime_ = 0.0f;
-            harvesting_ = true;
+            playerAction_ = PlayerAction::Harvesting;
             auto& sm = engine::GameEngine::Get().GetSoundManager();
-            StopHarvestSound();
-            harvestSoundChannel_ = sm.PlaySound("res/sounds/chopping.wav");
+            StopActionSound();
+            // configuration determins what to play here. for now use the generic action sound
+            std::string ACTION_SOUND;
+            configuration_.GetVar("ACTION_SOUND", ACTION_SOUND);
+            actionSoundChannel_ = sm.PlaySound(ACTION_SOUND);
             uiSystem_->ToggleCastBar(true);
         }
     }
 
-    void IsleGame::StopHarvestSound()
+    void IsleGame::StopActionSound()
     {
-        if(harvestSoundChannel_ != -1)
+        if(actionSoundChannel_ != -1)
         {
-            engine::GameEngine::Get().GetSoundManager().HaltSound(harvestSoundChannel_);
-            harvestSoundChannel_ = -1;
+            engine::GameEngine::Get().GetSoundManager().HaltSound(actionSoundChannel_);
+            actionSoundChannel_ = -1;
         }
     }
 
@@ -1083,9 +1109,9 @@ namespace game
         delete ent;
     }
 
-    void IsleGame::CheckHarvestCast(float dtime)
+    void IsleGame::CheckActionCast(float dtime)
     {
-        if(!harvesting_)
+        if(playerAction_ == PlayerAction::None)
         {
             uiSystem_->ToggleCastBar(false);
             return;
@@ -1093,100 +1119,110 @@ namespace game
 
         currentCastTime_ += dtime;
         uiSystem_->SetCastBarValue(currentCastTime_ / maxCastTime_);
-        // handle completion of harvest
+        // handle completion of action
         if(currentCastTime_ >= maxCastTime_)
         {
+            // cast time is complete so act accordingly
             bool dinged = false; // level up flag
-            StopHarvestSound();
-            // if the current target isn't of type Entity then something has gone horribly wrong because
-            // target switching should have cancelled the harvest
-            if(target_.GetTargetSpriteType() != Target::SPRITE_TYPE::ENTSPR)
+            StopActionSound();
+            if(playerAction_ == PlayerAction::Harvesting)
             {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
-                    "%s: Target is not an entity (this point should have never been reached!)", __FUNCTION__);
-                harvesting_ = false;
-                return;
-            }
-            // now it is safe to cast targeted sprite to the Entity
-            Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
-            if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
-            {
-                // check farming
-                auto itemToAdd = targetedEntity->Farm();
-                SetFarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y, 
-                    FarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y,
-                        false, time(nullptr)));
-                inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
-                uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
-                    + " " + itemToAdd.name);
-                // add experience based on number of items farmed
-                dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
-                uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) + " exp",
-                    1.0f, 0.f, 1.0f, 1.0f);
-                uiSystem_->BuildInventory();
-                UpdatePlayerExperience(dinged);
-                ClearTarget(); // to prevent accidentally harvesting instead of farming item
-            }
-            else 
-            {
-                // check harvest-clicking
-                targetedEntity->DecRemainingClicks();
-                SetHarvestCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y, 
-                    targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
-                // get the item(s) to add.
-                auto itemsToAdd = targetedEntity->OnInteract();
-                for(auto each : itemsToAdd)
+                // if the current target isn't of type Entity then something has gone horribly wrong because
+                // target switching should have cancelled the harvest
+                if(target_.GetTargetSpriteType() != Target::SPRITE_TYPE::ENTSPR)
                 {
-                    if(each.name != "exp")
-                    {
-                        uiSystem_->WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
-                            + " " + each.name);
-                        inventory_.AddItemByName(each.name, each.num);
-                        uiSystem_->BuildInventory();
-                    }
-                    else 
-                    {   // item exp is a special handled case, not added to inventory
-                        uiSystem_->WriteLineToConsole(std::string("You gain ") 
-                            + std::to_string(each.num) + " experience.", 
-                            1.0f, 0.0f, 1.0f, 1.0f);
-                        dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
-                        UpdatePlayerExperience(dinged);
-                    }
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                        "%s: Target is not an entity (this point should have never been reached!)", 
+                        __FUNCTION__);
+                    playerAction_ = PlayerAction::None;
+                    return;
                 }
-                if(targetedEntity->GetRemainingClicks() == 0)
+                // now it is safe to cast targeted sprite to the Entity
+                Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
+                if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
                 {
-                    auto items = targetedEntity->OnDestroy();
-                    for(auto each : items)
+                    // check farming
+                    auto itemToAdd = targetedEntity->Farm();
+                    harvesting_->SetFarmCommand((int)targetedEntity->position.x, 
+                        (int)targetedEntity->position.y, 
+                        FarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y,
+                            false, time(nullptr)));
+                    inventory_.AddItemByName(itemToAdd.name, itemToAdd.num);
+                    uiSystem_->WriteLineToConsole(std::string("You harvested ") + std::to_string(itemToAdd.num) 
+                        + " " + itemToAdd.name);
+                    // add experience based on number of items farmed
+                    dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
+                    uiSystem_->WriteLineToConsole(std::string(" And gained ") + std::to_string(itemToAdd.num) 
+                        + " exp", 1.0f, 0.f, 1.0f, 1.0f);
+                    uiSystem_->BuildInventory();
+                    UpdatePlayerExperience(dinged);
+                    ClearTarget(); // to prevent accidentally harvesting instead of farming item
+                }
+                else 
+                {
+                    // check harvest-clicking
+                    targetedEntity->DecRemainingClicks();
+                    harvesting_->SetHarvestCommand((int)targetedEntity->position.x, 
+                        (int)targetedEntity->position.y, 
+                        targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
+                    // get the item(s) to add.
+                    auto itemsToAdd = targetedEntity->OnInteract();
+                    for(auto each : itemsToAdd)
                     {
                         if(each.name != "exp")
                         {
-                            uiSystem_->WriteLineToConsole(std::string("You received ") 
-                                + std::to_string(each.num) + " " + each.name);
+                            uiSystem_->WriteLineToConsole(std::string("You receive ") + std::to_string(each.num) 
+                                + " " + each.name);
                             inventory_.AddItemByName(each.name, each.num);
                             uiSystem_->BuildInventory();
                         }
                         else 
-                        {
-                            uiSystem_->WriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
-                                + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                        {   // item exp is a special handled case, not added to inventory
+                            uiSystem_->WriteLineToConsole(std::string("You gain ") 
+                                + std::to_string(each.num) + " experience.", 
+                                1.0f, 0.0f, 1.0f, 1.0f);
                             dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
                             UpdatePlayerExperience(dinged);
                         }
                     }
-                    RemoveSpriteFromRenderList(targetedEntity);
-                    RemoveEntityFromLoaded(targetedEntity);
-                    ClearTarget();
+                    if(targetedEntity->GetRemainingClicks() == 0)
+                    {
+                        auto items = targetedEntity->OnDestroy();
+                        for(auto each : items)
+                        {
+                            if(each.name != "exp")
+                            {
+                                uiSystem_->WriteLineToConsole(std::string("You received ") 
+                                    + std::to_string(each.num) + " " + each.name);
+                                inventory_.AddItemByName(each.name, each.num);
+                                uiSystem_->BuildInventory();
+                            }
+                            else 
+                            {
+                                uiSystem_->WriteLineToConsole(std::string("You gain ") + std::to_string(each.num) 
+                                    + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                                dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
+                                UpdatePlayerExperience(dinged);
+                            }
+                        }
+                        RemoveSpriteFromRenderList(targetedEntity);
+                        RemoveEntityFromLoaded(targetedEntity);
+                        ClearTarget();
+                    }
                 }
             }
-            harvesting_ = false;
+            // TODO: else if to check crafting, etc.
+
+            // in all cases the cast time completion indicates that the action is finished
+            playerAction_ = PlayerAction::None;
             uiSystem_->ToggleCastBar(false);
-            StopHarvestSound();
+            StopActionSound();
         }
     }
 
     void IsleGame::UpdatePlayerExperience(bool dinged)
     {
-        if(dinged)
+        if(dinged) // TODO: play a sound when player gets a level increase
         {
             uiSystem_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
                 playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel()) 
@@ -1202,58 +1238,5 @@ namespace game
         // print information for debugging purposes.
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
             "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);
-    }
-
-    void IsleGame::SetHarvestCommand(int x, int y, int clicks)
-    {
-        auto found = harvestCommands_.find({x,y});
-        if(found != harvestCommands_.end())
-        {
-            found->second = clicks;
-        }
-        else 
-        {
-            harvestCommands_[{x,y}] = clicks;
-        }
-    }
-
-    void IsleGame::SetFarmCommand(int x, int y, const FarmCommand& fc)
-    {
-        auto found = farmCommands_.find({x,y});
-        if(found != farmCommands_.end())
-        {
-            found->second = fc;
-        }
-        else
-        {
-            farmCommands_[{x,y}] = fc;
-        }
-    }
-
-    void IsleGame::RemoveFarmCommand(int x, int y)
-    {
-        auto found = farmCommands_.find({x,y});
-        if(found != farmCommands_.end())
-            farmCommands_.erase(found);
-    }
-        
-    std::vector<HarvestCommand> IsleGame::GetHarvestCommands()
-    {
-        std::vector<HarvestCommand> hc;
-        for(auto it = harvestCommands_.begin(); it != harvestCommands_.end(); ++it)
-        {
-            hc.push_back(HarvestCommand(it->first.x, it->first.y, it->second));
-        }
-        return hc;
-    }
-
-    std::vector<FarmCommand> IsleGame::GetFarmCommands()
-    {
-        std::vector<FarmCommand> commands;
-        for(auto it = farmCommands_.begin(); it != farmCommands_.end(); ++it)
-        {
-            commands.push_back(it->second);
-        }
-        return commands;
     }
 }

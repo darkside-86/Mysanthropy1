@@ -1,4 +1,4 @@
-// BattleSystem.cpp
+// Battle.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -17,22 +17,22 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "BattleSystem.hpp"
+#include "Battle.hpp"
 
 namespace combat
 {
 
-    BattleSystem::BattleSystem()
+    Battle::Battle()
     {
 
     }
 
-    BattleSystem::~BattleSystem()
+    Battle::~Battle()
     {
 
     }
 
-    void BattleSystem::AddMob(game::MobSprite* mobSprite)
+    void Battle::AddMob(game::MobSprite* mobSprite)
     {
         // if mob not already in list add it
         auto found = std::find_if(mobSprites_.begin(), mobSprites_.end(), [mobSprite](const game::MobSprite* spr){
@@ -46,7 +46,7 @@ namespace combat
         playerSprite_->GetPlayerCombatUnit().SetInCombat(true);
     }
 
-    void BattleSystem::RemoveMob(game::MobSprite* mobSprite)
+    void Battle::RemoveMob(game::MobSprite* mobSprite)
     {
         // look for mob and remove if found
         auto found = std::find_if(mobSprites_.begin(), mobSprites_.end(), [mobSprite](const game::MobSprite* spr){
@@ -63,13 +63,13 @@ namespace combat
         }
     }
 
-    void BattleSystem::AddPlayer(game::PlayerSprite* playerSprite)
+    void Battle::AddPlayer(game::PlayerSprite* playerSprite)
     {
         // only one player for now
         playerSprite_ = playerSprite;
     }
 
-    std::string BattleSystem::UsePlayerAbility(const std::string& abilityName, game::Target& target)
+    std::string Battle::UsePlayerAbility(const std::string& abilityName, game::Target& target)
     {
         std::string combatLogEntry = ""; // for clarity initialize to blank to indicate nothing gets printed
                                          // in some cases (such as hitting button while on cooldown)
@@ -109,7 +109,7 @@ namespace combat
         return combatLogEntry;
     }
 
-    std::vector<std::string> BattleSystem::CalculateMoves()
+    std::vector<std::string> Battle::CalculateMoves()
     {
         std::vector<std::string> combatLogEntries;
         // iterate through mobs and either attempt to move close enough to player for chosen attack
@@ -183,7 +183,7 @@ namespace combat
         return combatLogEntries;
     }
 
-    const Ability BattleSystem::PickRandomAbility(CombatUnit& unit)
+    const Ability Battle::PickRandomAbility(CombatUnit& unit)
     {
         const auto& abilityTable = unit.GetAbilities();
         const std::vector<std::pair<std::string, Ability> > listView(abilityTable.begin(), abilityTable.end());

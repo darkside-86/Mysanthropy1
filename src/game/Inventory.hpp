@@ -39,8 +39,10 @@ namespace game
     public:
         Inventory();
         virtual ~Inventory();
-        void AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden=false, int foodstuffValue=0);
+        void AddItemEntry(const std::string& name, const std::string& texturePath, ogl::Texture* texture,
+                          bool hidden=false, int foodstuffValue=0);
         void AddItemByName(const std::string &name, int count);
+        // caller does NOT own the pointer in the ItemEntry
         ItemEntry GetItemEntryByName(const std::string &name) const;
         void ForEachItemEntry(std::function<void(const std::string&,const ItemEntry&)> expr) const;
         inline size_t GetNumEntries() const { return items_.size(); }

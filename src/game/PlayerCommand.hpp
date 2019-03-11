@@ -18,24 +18,27 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <ctime>
+
 namespace game 
 {
     // Base class for user actions that modify the map or location of the player between savegame loads
     class PlayerCommand
     {
     public:
-        enum ACTION { HARVEST, LOCATION, FARM };
+        // light RTTI info
+        enum TYPE { HARVEST, LOCATION, FARM };
 
-        PlayerCommand(ACTION a) : action(a) {}
+        PlayerCommand(TYPE t) : type(t) {}
         virtual ~PlayerCommand() {}
-        ACTION action;
+        TYPE type;
     };
 
     // Represents one click-harvest of a static harvestable object
     class HarvestCommand : public PlayerCommand 
     {
     public:
-        HarvestCommand(int tx, int ty, int c) : PlayerCommand(ACTION::HARVEST),
+        HarvestCommand(int tx, int ty, int c) : PlayerCommand(TYPE::HARVEST),
             targetX(tx), targetY(ty), count(c) {}
         virtual ~HarvestCommand() {}
 
@@ -46,7 +49,7 @@ namespace game
     class LocationCommand : public PlayerCommand
     {
     public:
-        LocationCommand(int x, int y) : PlayerCommand(ACTION::LOCATION), 
+        LocationCommand(int x, int y) : PlayerCommand(TYPE::LOCATION), 
             locationX(x), locationY(y) {}
         virtual ~LocationCommand() {}
 
@@ -57,12 +60,14 @@ namespace game
     class FarmCommand : public PlayerCommand
     {
     public:
-        FarmCommand(int x, int y, bool rtf, time_t ftime) : PlayerCommand(ACTION::FARM),
+        FarmCommand(int x, int y, bool rtf, time_t ftime) : PlayerCommand(TYPE::FARM),
             targetX(x), targetY(y), readyToFarm(rtf), farmedTime(ftime) {}
-        FarmCommand() : PlayerCommand(ACTION::FARM), targetX(0), targetY(0), readyToFarm(false),
+        FarmCommand() : PlayerCommand(TYPE::FARM), targetX(0), targetY(0), readyToFarm(false),
             farmedTime(0) {}
         virtual ~FarmCommand() {}
         int targetX; int targetY; unsigned char readyToFarm; time_t farmedTime;
     };
+
+    // TODO: building command
 
 }

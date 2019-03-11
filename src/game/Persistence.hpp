@@ -1,4 +1,4 @@
-// SaveData.hpp
+// Persistence.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -28,7 +28,7 @@
 namespace game
 {
     // encapsulates writing and reading a persistent state of the game to files
-    class SaveData
+    class Persistence
     {
     public:
         class ItemData
@@ -44,8 +44,8 @@ namespace game
             int boy; // 1 for boy, 0 for girl
         };
     
-        SaveData();
-        virtual ~SaveData();
+        Persistence();
+        virtual ~Persistence();
         void AddHarvestCommand(const HarvestCommand& command);
         void AddFarmCommand(const FarmCommand& command);
         void ForEachHarvestCommand(const std::function<void(const HarvestCommand&)>& fn);

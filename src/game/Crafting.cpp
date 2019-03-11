@@ -1,4 +1,4 @@
-// CraftingSystem.cpp
+// Crafting.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -19,16 +19,16 @@
 
 #include <lua/lua.hpp>
 
-#include "CraftingSystem.hpp"
+#include "Crafting.hpp"
 #include "engine/GameEngine.hpp"
 
 namespace game
 {
-    CraftingSystem::CraftingSystem()
+    Crafting::Crafting()
     {
         lua_State* L = luaL_newstate();
         // store the CraftingSystem object
-        lua_pushstring(L, "CraftingSystem");
+        lua_pushstring(L, "Crafting");
         lua_pushlightuserdata(L, this);
         lua_settable(L, LUA_REGISTRYINDEX);
         // bind globals
@@ -46,12 +46,12 @@ namespace game
         lua_close(L);
     }
 
-    CraftingSystem::~CraftingSystem()
+    Crafting::~Crafting()
     {
 
     }
 
-    bool CraftingSystem::CraftItem(const std::string& itemToCraft, Inventory& inventory)
+    bool Crafting::CraftItem(const std::string& itemToCraft, Inventory& inventory)
     {
         // first make sure the item to craft is in the database of craftable items.
         std::vector<Craftable>::iterator found = std::find_if(craftables_.begin(), craftables_.end(),
@@ -95,12 +95,12 @@ namespace game
         return true;
     }
 
-    int CraftingSystem::lua_Craftable(lua_State* L)
+    int Crafting::lua_Craftable(lua_State* L)
     {
         // get the CraftingSystem object.
-        lua_pushstring(L, "CraftingSystem");
+        lua_pushstring(L, "Crafting");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        CraftingSystem* cs = (CraftingSystem*)lua_touserdata(L, -1);
+        Crafting* cs = (Crafting*)lua_touserdata(L, -1);
         lua_pop(L, 1);
 
         Craftable craftable;

@@ -65,6 +65,8 @@ namespace game
         void LeftHandFrame_SetValue(float value);
         // set the CD indicator of right hand weapon (or unarmed)
         void RightHandFrame_SetValue(float value);
+        // toggle the crafting window visibility
+        void CraftingWindow_Toggle();
     private:
         // prints the Lua error and pops it after a bad pcall
         void PrintLuaError(lua_State* L);
@@ -77,11 +79,15 @@ namespace game
         static int lua_Game_ReturnToMainMenu(lua_State* L);
         static int lua_Game_GetSaveSlot(lua_State* L);
         static int lua_Game_GetPlayerLevel(lua_State* L);
+        static int lua_Game_GetCraftables(lua_State* L);
+        static int lua_Game_GetItemTexture(lua_State* L);
 
         // the lua state
         lua_State* script_;
         // bindings to UI library
         engine::ui::LuaBindings* luaBindings_;
+        // toggle for crafting window
+        bool toggleCraftingWindow_ = false;
         // reference to the IsleGame, set in constructor
         IsleGame& game_;
     };

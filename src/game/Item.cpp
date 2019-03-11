@@ -22,8 +22,8 @@
 namespace game 
 {
 
-    Item::Item(const std::string& name, ogl::Texture* icon, bool hidden) 
-        : name_(name), icon_(icon), hiddenFromInventory_(hidden)
+    Item::Item(const std::string& name, const std::string& texturePath, ogl::Texture* icon, bool hidden) 
+        : name_(name), texturePath_(texturePath), icon_(icon), hiddenFromInventory_(hidden)
     {
 
     }

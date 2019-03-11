@@ -332,3 +332,60 @@ function RightHandFrame_SetValue(value)
     rightHandFrame.fill:SetYPos(rightHandFrame:GetHeight() - rightHandFrame.fill:GetHeight())
 end
 
+-- Setup crafting window ------------------------------------------------------
+-------------------------------------------------------------------------------
+craftingWindow = UIFrame.New(nil, screenWidth / 1.5, screenHeight / 1.5, 0, 0, TEXTURE_UIBLANK)
+craftingWindow:SetXPos(screenWidth / 2 - craftingWindow:GetWidth() / 2)
+craftingWindow:SetYPos(screenHeight / 2 - craftingWindow:GetHeight() / 2)
+craftingWindow:SetColor(0.2, 0.2, 0.2, 0.85)
+craftingWindow:SetBorderColor(0.6, 0.6, 0.6, 0.85)
+craftingWindow:SetBorderSize(1)
+craftingWindow:SetVisible(false)
+function CraftingWindow_Toggle(show)
+    craftingWindow:SetVisible(show)
+end
+craftingWindow.title = UILabel.New(craftingWindow, "Crafting", "sans14", 1, 1, 1, 1)
+craftingWindow.optionPanel = UIFrame.New(craftingWindow, craftingWindow:GetWidth(), 25, 0, 0, TEXTURE_UIBLANK)
+craftingWindow.optionPanel:SetYPos(craftingWindow.title:GetHeight())
+craftingWindow.optionPanel:SetColor(0.4, 0.5, 0.4, 0.2)
+craftingWindow.optionPanel.craftBtn = UIButton.New(craftingWindow.optionPanel, TEXTURE_UIBLANK, "Craft", 
+    "sans14", 5)
+craftingWindow.optionPanel.craftBtn:SetColor(0,0,1,0.5)
+craftingWindow.optionPanel.craftBtn:SetBorderSize(1)
+craftingWindow.optionPanel.craftBtn:SetBorderColor(1,1,1,0.75)
+craftingWindow.optionPanel:SetHeight(craftingWindow.optionPanel.craftBtn:GetHeight())
+craftingWindow.listPanel = UIFrame.New(craftingWindow, craftingWindow:GetWidth(), 1, 0, 0, TEXTURE_UIBLANK)
+craftingWindow.listPanel:SetYPos(craftingWindow.optionPanel:GetYPos() + craftingWindow.optionPanel:GetHeight())
+craftingWindow.listPanel:SetHeight(craftingWindow:GetHeight() - craftingWindow.listPanel:GetYPos())
+craftingWindow.listPanel:SetColor(0.5, 0.4, 0.4, 0.1)
+-- TODO: Game_GetCraftables() to get craftable item list and populate it
+-- TODO: Game_GetItemTexture(itemName) to get icons for each craftable entry
+-- test out our Game_GetCraftables() function
+craftDB = Game_GetCraftables()    
+craftingWindow.listPanel.elements = {}
+ycounter = 0
+for i,v in ipairs(craftDB) do
+    local element = UIFrame.New(craftingWindow.listPanel, craftingWindow.listPanel:GetWidth(), 48, 0, 0,
+        TEXTURE_UIBLANK)
+    element:SetYPos(ycounter)
+    element:SetColor(0,0,0,0)
+    element.data = v
+    element.nameIcon = UITexture.New(element, Game_GetItemTexture(v.name), 48, 48)
+    element.nameLbl = UILabel.New(element, v.name, "sans14", 1, 1, 1, 1)
+    element.eqLabel = UILabel.New(element, "=", "sans14", 1, 1, 1, 1)
+    element.eqLabel:SetXPos(element.nameIcon:GetWidth() + element.nameIcon:GetXPos())
+    element.eqLabel:SetYPos(element.nameIcon:GetHeight() / 2 - element.eqLabel:GetHeight() / 2)
+    element.requirements = {}
+    xcounter = element.eqLabel:GetWidth() + element.eqLabel:GetXPos()
+    for j, reqs in ipairs(v.required) do 
+        element.requirements[j] = UITexture.New(element, Game_GetItemTexture(reqs.name), 48, 48)
+        element.requirements[j]:SetXPos(xcounter)
+        element.requirements[j].countLbl = UILabel.New(element.requirements[j], tostring(reqs.count),
+            "sans14", 1, 1, 1, 1)
+        xcounter = xcounter + element.requirements[j]:GetWidth()
+    end
+    ycounter = ycounter + element:GetHeight()
+    table.insert(craftingWindow.listPanel.elements, element)
+end
+
+

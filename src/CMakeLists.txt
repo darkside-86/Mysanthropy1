@@ -114,21 +114,22 @@ add_executable (
         combat/AnimationSystem.cpp
         combat/AnimationTable.cpp
         combat/AttributeSheet.cpp
-        combat/BattleSystem.cpp
+        combat/Battle.cpp
         combat/CombatUnit.cpp
         combat/Formula.cpp
         combat/PlayerCombatUnit.cpp
         game/Configuration.cpp
-        game/CraftingSystem.cpp
+        game/Crafting.cpp
         game/Entity.cpp
         game/gamemain.cpp
+        game/Harvesting.cpp
         game/Inventory.cpp
         game/Item.cpp
         game/Keybinds.cpp
         game/MobSpawner.cpp
         game/MobSprite.cpp
+        game/Persistence.cpp
         game/PlayerSprite.cpp
-        game/SaveData.cpp
         game/SplashScreen.cpp
         game/Sprite.cpp
         game/SwimFilter.cpp

@@ -54,7 +54,8 @@ namespace game
         }
     }
 
-    void Inventory::AddItemEntry(const std::string& name, ogl::Texture* texture, bool hidden, int foodstuffValue)
+    void Inventory::AddItemEntry(const std::string& name, const std::string& texturePath, ogl::Texture* texture, 
+            bool hidden, int foodstuffValue)
     {
         // make sure item entry is not already in the list
         auto found = items_.find(name);
@@ -63,7 +64,7 @@ namespace game
         {
             // not found so create the new item entry.
             ItemEntry ie;
-            ie.item = new Item(name, texture, hidden);
+            ie.item = new Item(name, texturePath, texture, hidden);
             ie.count = 0;
             ie.foodstuffValue = foodstuffValue;
             items_[name] = ie;
@@ -221,7 +222,7 @@ namespace game
         lua_pop(L, 1);
 
         ogl::Texture* texture = engine::GameEngine::Get().GetTextureManager().GetTexture(texturePath);
-        inventory->AddItemEntry(name, texture, hidden, foodstuff);
+        inventory->AddItemEntry(name, texturePath, texture, hidden, foodstuff);
 
         return 0;
     }

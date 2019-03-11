@@ -28,14 +28,16 @@ namespace game
     class Item
     {
     public:
-        Item(const std::string& name, ogl::Texture* icon, bool hidden=false);
+        Item(const std::string& name, const std::string& texturePath, ogl::Texture* icon, bool hidden=false);
         virtual ~Item();
-        inline std::string GetName() { return name_; }
+        inline std::string GetName() const { return name_; }
+        inline std::string GetTexturePath() const { return texturePath_; }
         inline ogl::Texture* GetIcon() { return icon_; }
         // TODO: Render?
         inline bool IsHiddenFromInventory() { return hiddenFromInventory_; }
     private:
         std::string name_;
+        std::string texturePath_;
         ogl::Texture* icon_;
         bool hiddenFromInventory_ = false;
     };

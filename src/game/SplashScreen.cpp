@@ -24,7 +24,7 @@
 #include "engine/GameEngine.hpp"
 #include "engine/ui/Root.hpp"
 #include "ogl/Vertex.hpp"
-#include "SaveData.hpp"
+#include "Persistence.hpp"
 #include "SplashScreen.hpp"
 
 namespace game
@@ -196,7 +196,7 @@ SplashScreen::SplashScreen()
             }
         });
         // generate vector of labels corresponding to slot name.
-        std::experimental::filesystem::path saveDir(SaveData::FILE_DIR);
+        std::experimental::filesystem::path saveDir(Persistence::FILE_DIR);
         int y = 0;
         for(const auto& each : std::experimental::filesystem::directory_iterator(saveDir))
         {

@@ -1,4 +1,4 @@
-// SaveData.cpp
+// Persistence.cpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -20,31 +20,31 @@
 #include <fstream>
 
 #include "engine/GameEngine.hpp"
-#include "SaveData.hpp"
+#include "Persistence.hpp"
 
 namespace game
 {
 
-    SaveData::SaveData() : locationCommand_(0,0)
+    Persistence::Persistence() : locationCommand_(0,0)
     {
 
     }
 
-    SaveData::~SaveData()
+    Persistence::~Persistence()
     {
     }
 
-    void SaveData::AddHarvestCommand(const HarvestCommand& command)
+    void Persistence::AddHarvestCommand(const HarvestCommand& command)
     {
         harvestCommands_.push_back(command);
     }
 
-    void SaveData::AddFarmCommand(const FarmCommand& command)
+    void Persistence::AddFarmCommand(const FarmCommand& command)
     {
         farmCommands_.push_back(command);
     }
 
-    void SaveData::ForEachHarvestCommand(const std::function<void(const HarvestCommand&)>& fn)
+    void Persistence::ForEachHarvestCommand(const std::function<void(const HarvestCommand&)>& fn)
     {
         for(auto each : harvestCommands_)
         {
@@ -52,7 +52,7 @@ namespace game
         }
     }
 
-    void SaveData::ForEachFarmCommand(const std::function<void(const FarmCommand&)>& fn)
+    void Persistence::ForEachFarmCommand(const std::function<void(const FarmCommand&)>& fn)
     {
         for(auto each : farmCommands_)
         {
@@ -60,7 +60,7 @@ namespace game
         }
     }
 
-    void SaveData::WriteToFile(const std::string& fileName)
+    void Persistence::WriteToFile(const std::string& fileName)
     {
         std::ofstream out;
         const std::string path = std::string(FILE_DIR) + fileName + FILE_EXT;
@@ -121,7 +121,7 @@ namespace game
         ClearData(); // discard data after writing. caller will have to manually refill data for another save
     }
 
-    bool SaveData::ReadFromFile(const std::string& fileName)
+    bool Persistence::ReadFromFile(const std::string& fileName)
     {
         // destroy existing data just in case.
         ClearData();
@@ -201,7 +201,7 @@ namespace game
         return true;
     }
 
-    void SaveData::ClearData()
+    void Persistence::ClearData()
     {
         locationCommand_.locationX = 0;
         locationCommand_.locationY = 0;
@@ -211,12 +211,12 @@ namespace game
         playerData_ = {0,0,0};
     }
 
-    void SaveData::SavePlayerData(const PLAYER_DATA& data)
+    void Persistence::SavePlayerData(const PLAYER_DATA& data)
     {
         playerData_ = data;
     }
 
-    SaveData::PLAYER_DATA SaveData::GetPlayerData()
+    Persistence::PLAYER_DATA Persistence::GetPlayerData()
     {
         return playerData_;
     }

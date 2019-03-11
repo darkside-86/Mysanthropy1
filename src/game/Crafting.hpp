@@ -1,4 +1,4 @@
-// CraftingSystem.hpp
+// Crafting.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -28,13 +28,13 @@ namespace game
 {
     // the crafting system. maintains a database of craftable items as well
     // as managing inventory to create items
-    class CraftingSystem
+    class Crafting
     {
     public:
         // ctor
-        CraftingSystem();
+        Crafting();
         // dtor
-        virtual ~CraftingSystem();
+        virtual ~Crafting();
         // get read-only list of craftable items
         inline const std::vector<Craftable>& GetCraftables() const { return craftables_; }
         // try to modify inventory contents to produce a craftable item

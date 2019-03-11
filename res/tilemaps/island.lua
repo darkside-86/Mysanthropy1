@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
 
 -- number of seconds required to get one harvest out of item
-local defaultClickTime = 8.0
+local defaultClickTime = 6.0
 -- time values are in seconds so use these for conversion
 local minutes = 60.0
 local hours = 60.0 * minutes
@@ -12,6 +12,9 @@ local hours = 60.0 * minutes
 LIQUIDS ( 
    {2,0} -- the full water tile
 ) 
+SWIMMING ( -- indicates what tile to paint for sprites that are swimming
+   "res/textures/swimming.png"
+)
 
 -- ENTITY LIST ----------------------------------------------------------------
 -------------------------------------------------------------------------------
