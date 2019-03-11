@@ -30,19 +30,30 @@
 namespace game
 {
 
+    // A textured quad for placing over the bottom half of an entity or sprite whose center base
+    //  position is in a tile considered "liquid" by the map configuration. The game uses the map
+    //  configuration to determine what texture is used.
     class SwimFilter
     {
     public:
+        // ctor.
         SwimFilter(const std::string& texturePath);
+        // dtor.
         virtual ~SwimFilter();
+        // Render the quad. Position is determined by location of the sprite that is "swimming".
         void Render(const glm::vec2& camera, ogl::Program& program);
         // set the dimensions of the vao object and location based on a sprite
         void SetSpriteData(const Sprite* sprite);
     private:
+        // location of where to render, filled by sprite location data
         glm::vec2 location_;
+        // ogl objects for drawing the quad
         ogl::Vertex vertices_[6];
+        // see above (this is configured according to map)
         ogl::Texture* texture_;
+        // see above
         ogl::VertexArray vao_;
+        // see above
         ogl::VertexBuffer vbo_;
     };
 

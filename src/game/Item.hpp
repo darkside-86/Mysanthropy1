@@ -24,21 +24,29 @@
 
 namespace game
 {
-
+    // defines information about an inventory item
     class Item
     {
     public:
-        Item(const std::string& name, const std::string& texturePath, ogl::Texture* icon, bool hidden=false);
-        virtual ~Item();
+        // ctor
+        Item(const std::string& name, const std::string& texturePath, ogl::Texture* icon, bool hidden=false)
+            : name_(name), texturePath_(texturePath), icon_(icon), hiddenFromInventory_(hidden) {}
+        // Name of item, serves as a database id
         inline std::string GetName() const { return name_; }
+        // Path to the texture associated with this item
         inline std::string GetTexturePath() const { return texturePath_; }
+        // The texture that is associated with the texture path. Item does not create this pointer
         inline ogl::Texture* GetIcon() { return icon_; }
-        // TODO: Render?
+        // Gets whether or not an inventory UI system should display the item
         inline bool IsHiddenFromInventory() { return hiddenFromInventory_; }
     private:
+        // database primary key
         std::string name_;
+        // path to the icon associated with the item
         std::string texturePath_;
+        // Graphical representation of item for UI purposes. Item does not own this pointer!
         ogl::Texture* icon_;
+        // Whether or not item should be shown in an inventory UI
         bool hiddenFromInventory_ = false;
     };
 

@@ -23,6 +23,7 @@
 
 namespace game
 {
+    // Represents the player on screen. 
     class PlayerSprite : public Sprite 
     {
     public:
@@ -39,6 +40,7 @@ namespace game
     private:
         // delete copy constructor and =
         PlayerSprite(const PlayerSprite&) = delete;
+        // see above
         void operator=(const PlayerSprite&) = delete;
         // the player combat unit, holds experience info and manages level ups
         combat::PlayerCombatUnit* combatUnit_;

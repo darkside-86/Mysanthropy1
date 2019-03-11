@@ -124,7 +124,6 @@ add_executable (
         game/gamemain.cpp
         game/Harvesting.cpp
         game/Inventory.cpp
-        game/Item.cpp
         game/Keybinds.cpp
         game/MobSpawner.cpp
         game/MobSprite.cpp
@@ -135,9 +134,9 @@ add_executable (
         game/SwimFilter.cpp
         game/Target.cpp
         game/IsleGame.cpp
+        game/UserInterface.cpp
         world/TileMap.cpp
         world/TileSet.cpp
-        game/UISystem.cpp
         ${ENGINESRC}
         ${OGLBINDINGSRC}
 )

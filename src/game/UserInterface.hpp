@@ -1,4 +1,4 @@
-// UISystem.hpp
+// UserInterface.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -28,13 +28,13 @@ namespace game
 {
     class IsleGame; // forward declaration.
     
-    class UISystem
+    class UserInterface
     {
     public:
         // ctor - Sets up lua state and then bindings
-        UISystem(IsleGame& isleGame);
+        UserInterface(IsleGame& isleGame);
         // dtor - Cleans up bindings and then lua state
-        virtual ~UISystem();
+        virtual ~UserInterface();
         // writes an unwrapped colored line to console
         void WriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
         // sets the percentage of progress on the cast bar (parameter between 0 and 1)
@@ -71,7 +71,7 @@ namespace game
         // prints the Lua error and pops it after a bad pcall
         void PrintLuaError(lua_State* L);
         // retrieves the "this" object for the lua_ functions. The UISystem* is stored in the Lua state registry
-        static UISystem* GetUISystem(lua_State* L);
+        static UserInterface* GetUserInterface(lua_State* L);
         // lua bound functions
         static int lua_Game_GetInventory(lua_State* L);
         static int lua_Game_ConvertItemToFoodstuff(lua_State* L);

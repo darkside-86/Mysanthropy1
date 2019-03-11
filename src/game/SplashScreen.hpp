@@ -35,8 +35,12 @@ namespace game
     // represents the menu selection options made at the splash screen
     class GameLoadState 
     { public:
+        // save slot to be read from and written to during course of gameplay
         std::string saveName;
+        // whether or not a new game is to be started or if false, a game slot is loaded
         bool newGame;
+        // if true, the "boy" character avatar is selected upon new game, else "girl". This
+        //  field is meaningless if newGame is false.
         bool boyCharacter;
     };
 
@@ -44,32 +48,44 @@ namespace game
     class SplashScreen
     {
     public:
+        // enum indicating the state of the splash screen
         enum SCREEN_STATE { MENU, ENDSPLASH };
+
+        // ctor
         SplashScreen();
+        // dtor
         virtual ~SplashScreen();
+        // Initializes music
         void Initialize();
+        // Updates the splash screen
         void Update(float dtime);
+        // Renders splash screen background
         void Render(ogl::Program& program);
+        // Stops music
         void Cleanup();
+        // Returns the screen state
         inline SCREEN_STATE GetScreenState() const { return screenState_; }
+        // Returns the game load state
         inline GameLoadState GetGameLoadState() const { return gameLoadState_; }
     private:
         // replaces any characters invalid in Windows filenames with '_'
         std::string ReplaceInvalidChars(const std::string& str);
         // the ogl objects for rendering the fullscreen background
         ogl::VertexArray bgVao_; 
+        // see above
         ogl::VertexBuffer bgVbo_;
         // The texture of the background
         ogl::Texture* bgTexture_;
-
-        // the main screen UI
+        // indicates whether or not the splash screen cycle should stop and game begin
         SCREEN_STATE screenState_ = SCREEN_STATE::MENU;
-        
+        // What to do when menu is exited and game begins to load
+        GameLoadState gameLoadState_;
+        // hardcoded UI objects
         engine::ui::Frame* mainScreenPanel_;
         engine::ui::Texture* titleIcon_;
         engine::ui::Texture* newGameIcon_;
         engine::ui::Texture* loadGameIcon_;
-        
+
         engine::ui::Frame* newScreenPanel_;
         engine::ui::Texture* newGoBackIcon_;
         engine::ui::Frame* newOptionsPanel_;
@@ -87,9 +103,6 @@ namespace game
         engine::ui::Button* loadOptionsLoadBtn_;
         engine::ui::Frame* loadOptionsFileListPanel_;
         std::vector<engine::ui::Label*> loadOptionsFileList_;
-
-        // What to do when menu is exited and game begins to load
-        GameLoadState gameLoadState_;
     };
 
 }

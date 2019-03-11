@@ -36,7 +36,7 @@
 #include "SplashScreen.hpp"
 #include "SwimFilter.hpp"
 #include "Target.hpp"
-#include "UISystem.hpp"
+#include "UserInterface.hpp"
 #include "world/TileMap.hpp"
 
 namespace game
@@ -197,7 +197,7 @@ namespace game
         // Harvest system to keep track of map modifications
         Harvesting* harvesting_;
         // Lua ui system object
-        UISystem* uiSystem_;
+        UserInterface* userInterface_;
         // Keybind object
         Keybinds keybinds_;
     };

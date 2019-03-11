@@ -23,17 +23,24 @@
 
 #include <SDL/SDL_keycode.h>
 
+// Defines the type of function to be called when a key is pressed
 typedef std::function<void(void)> Keybind;
 
+// Associates functions with keycodes enumerated by SDL
 class Keybinds
 {
 public:
+    // ctor
     Keybinds();
-    virtual ~Keybinds();
-
+    // dtor
+    virtual ~Keybinds();   
+    // TODO: Rename this to set because only one keybind callback per keycode
     void AddKeybind(int keycode, const Keybind& kb);
+    // Runs the function (if any) associated with a given SDLK_* keycode
     void RunKeybind(int keycode);
+    // Erase all existing callbacks
     void Clear();
 private:
+    // Table of keycode-function pairs
     std::unordered_map<int, Keybind> keybindCallbacks_;
 };

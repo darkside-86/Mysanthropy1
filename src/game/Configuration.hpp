@@ -27,8 +27,7 @@
 
 namespace game
 {
-    // handles configuration of game rule data by reading it from a Lua file
-    //
+    // handles configuration of general game rule data by reading it from a Lua file
     class Configuration
     {
     public:
@@ -42,6 +41,7 @@ namespace game
             static_assert(false); // not handled
         }
 
+        // see above
         template <>
         void GetVar(const std::string& name, std::string& value) 
         {
@@ -59,6 +59,7 @@ namespace game
             lua_pop(scripting_, 1);
         }
 
+        // see above
         template <>
         void GetVar(const std::string& name, int& value)
         {
@@ -76,6 +77,7 @@ namespace game
             lua_pop(scripting_, 1);
         }
 
+        // see above
         template <>
         void GetVar(const std::string& name, float& value)
         {
@@ -142,11 +144,12 @@ namespace game
             lua_pop(scripting_, 1);
         }
 
-        // TODO: ones for vector<int>
-
     private:
+        // ctor
         Configuration();
+        // dtor
         virtual ~Configuration();
+        // lua state that holds all the globals accessed with GetVar methods
         lua_State* scripting_ = nullptr;
     };
 }

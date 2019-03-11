@@ -21,6 +21,9 @@
 #include "engine/GameEngine.hpp"
 #include "game/IsleGame.hpp"
 
+// Retrieves the game engine singleton, allocates an IsleGame instance on the stack,
+//  and begins running the update/render cycle for the game. Also calls initialization
+//  and cleanup methods before and after the cycle.
 int main(int argc, char* argv[])
 {
     engine::GameEngine& ge = engine::GameEngine::Get();
