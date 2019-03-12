@@ -35,52 +35,40 @@ namespace game
         UserInterface(IsleGame& isleGame);
         // dtor - Cleans up bindings and then lua state
         virtual ~UserInterface();
-        // writes an unwrapped colored line to console
-        void WriteLineToConsole(const std::string& line, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
-        // sets the percentage of progress on the cast bar (parameter between 0 and 1)
-        void SetCastBarValue(float value);
-        // Toggles the visibility of the taskbar
-        void ToggleCastBar(bool show);
-        // Sets the percentage of progress of the experience bar
-        void SetExperienceBar(float value);
-        // shows or hide inventory window
-        void ShowInventory(bool show);
-        // Creates the UI elements for the inventory window such as each item icon
-        void BuildInventory();
-        // Sets the value of the foodstuff counter in the corner
-        void SetFoodstuffBarData(int amount);
-        // Show dialog box for returning to main menu
-        void ShowMMPopup(bool show);
-        // Sets unit frame top info
-        void PlayerUnitFrame_SetNameAndLevel(const std::string& name, int level);
-        // Sets unit frame health info
-        void PlayerUnitFrame_SetHealth(const int current, const int max);
-        // set up target unit frame data
-        void TargetUnitFrame_SetNameAndLevel(const std::string& name, int level);
-        // set target frame health info and hostility
-        void TargetUnitFrame_SetHealth(const int current, const int max, const std::string& hostility);
-        // toggle visibility
-        void TargetUnitFrame_Toggle(bool show);
-        // set the CD indicator of left hand weapon (or unarmed)
-        void LeftHandFrame_SetValue(float value);
-        // set the CD indicator of right hand weapon (or unarmed)
-        void RightHandFrame_SetValue(float value);
-        // toggle the crafting window visibility
-        void CraftingWindow_Toggle();
+
+    //-- C++ interface to Lua defined UI methods ------------------------------
+
+        // Shows or hides the InventoryFrame depending on its current visibility
+        void UI_Inventory_Toggle();
+        // Destroys and repopulates inventory item grid
+        void UI_Inventory_Setup();
+
+    //-------------------------------------------------------------------------
+
     private:
         // prints the Lua error and pops it after a bad pcall
         void PrintLuaError(lua_State* L);
         // retrieves the "this" object for the lua_ functions. The UISystem* is stored in the Lua state registry
         static UserInterface* GetUserInterface(lua_State* L);
-        // lua bound functions
-        static int lua_Game_GetInventory(lua_State* L);
-        static int lua_Game_ConvertItemToFoodstuff(lua_State* L);
-        static int lua_Game_GetFoodstuffCount(lua_State* L);
-        static int lua_Game_ReturnToMainMenu(lua_State* L);
-        static int lua_Game_GetSaveSlot(lua_State* L);
-        static int lua_Game_GetPlayerLevel(lua_State* L);
-        static int lua_Game_GetCraftables(lua_State* L);
-        static int lua_Game_GetItemTexture(lua_State* L);
+
+    //-- lua bound functions --------------------------------------------------
+
+        // Game_Inventory_ConvertItemToFoodstuff(name,count) : boolean
+        // Attempts to convert a given number of item `name' into foodstuff
+        //  currency. Returns true on success, else false.
+        static int lua_Game_Inventory_ConvertItemToFoodstuff(lua_State* L);
+
+        // Game_Inventory_GetItems() : {...}
+        // returns an array of items currently inventory. fields of each element are
+        // name and durability.
+        static int lua_Game_Inventory_GetItems(lua_State* L);
+
+        // Game_ItemTable_GetItemEntries() : {...}
+        // returns a table of the entire item database. should be called once by UI.
+        //  keys are the item name. See items.lua for fields.
+        static int lua_Game_ItemTable_GetItemEntries(lua_State* L);
+
+    //-------------------------------------------------------------------------
 
         // the lua state
         lua_State* script_;

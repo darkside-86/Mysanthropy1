@@ -71,7 +71,7 @@ namespace game
         // check inventory to make sure we have enough of the required items to craft the item
         for(const Craftable::Required& requirement : found->required)
         {
-            int has = inventory.GetItemAmount(requirement.item);
+            int has = inventory.GetItemCount(requirement.item);
             if(has < requirement.count)
             {
                 // NOTE: The UI should do its own validation to report insufficient items
@@ -89,9 +89,9 @@ namespace game
         // inventory. And return true to indicate success.
         for(const Craftable::Required& requirement : found->required)
         {
-            inventory.SetItemAmount(requirement.item, inventory.GetItemAmount(requirement.item) - requirement.count);
+            inventory.RemoveItem(requirement.item, requirement.count);
         }
-        inventory.AddItemByName(found->name, 1);
+        inventory.AddItem(found->name, 1);
         return true;
     }
 

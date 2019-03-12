@@ -49,7 +49,8 @@ namespace engine
         void SetBGColor(float r, float g, float b, float a);
 		// Deprecated. Returns a TTF_Font associated with an alias. Caller does not own pointer.
 		TTF_Font* GetFont(const std::string & name);
-		// TODO: void GetTextSize(int& w, int& h) for getting dimensions without rendering the text
+		// Get the dimensions of rendered text if it were to be rendered
+		void GetTextSize(const std::string& font, const std::string& text, int& w, int& h);
 	private:
 		// Copy constructor is disabled
 		TextRenderer(const TextRenderer&) {}

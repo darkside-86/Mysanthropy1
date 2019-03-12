@@ -1,4 +1,4 @@
-// Inventory.cpp
+// Inventory.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -22,209 +22,226 @@
 
 namespace game
 {
-    Inventory::Inventory() 
+    Inventory::Inventory(const ItemTable& itemTable) : itemTable_(itemTable)
     {
-        // create lua state
-        script_ = luaL_newstate();
-        // set *this in registry
-        lua_pushstring(script_, "Inventory");
-        lua_pushlightuserdata(script_, this);
-        lua_settable(script_, LUA_REGISTRYINDEX);
-        // set global(s)
-        lua_pushcfunction(script_, lua_ItemEntry);
-        lua_setglobal(script_, "ITEM_ENTRY");
-        // read database file to fill in all possible item entries
-        int ok = luaL_dofile(script_, "res/config/inventory.lua");
-        // report any possible errors
-        if(ok != LUA_OK)
-        {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                "%s: Failed to read item database -- %s", __FUNCTION__, lua_tostring(script_, -1));
-            lua_pop(script_, 1);
-        }
 
-        lua_close(script_);
     }
-
+    
     Inventory::~Inventory()
     {
-        for(auto each : items_)
+        for(Item* item : items_)
         {
-            delete each.second.item;
+            delete item;
         }
     }
-
-    void Inventory::AddItemEntry(const std::string& name, const std::string& texturePath, ogl::Texture* texture, 
-            bool hidden, int foodstuffValue)
+    
+    bool Inventory::AddItem(const std::string& itemName, int count, int durability)
     {
-        // make sure item entry is not already in the list
-        auto found = items_.find(name);
-
-        if(found == items_.end())
-        {
-            // not found so create the new item entry.
-            ItemEntry ie;
-            ie.item = new Item(name, texturePath, texture, hidden);
-            ie.count = 0;
-            ie.foodstuffValue = foodstuffValue;
-            items_[name] = ie;
+        // first search for the ItemEntry in the database.
+        const auto& itemEntries = itemTable_.GetItemEntries();
+        const auto found = itemEntries.find(itemName);
+        if(found == itemEntries.end())
+        {   // if not found, print error and return false
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Failed to add item `%s' because it is not in database", 
+                __FUNCTION__, itemName.c_str());
+            return false;
         }
-        else 
-        {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
-                "%s: Item `%s' already exists!", __FUNCTION__, name.c_str());
-        }
-    }
-
-    void Inventory::AddItemByName(const std::string &name, int count)
-    {
-        // search for item entry
-        auto found = items_.find(name);
-
-        if(found != items_.end())
-        {
-            found->second.count += count;
-        }
-        else 
+        // make sure count is > 0
+        if(count <= 0)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
-                "%s: Item `%s' has no entry.", __FUNCTION__, name.c_str());
+                "%s: Attempt to add 0 or less `%s'", __FUNCTION__, itemName.c_str());
+            return false;
         }
-    }
-
-    ItemEntry Inventory::GetItemEntryByName(const std::string &name) const
-    {
-        auto found = items_.find(name);
-        if(found != items_.end())
+        // make sure durability was requested only for equipment
+        if(durability != 0 && found->second->type != ItemType::Equipment)
         {
-            return found->second;
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Item `%s' cannot have a durability %d because it's not gear", 
+                __FUNCTION__, itemName.c_str(), durability);
+            return false;
         }
-        else 
+        // item was found but next we must check uniqueness and if true make sure
+        //  there is not already the unique item in list
+        if(found->second->unique)
         {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
-                "%s: Item `%s' does not have an entry!", __FUNCTION__, name.c_str());
-            ItemEntry blank = { nullptr, 0, 0 };
-            return blank;
+            const Item* existingItem = GetFirstItemByName(itemName);
+            if(existingItem != nullptr)
+            {   // this indicates the item already exists so report the error and return false.
+                // (Inventory must be guaranteed to not hold on to 0 or less count items)
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                    "%s: Unable to add unique item `%s'", __FUNCTION__, itemName.c_str());
+                return false;
+            }
+            // we can add the unique item now but only if count=1
+            if(count != 1)
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                    "%s: Item `%s' so only one can be added!", __FUNCTION__, itemName.c_str());
+                return false;
+            }
         }
-    }
-
-    void Inventory::ForEachItemEntry(std::function<void(const std::string&,const ItemEntry&)> expr) const
-    {
-        for(auto it = items_.begin(); it != items_.end(); ++it)
+        // all conditions are met to either modify the count field of an existing item
+        // or in the case of equipment, always create a new entry
+        Item* possiblyExistingItem = GetFirstItemByName(itemName);
+        if(possiblyExistingItem == nullptr || found->second->type == ItemType::Equipment)
         {
-            expr(it->first, it->second);
-        }
-    }
-
-    void Inventory::ClearItems()
-    {
-        for(auto& each : items_)
-        {
-            each.second.count = 0;
-        }
-    }
-
-    void Inventory::SetItemAmount(const std::string& name, int amount)
-    {
-        auto found = items_.find(name);
-        if(found != items_.end())
-        {
-            found->second.count = amount;
+            Item* newItem = new Item(*(found->second));
+            newItem->count = count;
+            newItem->durability = durability;
+            items_.push_back(newItem);
         }
         else
         {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
-                "%s: Entry not found: `%s'", __FUNCTION__, name.c_str());
+            possiblyExistingItem->count += count;
         }
-        
-    }
-
-    int Inventory::GetItemAmount(const std::string& name)
-    {
-        auto found = items_.find(name);
-        if(found != items_.end())
-        {
-            return found->second.count;
-        }
-        else
-        {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
-                "%s: Entry not found: `%s'", __FUNCTION__, name.c_str());
-            return 0;      
-        }
-    }
-
-    bool Inventory::ConvertItemToFoodstuff(const std::string& name, int amount)
-    {
-        if(GetItemAmount(name) < amount)
-        {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                "%s: Not enough %s to convert to foodstuff. Wanted: %d. Have: %d", __FUNCTION__, name.c_str(),
-                amount, GetItemAmount(name));
-            return false;
-        }
-
-        ItemEntry ie = GetItemEntryByName(name);
-
-        if(ie.foodstuffValue <= 0)
-        {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                "%s: Item %s is not worth any foodstuff. No trade.", __FUNCTION__, name.c_str());
-            return false;
-        }
-
-        int foodstuffPerItem = ie.foodstuffValue;
-        int totalFoodstuff = ie.foodstuffValue * amount;
-        // first decrease the requested number of items to trade
-        SetItemAmount(name, GetItemAmount(name) - amount);
-        // then add the corresponding foodstuff value
-        SetItemAmount("foodstuff", GetItemAmount("foodstuff") + totalFoodstuff);
         return true;
     }
-
-    // argument is a lua table with appropriate fields for defining an item
-    int Inventory::lua_ItemEntry(lua_State *L)
+    
+    bool Inventory::RemoveItem(const std::string& itemName, int count, int durability)
     {
-        // get "this" pointer
-        lua_pushstring(L, "Inventory");
-        lua_gettable(L, LUA_REGISTRYINDEX);
-        Inventory* inventory = (Inventory*)lua_touserdata(L, -1);
-        lua_pop(L, 1);
-
-        // information needed to construct an item entry.
-        std::string name;
-        std::string texturePath;
-        bool hidden = false;
-        int foodstuff = 0;
-
-        // read name field
-        lua_pushstring(L, "name");
-        lua_gettable(L, 1);
-        name = lua_tostring(L, -1);
-        lua_pop(L, 1);
-        // read hidden field
-        lua_pushstring(L, "hidden");
-        lua_gettable(L, 1);
-        if(lua_isnil(L, -1))
-            hidden = false; // default to false if no value listed
-        else
-            hidden = lua_toboolean(L, -1);
-        lua_pop(L, 1);
-        // read texture field
-        lua_pushstring(L, "texture");
-        lua_gettable(L, 1);
-        texturePath = lua_tostring(L, -1) != nullptr ? lua_tostring(L, -1) : "";
-        lua_pop(L, 1);
-        // read foodstuff field
-        lua_pushstring(L, "foodstuff");
-        lua_gettable(L, 1);
-        foodstuff = (int)lua_tointeger(L, -1); // nil as 0 is fine and expected
-        lua_pop(L, 1);
-
-        ogl::Texture* texture = engine::GameEngine::Get().GetTextureManager().GetTexture(texturePath);
-        inventory->AddItemEntry(name, texturePath, texture, hidden, foodstuff);
-
-        return 0;
+        // attempt to decrease the item count of an existing entry, and if the count becomes
+        //  0, remove the entry from the list. If durability is non-zero, the item specified
+        //  must be an equipment type and the first equipment item that matches the name and
+        //  durability will be removed. (When equipment durability reaches 0, the game should
+        //  convert it into a different unequippable item or destroy it completely)
+        Item* possiblyExistingItem = GetFirstItemByName(itemName, durability);
+        // if there is no entry at all, there is nothing to destroy so report this and return false
+        if(possiblyExistingItem == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: There is no item entry for `%s'", __FUNCTION__, itemName.c_str());
+            return false;
+        }
+        else 
+        {   // make sure there are enough to remove according to count. If not, remove nothing at all
+            if(possiblyExistingItem->count >= count)
+            {
+                possiblyExistingItem->count -= count;
+            }
+            else
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                    "%s: Failed to remove %d of item `%s'. Only %d in inventory", __FUNCTION__, 
+                    count, itemName.c_str(), possiblyExistingItem->count);
+                return false;
+            }
+            // make sure item count did not reach < 0. THIS CODE SHOULD BE UNREACHABLE except maybe
+            //  in the case of integer overflow
+            if(possiblyExistingItem->count < 0)
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                    "%s: Something has gone horribly wrong!!!", __FUNCTION__);
+                // try to remove it anyway but return false because the result is not valid
+                RemoveItemFromListByPointer(possiblyExistingItem);
+                return false;
+            }
+            else if(possiblyExistingItem->count == 0)
+            {   // 0 means we remove the pointer from the list
+                RemoveItemFromListByPointer(possiblyExistingItem);
+            }
+            // the count is decreased and/or the count=0 entry is removed
+            return true;
+        }
+    }
+    
+    int Inventory::GetItemCount(const std::string& itemName)
+    {
+        // count the number of entries with the specified name regardless of durability
+        int count = 0;
+        for(Item* item : items_)
+        {
+            if(item->GetItemEntry().name == itemName)
+                count += item->count;
+        }
+        return count;
     }
 
+    Item* Inventory::GetFirstItemByName(const std::string& name, int durability)
+    {
+        // if durability is 0 (i.e. not specified) then we simply return the first
+        // entry with the matching name or nullptr if not found. If durability is > 0
+        // then the item has to be of type equipment and match the requested durability
+        // else nullptr is returned.
+        for(Item* item : items_)
+        {
+            if(durability == 0)
+            {
+                if(item->GetItemEntry().name == name)
+                    return item;
+            }
+            else // durability is non-zero
+            {
+                if(item->GetItemEntry().type == ItemType::Equipment)
+                {
+                    if(item->durability == durability && item->GetItemEntry().name == name)
+                        return item;
+                }
+                else // doesn't matter if the item name was found, requesting specific durability
+                {    // for a non-equipment item is just absurd and meaningless.
+                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                        "%s: Searched by durability %d for unequippable `%s'. Why?", __FUNCTION__,
+                        durability, name.c_str());
+                    return nullptr;
+                }
+            }
+        }
+        // we didn't find anything
+        return nullptr;
+    }
+
+    void Inventory::RemoveItemFromListByPointer(const Item* item)
+    {
+        std::vector<Item*>::iterator toFind = items_.begin();
+        for(; toFind != items_.end(); ++toFind)
+        {
+            if((*toFind) == item)
+                break;
+        }
+        if(toFind != items_.end())
+            items_.erase(toFind);
+    }
+
+    bool Inventory::ConvertItemToFoodstuff(const std::string& name, int count)
+    {
+        // make sure the item is valid.
+        const auto found = itemTable_.GetItemEntries().find(name);
+        if(found == itemTable_.GetItemEntries().end())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Cannot convert non-existent item `%s' to foodstuff.", __FUNCTION__, name.c_str());
+            return false;
+        }
+        // the db entry was found so check the foodstuff value. only ones with 1 or more worth can
+        //  be converted.
+        if(found->second->foodstuff <= 0)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: Item `%s' is not edible and cannot be stored as food!",
+                __FUNCTION__, name.c_str());
+            return false;
+        }
+        // make sure there are enough of the item to do the conversion
+        Item* item = GetFirstItemByName(name);
+        if(item == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: Item `%s' cannot be converted to foodstuff because it is missing from inventory!",
+                __FUNCTION__, name.c_str());
+            return false;
+        }
+        if(item->count < count)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: Failed to convert %d `%s' to foodstuff. Only %d in inventory.",
+                __FUNCTION__, count, name.c_str(), item->count);
+            return false;
+        }
+        // finally all error conditions are checked and conversion can be done.
+        int foodstuffToAdd = found->second->foodstuff * count;
+        // if foodstuff is missing from database for some reason then AddItem will return an error.
+        RemoveItem(name, count); // use method to remove items to avoid 0 count entries
+        return AddItem("foodstuff", foodstuffToAdd);
+    }
 }

@@ -167,10 +167,25 @@ namespace engine
 		auto findFont = fonts_.find(name);
 		if (findFont == fonts_.end())
 		{
-			GameEngine::Get().GetLogger().Logf(Logger::Severity::WARNING,
+			GameEngine::Get().GetLogger().Logf(Logger::Severity::ERROR,
                     "%s: Font `%s' does not exist", __FUNCTION__, name.c_str());
 			return nullptr;
 		}
 		return findFont->second;
     }
+
+	void TextRenderer::GetTextSize(const std::string& font, const std::string& text, int& w, int& h)
+	{
+		auto findFont = fonts_.find(font);
+		if(findFont == fonts_.end())
+		{
+			GameEngine::Get().GetLogger().Logf(Logger::Severity::ERROR,
+				"%s: Font `%s' does not exist. Returning 0,0", __FUNCTION__, font.c_str());
+			w = 0;
+			h = 0;
+			return;
+		}
+		TTF_Font* f = findFont->second;
+		TTF_SizeUTF8(f, text.c_str(), &w, &h);
+	}
 }

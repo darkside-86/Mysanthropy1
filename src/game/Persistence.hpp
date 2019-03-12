@@ -31,15 +31,17 @@ namespace game
     class Persistence
     {
     public:
-        // storage for inventory items whose count is > 0
+        // serializable representation of an item
         class ItemData
         { public:
-            // database primary key for the associated ItemEntry
+            // database primary key for the associated item database entry
             std::string name;
             // the amount of the item
             int count;
+            // the durability of the item in case it's equipment. otherwise will be 0
+            int durability;
         };
-        // storage for information about the player
+        // serializable representation of player info (location is separate)
         struct PLAYER_DATA
         {
             // the amount of experience between current level and next level. (NOT the players entire

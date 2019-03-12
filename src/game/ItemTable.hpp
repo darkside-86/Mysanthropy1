@@ -1,4 +1,4 @@
-// Item.hpp
+// ItemTable.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,30 +18,30 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
+#include <lua/lua.hpp>
+
 #include "ItemEntry.hpp"
-#include "ogl/Texture.hpp"
 
 namespace game
 {
-    // An entry in the inventory
-    class Item
+    // Database of all possible items
+    class ItemTable
     {
     public:
         // ctor
-        Item(const ItemEntry& ie);
-        // used by inventory to determine how many of an identical item is present
-        int count = 0;
-        // for equipment, durability out of itemEntry_.info->durability. Used to separate otherwise
-        //  identical equippable items.
-        int durability = 0; 
-        // Returns a reference to the item entry that has the database info about the item
-        const ItemEntry& GetItemEntry() const { return itemEntry_; }
-        // Convenience accessors
-        bool IsHidden() const { return itemEntry_.hidden; }
-        bool IsUnique() const { return itemEntry_.unique; }
-        int GetMaxDurability() const 
-            { return itemEntry_.type==ItemType::Equipment? ((EquipmentItemInfo*)itemEntry_.info)->durability: 0; }
+        ItemTable();
+        // dtor
+        virtual ~ItemTable();
+        // get a const reference to the database table
+        const std::unordered_map<std::string,const ItemEntry*>& GetItemEntries() const 
+            { return itemEntries_; }
     private:
-        const ItemEntry& itemEntry_;
+        // Lua function for reading each entry in the database file
+        static int lua_ItemEntry(lua_State* L);
+        // database of items read from Lua data file
+        std::unordered_map<std::string,const ItemEntry*> itemEntries_;
     };
 }

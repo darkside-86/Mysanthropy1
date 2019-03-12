@@ -18,62 +18,50 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <functional>
-#include <unordered_map>
-
-#include <lua/lua.hpp>
+#include <vector>
 
 #include "Item.hpp"
+#include "ItemTable.hpp"
 
 namespace game
 {
-    // Represents an entry of the item database. 
-    class ItemEntry
-    { public:
-        // TODO: This shouldn't be a pointer and redundancy should be eliminated.
-        Item *item=nullptr;
-        // The number of the item in inventory
-        int count=0;
-        // The foodstuff value of an item when converted to the foodstuff currency. 
-        //  TODO: eliminate this redundancy (should be in Item)
-        int foodstuffValue=0;
-    };
-
-    // Represents the database of all possible items as well as the player inventory
+    // Represents the player inventory. Although there are no restrictions on amount of items
+    //  in the inventory, equipment never interanally "stacks"--it always has a separate list entry because
+    //  it is assumed that the durability will change frequently enough to warrant separate entries
     class Inventory
     {
     public:
-        // ctor
-        Inventory();
-        // dtor
+        // ctor - requires item database parameter
+        Inventory(const ItemTable& itemTable);
+        // dtor - deallocates the Item pointers in the list
         virtual ~Inventory();
-        // Adds a new item entry to the database. NOT for use in modifying the count of existing items
-        void AddItemEntry(const std::string& name, const std::string& texturePath, ogl::Texture* texture,
-                          bool hidden=false, int foodstuffValue=0);
-        // Adds to the count value of an existing item in the backpack
-        void AddItemByName(const std::string &name, int count);
-        // Returns item information by name. caller does NOT own the pointer in the ItemEntry
-        ItemEntry GetItemEntryByName(const std::string &name) const;
-        // Deprecated. TODO: replace this nonsense with a const& return
-        void ForEachItemEntry(std::function<void(const std::string&,const ItemEntry&)> expr) const;
-        // Returns the number of entries in the item database
-        inline size_t GetNumEntries() const { return items_.size(); }
-        // Sets the inventory count of all items to 0. Does NOT erase item database entries
-        void ClearItems();
-        // Sets the count of an item
-        void SetItemAmount(const std::string& name, int amount);
-        // Gets the count of an item
-        int GetItemAmount(const std::string& name);
-        // Attempts to convert N items into foodstuff currency. Returns false if fails, such as due
-        //  to the item having 0 foodstuff value or the player not having enough items to convert.
-        bool ConvertItemToFoodstuff(const std::string& name, int amount);
+        // Adds a new item from the database into the inventory list. Returns true if
+        //  item gets added (e.g. could fail if item is unique and already in inventory)
+        //  if durability is not 0, the requested item has to be an equipment or it
+        //  will not be added.
+        bool AddItem(const std::string& itemName, int count, int durability=0);
+        // Removes an item from the inventory. Returns true if the specified number of items
+        //  are successfully removed, else false, such as if count=2 and there is only 1 of the item
+        //  in which case nothing gets removed at all.
+        bool RemoveItem(const std::string& itemName, int count, int durability=0);
+        // Gets the number of a given item in the inventory. Equipment with varying durability
+        //  is combined in the count if they have the same name
+        int GetItemCount(const std::string& itemName);
+        // TODO: Item* GetEquippableItemByDurability(name,durability)
+        // Get const reference to the item list. Needed for building inventory UI info
+        const std::vector<Item*>& GetItems() const { return items_; }
+        // (Tries to) convert a number of items into foodstuff currency. Equipment will NEVER
+        //  be edible so there is no durability parameter to check.
+        bool ConvertItemToFoodstuff(const std::string& name, int count);
     private:
-        // see res/config/inventory.lua
-        static int lua_ItemEntry(lua_State *L);
-        // Database of all possible items. Owns ItemEntry::item pointer
-        std::unordered_map<std::string,ItemEntry> items_;
-        // Lua state for reading Lua defined database. TODO: discard this once the database is read
-        //  from file. This serves no purpose otherwise.
-        lua_State* script_ = nullptr;
+        // Gets the first Item* whose name matches parameter.
+        Item* GetFirstItemByName(const std::string& name, int durability=0);
+        // Remove an item from the list by pointer
+        void RemoveItemFromListByPointer(const Item* item);
+        // inventory has to be stored as a list because unstackable items--such as equipment
+        //  with varying durability requires its own entry. Owns the pointers.
+        std::vector<Item*> items_;
+        // link to the database containing all types of possible items
+        const ItemTable& itemTable_;
     };
 }

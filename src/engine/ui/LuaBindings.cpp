@@ -96,8 +96,9 @@ namespace engine { namespace ui {
     {
         static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
-        // An array of callbacks in the lua registry
+        // make sure argument is a function
         luaL_checktype(L, 2, LUA_TFUNCTION);
+        // Get array of callbacks in the lua registry
         lua_pushstring(L, "ClickedEventCallbacks");
         lua_gettable(L, LUA_REGISTRYINDEX);
         // increment the counter
@@ -108,6 +109,27 @@ namespace engine { namespace ui {
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
+        // create self._onClicked array as needed and add current to it
+        lua_getuservalue(L, 1);
+        lua_pushstring(L, "_onClicked");
+        lua_gettable(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to create self._onClicked", __FUNCTION__);
+            lua_pop(L, 1); // pop nil
+            lua_pushstring(L, "_onClicked");
+            lua_newtable(L);
+            lua_settable(L, -3); // not sure this works? maybe it calls mmIndex?
+            lua_getfield(L, -1, "_onClicked"); // put it back on stack
+        }
+        // from any branch, self._onClicked is now at -1 on stack so add [current]=fn
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to store [%ld]=fn in self._onClicked now", __FUNCTION__, current);
+        lua_pushinteger(L, current);
+        lua_pushvalue(L, 2);
+        lua_settable(L, -3);
+        lua_pop(L, 2); // pop self._onClicked self:_uservalue
         ClickedEventCallback cb = [L, current](const ClickedEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
             lua_pushstring(L, "ClickedEventCallbacks");
@@ -123,6 +145,13 @@ namespace engine { namespace ui {
         };
         self->AddOnClicked(cb);
         return 0;
+
+        /*Object* self = CheckObject(L, 1);
+        // make sure argument is a function
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+        // define an incrementing ID for C++ to capture and use
+        static int counter = 0;
+        int current = ++current;*/
     }
 
     // lua : UIObject.AddOnHover(self, someFunction)
@@ -139,6 +168,29 @@ namespace engine { namespace ui {
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
+
+        // create self._onHover array as needed and add current to it
+        lua_getuservalue(L, 1);
+        lua_pushstring(L, "_onHover");
+        lua_gettable(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to create self._onHover", __FUNCTION__);
+            lua_pop(L, 1); // pop nil
+            lua_pushstring(L, "_onHover");
+            lua_newtable(L);
+            lua_settable(L, -3); // not sure this works? maybe it calls mmIndex?
+            lua_getfield(L, -1, "_onHover"); // put it back on stack
+        }
+        // from any branch, self._onHover is now at -1 on stack so add [current]=fn
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to store [%ld]=fn in self._onHover now", __FUNCTION__, current);
+        lua_pushinteger(L, current);
+        lua_pushvalue(L, 2);
+        lua_settable(L, -3);
+        lua_pop(L, 2); // pop self._onHover self:_uservalue
+
         HoverEventCallback cb = [L, current](const HoverEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
             lua_pushstring(L, "HoverEventCallbacks");
@@ -171,6 +223,29 @@ namespace engine { namespace ui {
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
+
+        // create self._onKeypressed array as needed and add current to it
+        lua_getuservalue(L, 1);
+        lua_pushstring(L, "_onKeypressed");
+        lua_gettable(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to create self._onKeypressed", __FUNCTION__);
+            lua_pop(L, 1); // pop nil
+            lua_pushstring(L, "_onKeypressed");
+            lua_newtable(L);
+            lua_settable(L, -3); // not sure this works? maybe it calls mmIndex?
+            lua_getfield(L, -1, "_onKeypressed"); // put it back on stack
+        }
+        // from any branch, self._onKeypressed is now at -1 on stack so add [current]=fn
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to store [%ld]=fn in self._onKeypressed now", __FUNCTION__, current);
+        lua_pushinteger(L, current);
+        lua_pushvalue(L, 2);
+        lua_settable(L, -3);
+        lua_pop(L, 2); // pop self._onKeypressed self:_uservalue
+
         KeypressedEventCallback cb = [L, current](const KeypressedEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
             lua_pushstring(L, "KeypressedEventCallbacks");
@@ -202,6 +277,29 @@ namespace engine { namespace ui {
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
+
+        // create self._onDragged array as needed and add current to it
+        lua_getuservalue(L, 1);
+        lua_pushstring(L, "_onDragged");
+        lua_gettable(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to create self._onDragged", __FUNCTION__);
+            lua_pop(L, 1); // pop nil
+            lua_pushstring(L, "_onDragged");
+            lua_newtable(L);
+            lua_settable(L, -3); // not sure this works? maybe it calls mmIndex?
+            lua_getfield(L, -1, "_onDragged"); // put it back on stack
+        }
+        // from any branch, self._onDragged is now at -1 on stack so add [current]=fn
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to store [%ld]=fn in self._onDragged now", __FUNCTION__, current);
+        lua_pushinteger(L, current);
+        lua_pushvalue(L, 2);
+        lua_settable(L, -3);
+        lua_pop(L, 2); // pop self._onDragged self:_uservalue
+
         DraggedEventCallback cb = [L, current](const DraggedEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
             lua_pushstring(L, "DraggedEventCallbacks");
@@ -235,6 +333,29 @@ namespace engine { namespace ui {
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
+
+        // create self._onTimer array as needed and add current to it
+        lua_getuservalue(L, 1);
+        lua_pushstring(L, "_onTimer");
+        lua_gettable(L, -2);
+        if(lua_isnil(L, -1))
+        {
+            GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to create self._onTimer", __FUNCTION__);
+            lua_pop(L, 1); // pop nil
+            lua_pushstring(L, "_onTimer");
+            lua_newtable(L);
+            lua_settable(L, -3); // not sure this works? maybe it calls mmIndex?
+            lua_getfield(L, -1, "_onTimer"); // put it back on stack
+        }
+        // from any branch, self._onTimer is now at -1 on stack so add [current]=fn
+        GameEngine::Get().GetLogger().Logf(Logger::Severity::INFO, 
+                "%s: I have to store [%ld]=fn in self._onTimer now", __FUNCTION__, current);
+        lua_pushinteger(L, current);
+        lua_pushvalue(L, 2);
+        lua_settable(L, -3);
+        lua_pop(L, 2); // pop self._onTimer self:_uservalue
+
         TimerEventCallback cb = [L, current](const TimerEvent& e) {
             lua_pushcfunction(L, lua_ErrorHandler);
             lua_pushstring(L, "TimerEventCallbacks");
@@ -333,6 +454,7 @@ namespace engine { namespace ui {
         self->SetYPos(y);
         return 0;
     }
+
 
 // UIFrame ////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -1219,10 +1341,59 @@ namespace engine { namespace ui {
         return 0;
     }
 
-    // runs lua files from the current working directory of host app
-    static int lua_RunFile(lua_State* L)
+    // lua : GetTextSize(alias, text) : w, h
+    static int lua_GetTextSize(lua_State* L)
+    {
+        std::string alias = luaL_checkstring(L, 1);
+        std::string text = luaL_checkstring(L, 2);
+        int width, height;
+        GameEngine::Get().GetTextRenderer().GetTextSize(alias, text, width, height);
+        lua_pushinteger(L, width);
+        lua_pushinteger(L, height);
+        return 2;
+    }
+
+    // runs lua files from the current working directory of host app one time
+    static int lua_Include(lua_State* L)
     {
         const char* path = luaL_checkstring(L, 1);
+
+        // create and/or check the "RunFiles" table in the registry for the
+        // given path and ignore already run files
+        lua_pushstring(L, "RunFiles");
+        lua_gettable(L, LUA_REGISTRYINDEX);
+        if(lua_isnil(L, -1))
+        {
+            // remove the nil
+            lua_pop(L, 1);
+            // create the table and add the entry
+            lua_pushstring(L, "RunFiles");
+            lua_newtable(L);
+             lua_pushstring(L, path);
+             lua_pushboolean(L, true);
+             lua_settable(L, -3);
+            lua_settable(L, LUA_REGISTRYINDEX);
+        }
+        else
+        {
+            // assume the table is a table (nothing else writes to this registry)
+            lua_pushstring(L, path);
+            lua_gettable(L, -2);
+            if(!lua_isnil(L, -1))
+            {
+                // entry already found so there's nothing to do but pop the stack and return
+                lua_pop(L, 2); // the non-nil and RunFiles{}
+                return 0;
+            }
+            else // add the file to entry before running
+            {
+                lua_pushstring(L, path);
+                lua_pushboolean(L, true);
+                lua_settable(L, -4);
+                lua_pop(L, 2); // pop the nil and RunFiles{}
+            }
+        }
+
         int errCode = luaL_dofile(L, path);
         if(errCode != LUA_OK)
         {
@@ -1249,30 +1420,57 @@ namespace engine { namespace ui {
         // register data
         lua_pushstring(L, "ClickedEventCallbacks");
         lua_newtable(L);
+        lua_newtable(L);
+        lua_pushstring(L, "__mode");
+        lua_pushstring(L, "kv");
+        lua_settable(L, -3);
+        lua_setmetatable(L, -2);
         lua_settable(L, LUA_REGISTRYINDEX);
         lua_pushstring(L, "HoverEventCallbacks");
         lua_newtable(L);
+        lua_newtable(L);
+        lua_pushstring(L, "__mode");
+        lua_pushstring(L, "kv");
+        lua_settable(L, -3);
+        lua_setmetatable(L, -2);
         lua_settable(L, LUA_REGISTRYINDEX);
         lua_pushstring(L, "KeypressedEventCallbacks");
         lua_newtable(L);
+        lua_newtable(L);
+        lua_pushstring(L, "__mode");
+        lua_pushstring(L, "kv");
+        lua_settable(L, -3);
+        lua_setmetatable(L, -2);
         lua_settable(L, LUA_REGISTRYINDEX);
         lua_pushstring(L, "DraggedEventCallbacks");
         lua_newtable(L);
+        lua_newtable(L);
+        lua_pushstring(L, "__mode");
+        lua_pushstring(L, "kv");
+        lua_settable(L, -3);
+        lua_setmetatable(L, -2);
         lua_settable(L, LUA_REGISTRYINDEX);
         lua_pushstring(L, "TimerEventCallbacks");
         lua_newtable(L);
+        lua_newtable(L);
+        lua_pushstring(L, "__mode");
+        lua_pushstring(L, "kv");
+        lua_settable(L, -3);
+        lua_setmetatable(L, -2);
         lua_settable(L, LUA_REGISTRYINDEX);
         // set global functions
         lua_pushcfunction(L, lua_LoadTexture);
         lua_setglobal(L, "LoadTexture");
         lua_pushcfunction(L, lua_LoadFont);
         lua_setglobal(L, "LoadFont");
+        lua_pushcfunction(L, lua_GetTextSize);
+        lua_setglobal(L, "GetTextSize");
         lua_pushcfunction(L, lua_GetScreenWidth);
         lua_setglobal(L, "GetScreenWidth");
         lua_pushcfunction(L, lua_GetScreenHeight);
         lua_setglobal(L, "GetScreenHeight");
-        lua_pushcfunction(L, lua_RunFile);
-        lua_setglobal(L, "RunFile");
+        lua_pushcfunction(L, lua_Include);
+        lua_setglobal(L, "Include");
         lua_pushcfunction(L, lua_GetFramesPerSecond);
         lua_setglobal(L, "GetFramesPerSecond");
         // UIObject

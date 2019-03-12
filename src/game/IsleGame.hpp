@@ -27,6 +27,7 @@
 #include "engine/Game.hpp"
 #include "Harvesting.hpp"
 #include "Inventory.hpp"
+#include "ItemTable.hpp"
 #include "Keybinds.hpp"
 #include "MobSpawner.hpp"
 #include "MobSprite.hpp"
@@ -58,6 +59,8 @@ namespace game
             //  cast spells. But there is only one cast bar and user can only do one.
         };
 
+        // methods implementing engine::Game //////////////////////////////////
+
         // constructor
         IsleGame();
         // destructor
@@ -71,8 +74,12 @@ namespace game
         // render either the main menu or game world depending on game state
         void Render(engine::GraphicsContext& gc);
 
+        // accessors //////////////////////////////////////////////////////////
+
         // returns a reference to the inventory object (not const because inventory list is always changing)
-        inline Inventory& GetInventory() { return inventory_; }
+        inline Inventory& GetInventory() { return *inventory_; }
+        // get the item database
+        inline const ItemTable& GetItemTable() const { return itemTable_; }
         // returns a reference to the crafting system (const because crafting database never changes0)
         inline const Crafting& GetCrafting() const { return crafting_; }
         // sets the game state
@@ -101,6 +108,8 @@ namespace game
         void ReturnToMainMenu();
         // Sets up keybinds based on ???
         void SetupKeybinds();
+
+        // Other methods //////////////////////////////////////////////////////
 
         // load a sprite and animations from lost guardian folder
         PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp);
@@ -143,22 +152,46 @@ namespace game
         // Checks if an action cast is completed and acts accordingly
         void CheckActionCast(float dtime);
 
+        // Persistent objects that remain valid the entire IsleGame object life spand //
+
         // Core game configuration
         Configuration& configuration_;
-        // The map currently loaded
-        world::TileMap* tileMap_ = nullptr;
-        // Represents the location and image of the player in the world  
-        PlayerSprite* playerSprite_ = nullptr;
-        // Inventory (shared across playable classes)
-        Inventory inventory_;
         // Crafting system
         Crafting crafting_;
-        // Places a swim filter over sprites that are swimming.
-        SwimFilter* swimFilter_ = nullptr;
-        // The complete target info
-        Target target_;
+        // State of game
+        GAME_STATE gameState_ = GAME_STATE::SPLASH;
+        // Item database
+        ItemTable itemTable_;
+        // Keybind object
+        Keybinds keybinds_;
+        // Save game data.
+        Persistence saveData_;
         // Player action enum to determine meaning of mouse clicks
         PlayerAction playerAction_;
+        // The complete target info
+        Target target_;
+
+        // Dynamic objects reset between start and end game ///////////////////
+
+        // Battle system to keep track of what is in combat and process moves
+        combat::Battle* battle_;
+        // Harvest system to keep track of map modifications
+        Harvesting* harvesting_;
+        // Inventory (shared across playable classes)
+        Inventory* inventory_;
+        // Represents the location and image of the player in the world  
+        PlayerSprite* playerSprite_ = nullptr;
+        // Splash screen main menu
+        SplashScreen* splashScreen_ = nullptr;
+        // Places a swim filter over sprites that are swimming.
+        SwimFilter* swimFilter_ = nullptr;
+        // Lua ui system object
+        UserInterface* userInterface_;
+        // The map currently loaded
+        world::TileMap* tileMap_ = nullptr;
+
+        // various members ////////////////////////////////////////////////////
+
         // The required amount of time for the current casting action
         float maxCastTime_ = 0.f;
         // Counts the number of seconds current cast attempt has been going
@@ -167,22 +200,16 @@ namespace game
         //  an invalid channel and is ignored. TODO: a class to organize playing of different types of sounds
         //  according to player action
         int actionSoundChannel_ = -1;
-        // Save game data.
-        Persistence saveData_;
-        // State of game
-        GAME_STATE gameState_ = GAME_STATE::SPLASH;
         // Autosave frequency
         static constexpr float AUTOSAVE_FREQUENCY = 120.0f; // in seconds
         // Autosave timer
         float autosaveTimer_ = 0.0f;
-        // Splash screen main menu
-        SplashScreen* splashScreen_ = nullptr;
         // which slot to use for current game
         std::string saveSlot_ = "slot0"; // by default
         // toggles the inventory window
         bool showingInventory_ = false;
         // Camera coordinates to determine where on screen objects are rendered. Render functions that take
-        // a camera vector should receive a negated camera parameter.
+        //  a camera vector should receive a negated camera parameter.
         glm::vec2 camera_ = {0.f,0.f};
         // list of all sprites to try to render including player. Does not own pointers
         std::vector<Sprite*> renderList_;
@@ -192,14 +219,6 @@ namespace game
         std::vector<MobSpawner*> mobSpawners_;
         // list of mob sprites. Owns pointers
         std::vector<MobSprite*> mobSprites_;
-        // Battle system to keep track of what is in combat and process moves
-        combat::Battle* battle_;
-        // Harvest system to keep track of map modifications
-        Harvesting* harvesting_;
-        // Lua ui system object
-        UserInterface* userInterface_;
-        // Keybind object
-        Keybinds keybinds_;
     };
 
 }

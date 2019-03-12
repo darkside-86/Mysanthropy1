@@ -87,6 +87,8 @@ namespace game
             out.write((char*)&item.name[0], sz);
             // write the item count
             out.write((char*)&item.count, sizeof(item.count));
+            // write the item durability
+            out.write((char*)&item.durability, sizeof(item.durability));
         }
         // write the move command
         out.write((char*)&locationCommand_.locationX, sizeof(locationCommand_.locationX));
@@ -154,6 +156,8 @@ namespace game
             in.read((char*)&ie.name[0], strLen);
             // then count.
             in.read((char*)&ie.count, sizeof(ie.count));
+            // then durability
+            in.read((char*)&ie.durability, sizeof(ie.durability));
             // Add the entry.
             items_.push_back(ie);
         }
