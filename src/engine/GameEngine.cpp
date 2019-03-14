@@ -33,6 +33,7 @@ namespace engine
 {
     bool GameEngine::Initialize(const char* title, int width, int height)
     {
+        SDL_Delay(1000 * 30);
         width_ = width;
         height_ = height;
         if(SDL_Init(SDL_INIT_EVERYTHING) !=0 )

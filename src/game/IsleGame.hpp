@@ -21,7 +21,9 @@
 #include <vector>
 #include <unordered_map>
 
+#include "BuildingEntry.hpp"
 #include "BuildingOutline.hpp"
+#include "BuildingTable.hpp"
 #include "combat/Battle.hpp"
 #include "Configuration.hpp"
 #include "Crafting.hpp"
@@ -162,8 +164,10 @@ namespace game
         // Checks if an action cast is completed and acts accordingly
         void CheckActionCast(float dtime);
 
-        // Persistent objects that remain valid the entire IsleGame object life spand //
+        // Persistent objects that remain valid the entire IsleGame object life span //
 
+        // Building database
+        BuildingTable buildingTable_;
         // Core game configuration
         Configuration& configuration_;
         // Crafting system
