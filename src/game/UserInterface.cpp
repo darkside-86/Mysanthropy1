@@ -36,6 +36,10 @@ namespace game
         lua_pushlightuserdata(script_, this);
         lua_settable(script_, LUA_REGISTRYINDEX);
         // set globals
+        lua_pushcfunction(script_, lua_Game_StartCrafting);
+        lua_setglobal(script_, "Game_StartCrafting");
+        lua_pushcfunction(script_, lua_Game_Crafting_GetCraftables);
+        lua_setglobal(script_, "Game_Crafting_GetCraftables");
         lua_pushcfunction(script_, lua_Game_Inventory_ConvertItemToFoodstuff);
         lua_setglobal(script_, "Game_Inventory_ConvertItemToFoodstuff");
         lua_pushcfunction(script_, lua_Game_Inventory_GetItems);
@@ -68,6 +72,80 @@ namespace game
 
 //-----------------------------------------------------------------------------
 
+    void UserInterface::UI_ActionBar_SetLeftCDValue(float value)
+    {
+        lua_getglobal(script_, "UI_ActionBar_SetLeftCDValue");
+        lua_pushnumber(script_, value);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+    
+    void UserInterface::UI_ActionBar_SetRightCDValue(float value)
+    {
+        lua_getglobal(script_, "UI_ActionBar_SetRightCDValue");
+        lua_pushnumber(script_, value);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_CastBar_SetActivity(const std::string activity)
+    {
+        lua_getglobal(script_, "UI_CastBar_SetActivity");
+        lua_pushstring(script_, activity.c_str());
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+        
+    void UserInterface::UI_CastBar_SetFillColor(float r, float g, float b, float a)
+    {
+        lua_getglobal(script_, "UI_CastBar_SetFillColor");
+        lua_pushnumber(script_, r);     lua_pushnumber(script_, g);
+        lua_pushnumber(script_, b);     lua_pushnumber(script_, a);
+        int ok = lua_pcall(script_, 4, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+    
+    void UserInterface::UI_CastBar_SetValue(float value)
+    {
+        lua_getglobal(script_, "UI_CastBar_SetValue");
+        lua_pushnumber(script_, value);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+        
+    void UserInterface::UI_CastBar_SetVisible(bool visible)
+    {
+        lua_getglobal(script_, "UI_CastBar_SetVisible");
+        lua_pushboolean(script_, visible);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_Console_WriteLine(const std::string& text, float r, float g, float b, float a)
+    {
+        lua_getglobal(script_, "UI_Console_WriteLine");
+        lua_pushstring(script_, text.c_str());
+        lua_pushnumber(script_, r);     lua_pushnumber(script_, g);
+        lua_pushnumber(script_, b);     lua_pushnumber(script_, a);
+        int ok = lua_pcall(script_, 5, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_Crafting_Toggle()
+    {
+        lua_getglobal(script_, "UI_Crafting_Toggle");
+        int ok = lua_pcall(script_, 0, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_ExperienceBar_SetValue(float value)
+    {
+        lua_getglobal(script_, "UI_ExperienceBar_SetValue");
+        lua_pushnumber(script_, value);
+        int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
     void UserInterface::UI_Inventory_Toggle()
     {
         lua_getglobal(script_, "UI_Inventory_Toggle");
@@ -79,6 +157,37 @@ namespace game
     {
         lua_getglobal(script_, "UI_Inventory_Setup");
         int ok = lua_pcall(script_, 0, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_UnitFrame_SetNameAndLevel(const std::string& name, 
+        int level, const std::string& hostility, bool isPlayer)
+    {
+        lua_getglobal(script_, "UI_UnitFrame_SetNameAndLevel");
+        lua_pushstring(script_, name.c_str());
+        lua_pushinteger(script_, level);
+        lua_pushstring(script_, hostility.c_str());
+        lua_pushboolean(script_, isPlayer);
+        int ok = lua_pcall(script_, 4, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+    
+    void UserInterface::UI_UnitFrame_SetHealth(int ch, int mh, bool isp)
+    {
+        lua_getglobal(script_, "UI_UnitFrame_SetHealth");
+        lua_pushinteger(script_, ch);
+        lua_pushinteger(script_, mh);
+        lua_pushboolean(script_, isp);
+        int ok = lua_pcall(script_, 3, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_UnitFrame_SetVisible(bool vis, bool isp)
+    {
+        lua_getglobal(script_, "UI_UnitFrame_SetVisible");
+        lua_pushboolean(script_, vis);
+        lua_pushboolean(script_, isp);
+        int ok = lua_pcall(script_, 2, 0, 0);
         if(ok != LUA_OK) PrintLuaError(script_);
     }
 
@@ -103,6 +212,66 @@ namespace game
 
     // Lua bound C++ functions ////////////////////////////////////////////////
 
+    int UserInterface::lua_Game_StartCrafting(lua_State* L)
+    {
+        UserInterface* ui = GetUserInterface(L);
+        const std::string itemName = luaL_checkstring(L, 1);
+        ui->game_.StartCrafting(itemName);
+        return 0;
+    }
+
+    int UserInterface::lua_Game_Crafting_GetCraftables(lua_State* L)
+    {
+        UserInterface* ui = GetUserInterface(L);
+        const auto& craftables = ui->game_.GetCrafting().GetCraftables();
+        lua_newtable(L);
+        int arrayCounter = 1;
+        for(const auto& entry : craftables)
+        {
+            lua_pushinteger(L, arrayCounter);
+            lua_newtable(L);
+
+            lua_pushstring(L, "name");
+            lua_pushstring(L, entry.name.c_str());
+            lua_settable(L, -3);
+            lua_pushstring(L, "yield");
+            lua_pushinteger(L, entry.yield);
+            lua_settable(L, -3);
+            lua_pushstring(L, "required");
+            lua_newtable(L);
+            int rc = 1;
+            for(const auto& req : entry.required)
+            {
+                lua_pushinteger(L, rc);
+                lua_newtable(L);
+
+                lua_pushstring(L, "item");
+                lua_pushstring(L, req.item.c_str());
+                lua_settable(L, -3);
+                lua_pushstring(L, "count");
+                lua_pushinteger(L, req.count);
+                lua_settable(L, -3);
+                
+                lua_settable(L, -3);
+                ++rc;
+            }
+            lua_settable(L, -3);
+            lua_pushstring(L, "time");
+            lua_pushinteger(L, entry.time);
+            lua_settable(L, -3);
+            lua_pushstring(L, "building");
+            lua_pushstring(L, entry.building.c_str());
+            lua_settable(L, -3);
+            lua_pushstring(L, "level");
+            lua_pushinteger(L, entry.level);
+            lua_settable(L, -3);
+
+            lua_settable(L, -3);
+            ++arrayCounter;
+        }
+        return 1;
+    }
+
     int UserInterface::lua_Game_Inventory_ConvertItemToFoodstuff(lua_State* L)
     {
         UserInterface* ui = GetUserInterface(L);
@@ -115,11 +284,20 @@ namespace game
     int UserInterface::lua_Game_Inventory_GetItems(lua_State* L)
     {
         UserInterface* ui = GetUserInterface(L);
+        std::string search = "";
+        if(lua_gettop(L) > 0)
+            search = luaL_checkstring(L, 1);
         const auto& items = ui->game_.GetInventory().GetItems();
         lua_newtable(L);
         int arrayCounter = 1;
         for(const Item* item : items)
         {
+            // if argument 1 was specified, that is what to check before adding to array
+            if(search != "")
+            {
+                if(item->GetItemEntry().name != search)
+                    continue;
+            }
             lua_pushinteger(L, arrayCounter);
             lua_newtable(L);
 

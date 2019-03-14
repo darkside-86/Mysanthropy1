@@ -88,6 +88,8 @@ namespace world
         void SetTile(int ix, int iy, const TILE& tile, bool layer1=false);
         // return true if tile at x,y is configured as "liquid"
         bool TileIsLiquid(int x, int y, bool layer1=false);
+        // returns true if tile at x,y,layer0 is buildable AND x,y,layer1 is "empty"
+        bool TileIsBuildable(int x, int y);
         // returns the path of the swimming texture that should be used.
         inline std::string GetSwimmingTexture() const { return swimmingTexture_; }
         // fills an entire layer of the map with a specific tile
@@ -133,6 +135,8 @@ namespace world
         static TileMap* GetTileMapObject(lua_State* L);
         // Lua global functions ///////////////////////////////////////////////
         static int lua_Liquids(lua_State* L);
+        static int lua_Buildable(lua_State* L);
+        static int lua_Empty(lua_State* L);
         static int lua_Swimming(lua_State* L);
         static int lua_BeginEntity(lua_State* L);
         static int lua_UseTexture(lua_State* L);
@@ -189,8 +193,12 @@ namespace world
         ogl::VertexBuffer collisionVbo_;
         // for reading map configuration, entity, and mob database in script file
         lua_State* scripting_ = nullptr;
-        // tile ID configurations
+        // tile ID liquid configuration
         std::vector<TILE> liquids_;
+        // tile ID buildable configuration
+        std::vector<TILE> buildable_; 
+        // what is the upper layer filled with to represent emptiness?
+        TILE empty_;
         // swimming texture configuration
         std::string swimmingTexture_ = "res/textures/swimming.png"; // a reasonable default
         // static entity types and instances

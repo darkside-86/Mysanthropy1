@@ -39,7 +39,7 @@ namespace game
         if(ok != LUA_OK)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
-                "%s: Unable to parse crafting database -- %s", __FUNCTION__, lua_tostring(L, -1));
+                "%s: Unable to read crafting database -- %s", __FUNCTION__, lua_tostring(L, -1));
             lua_pop(L, 1);
         }
 
@@ -82,16 +82,16 @@ namespace game
                 return false;
             }
             // don't consume items yet--need a separate loop in case we run into an unmet item
-            // requirement. Otherwise items might get thrown away for nothing.
+            //  requirement. Otherwise items might get thrown away for nothing.
         }
 
-        // item requirement passed so first consume the items then add the crafted item (1) to
-        // inventory. And return true to indicate success.
+        // item requirement passed so first consume the items then add the crafted item (yield) to
+        //  inventory. And return true to indicate success.
         for(const Craftable::Required& requirement : found->required)
         {
             inventory.RemoveItem(requirement.item, requirement.count);
         }
-        inventory.AddItem(found->name, 1);
+        inventory.AddItem(found->name, found->yield);
         return true;
     }
 
@@ -110,6 +110,11 @@ namespace game
         lua_pushstring(L, "name");
         lua_gettable(L, 1);
         craftable.name = lua_tostring(L, -1); // required field so no checking
+        lua_pop(L, 1);
+        // yield : int
+        lua_pushstring(L, "yield");
+        lua_gettable(L, 1);
+        craftable.yield = (int)lua_tointeger(L, -1);
         lua_pop(L, 1);
         // requires : array of int,string...
         lua_pushstring(L, "requires");

@@ -51,9 +51,9 @@ namespace combat
         void InvalidateSource(const CombatUnit& src);
         // invalidate target IFF parameter tgt is the stored target
         void InvalidateTarget(const CombatUnit& tgt);
-        // check validation of source TODO: depend on type
+        // check validation of source 
         inline bool SourceIsInvalid() const { return sourceInvalidated_; }
-        // check validation of target TODO: depend on type
+        // check validation of target 
         inline bool TargetIsInvalid() const { return targetInvalidated_; }
     private:
         // the amount of time elapsed since the animation started in seconds

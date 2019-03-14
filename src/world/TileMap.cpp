@@ -93,6 +93,25 @@ namespace world
         return false;
     }
 
+    bool TileMap::TileIsBuildable(int x, int y)
+    {
+        // first check tile at layer1 is "empty"
+        TILE t = GetTile(x, y, 1);
+        // if not, can't build here
+        if(!(t.ix == empty_.ix && t.iy == empty_.iy))
+            return false;
+        // check tile at layer0 is "buildable"
+        t = GetTile(x, y, 0);
+        // determine if it is in "buildable"
+        for(auto each : buildable_)
+        {
+            if(each.ix == t.ix && each.iy == t.iy)
+                return true;
+        }
+        // reached end of list so it's not in buildable 
+        return false;
+    }
+
     void TileMap::SaveToFile(const std::string& path)
     {
         std::ofstream out;
@@ -563,6 +582,10 @@ namespace world
 
         lua_pushcfunction(scripting_, TileMap::lua_Liquids);
         lua_setglobal(scripting_, "LIQUIDS");
+        lua_pushcfunction(scripting_, TileMap::lua_Buildable);
+        lua_setglobal(scripting_, "BUILDABLE");
+        lua_pushcfunction(scripting_, TileMap::lua_Empty);
+        lua_setglobal(scripting_, "EMPTY");
         lua_pushcfunction(scripting_, TileMap::lua_Swimming);
         lua_setglobal(scripting_, "SWIMMING");
         lua_pushcfunction(scripting_, TileMap::lua_BeginEntity);
@@ -660,6 +683,35 @@ namespace world
             tileMap->liquids_.push_back({(unsigned short)ix,(unsigned short)iy});
         }
 
+        return 0;
+    }
+
+    // lua - BUILDABLE ( {ix,iy}... )
+    int TileMap::lua_Buildable(lua_State* L)
+    {
+        TileMap* tileMap = GetTileMapObject(L);
+        int nargs = lua_gettop(L);
+        for(int i=1; i <= nargs; ++i)
+        {
+            lua_rawgeti(L, i, 1);
+            int ix = (int)lua_tointeger(L, -1);
+            lua_pop(L, 1);
+            lua_rawgeti(L, i, 2);
+            int iy = (int)lua_tointeger(L, -1);
+            lua_pop(L, 1);
+            tileMap->buildable_.push_back({(unsigned short)ix, (unsigned short)iy});
+        }
+        return 0;
+    }
+
+    // lua - EMPTY ( ix, iy )
+    int TileMap::lua_Empty(lua_State* L)
+    {
+        TileMap* tileMap = GetTileMapObject(L);
+        int ix = (int)lua_tointeger(L, 1);
+        int iy = (int)lua_tointeger(L, 2);
+        tileMap->empty_.ix = (unsigned short)ix;
+        tileMap->empty_.iy = (unsigned short)iy;
         return 0;
     }
 

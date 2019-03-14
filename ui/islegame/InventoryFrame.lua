@@ -23,11 +23,11 @@ Include("ui/islegame/ItemTable.lua")
 
 -- defines a subclass of GameFrame that displays inventory
 InventoryFrame = {
-    New = function() 
+    New = function(parent) 
         local screenWidth = GetScreenWidth()
         local screenHeight = GetScreenHeight()
         -- create the GameFrame
-        local frame = GameFrame.New(nil, screenWidth / 2.5, screenHeight / 2.5, "Inventory", true)
+        local frame = GameFrame.New(parent, screenWidth / 2.25, screenHeight / 2.25, "Inventory", true)
         frame:SetXPos(screenWidth - frame:GetWidth())
         frame:SetYPos(screenHeight - frame:GetHeight())
         -- create the button
@@ -68,9 +68,11 @@ InventoryFrame = {
                                 if success then
                                     capture.data.count = capture.data.count - 1
                                     capture.countLbl:SetText(tostring(capture.data.count))
+                                    UI.dataBar:SetFoodstuff()
                                 end
                             end
                         end
+                        -- TODO: future equip and consume buttons
                     end
                     elem:AddOnClicked(elemOnClicked)
                     --TODO: handle durability field

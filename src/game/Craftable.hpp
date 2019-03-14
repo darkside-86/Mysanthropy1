@@ -32,10 +32,12 @@ namespace game
 
         // name of an item in item database. what gets crafted.
         std::string name;
+        // the amount of the item created by the craft
+        int yield = 1;
         // required items to be consumed from inventory to create the item.
         std::vector<Required> required;
         // how long it takes to produce the item in seconds
-        int time;
+        int time = 1;
         // optional building proximity requirement. entry in building database.
         std::string building;
         // minimum level requirement (defaults to 1)

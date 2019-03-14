@@ -9,9 +9,23 @@ local hours = 60.0 * minutes
 
 -- TILE ID CONFIGURATION ------------------------------------------------------
 -------------------------------------------------------------------------------
+-- when a tile causes the sprite to "swim"
 LIQUIDS ( 
    {2,0} -- the full water tile
 ) 
+-- when a tile can have a building placed on it
+BUILDABLE (
+   {0,0}, {1,0},                
+   {0,1}, {1,1}, {2,1}, 
+   {0,2}, {1,2}, {2,2},     {4,2}, 
+   {0,3}, {1,3}, {2,3}, 
+   {0,4}, {1,4}, {2,4}, 
+   {0,5}, {1,5}, {2,5}, 
+   {0,6}, {1,6}, {2,6}
+) 
+-- when the upper layer is empty it is filled with
+EMPTY ( 5, 0 )
+
 SWIMMING ( -- indicates what tile to paint for sprites that are swimming
    "res/textures/swimming.png"
 )

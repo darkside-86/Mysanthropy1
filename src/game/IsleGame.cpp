@@ -97,9 +97,9 @@ namespace game
                     if(playerAction_ != PlayerAction::None)
                     {
                         playerAction_ = PlayerAction::None;
-                        //userInterface_->ToggleCastBar(false);
-                        //userInterface_->WriteLineToConsole("Action interrupted by player", 
-                        //  1.f, 0.f, 0.f, 0.9f);
+                        userInterface_->UI_CastBar_SetVisible(false);
+                        userInterface_->UI_Console_WriteLine("Action interrupted by player", 
+                            1.f, 0.f, 0.f, 0.9f);
                         if(actionSoundChannel_ != -1)
                         {
                             engine::GameEngine::Get().GetSoundManager().HaltSound(actionSoundChannel_);
@@ -142,6 +142,20 @@ namespace game
                     int clickedX = e.x;
                     int clickedY = e.y;
                     engine::GameEngine::Get().SetLogicalXY(clickedX, clickedY);
+
+                    // check for possible attempts to place a building
+                    if(isPlacingBuilding_)
+                    {
+                        int toPlaceX = buildingOutlineX_ + (int)camera_.x;
+                        int toPlaceY = buildingOutlineY_ + (int)camera_.y;
+                        engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                            "I want to place a building at %d, %d", toPlaceX, toPlaceY);
+                        // TODO: here is where we would validate placement once more before placing
+                        DestroyBuildingOutline();
+                        isPlacingBuilding_ = false;
+                        return;
+                    }
+
                     // TODO: look for a mob to target first
                     auto mobFound = std::find_if(mobSprites_.begin(), mobSprites_.end(), 
                         [this, clickedX, clickedY](const MobSprite* mob) {
@@ -162,7 +176,7 @@ namespace game
                         {
                             // TODO: generic right-hand weapon calls instead of direct ability name
                             std::string log = battle_->UsePlayerAbility("unarmed_right", target_);
-                            // userInterface_->WriteLineToConsole(log);
+                            userInterface_->UI_Console_WriteLine(log);
                         }
                         else
                         {
@@ -180,19 +194,20 @@ namespace game
                             // Set the unit frame data.
                             //  not possible to use existing enums due to circular dependencies generating
                             //  arcane compile errors so we just send strings as argument
-                            //userInterface_->TargetUnitFrame_SetNameAndLevel(
-                            //    (*mobFound)->GetCombatUnit().GetName(), 
-                            //    (*mobFound)->GetCombatUnit().GetAttributeSheet().GetLevel());
                             std::string hostility = "friendly"; // default value
                             switch(tt)
                             {
                                 case Target::TARGET_TYPE::HOSTILE: hostility = "hostile"; break;
                                 case Target::TARGET_TYPE::NEUTRAL: hostility = "neutral"; break;
                             }
-                            //userInterface_->TargetUnitFrame_SetHealth(
-                            //    (*mobFound)->GetCombatUnit().GetCurrentHealth(), 
-                            //    (*mobFound)->GetCombatUnit().GetMaxHealth(), hostility);
-                            // userInterface_->TargetUnitFrame_Toggle(true);
+                            userInterface_->UI_UnitFrame_SetNameAndLevel(
+                                (*mobFound)->GetCombatUnit().GetName(),
+                                (*mobFound)->GetCombatUnit().GetAttributeSheet().GetLevel(), 
+                                hostility, false);
+                            userInterface_->UI_UnitFrame_SetHealth(
+                                (*mobFound)->GetCombatUnit().GetCurrentHealth(), 
+                                (*mobFound)->GetCombatUnit().GetMaxHealth(), false);
+                            userInterface_->UI_UnitFrame_SetVisible(true, false);
                         }
                     }
                     else
@@ -221,7 +236,7 @@ namespace game
                                 std::string info = (*found)->GetName() + " (" +
                                     std::to_string((*found)->GetRemainingClicks()) +
                                     "/" + std::to_string((*found)->GetMaxClicks()) + ")";
-                                // userInterface_->WriteLineToConsole(info);
+                                userInterface_->UI_Console_WriteLine(info);
                             }
                             if((*found)->IsFarmable())
                             {
@@ -232,7 +247,7 @@ namespace game
                                     info += "in " +
                                         engine::GameEngine::Get().FormatTimeInSeconds((int)timeRemaining);
                                 }
-                                // userInterface_->WriteLineToConsole(info);
+                                userInterface_->UI_Console_WriteLine(info);
                             }
                             InteractWithEntity(*found);
                             return;
@@ -251,8 +266,21 @@ namespace game
                     // primary mouse button)
                     // TODO: implement function that uses generic left hand ability of equipped weapon 
                     std::string log = battle_->UsePlayerAbility("unarmed_left", target_);
-                    // userInterface_->WriteLineToConsole(log);
+                    userInterface_->UI_Console_WriteLine(log);
                 }
+            }
+        });
+
+        engine::GameEngine::Get().AddMouseMotionListener([this](const SDL_MouseMotionEvent& e) {
+            // mouse motion only means anything if we're placing a building
+            if(isPlacingBuilding_)
+            {
+                int logicalX = e.x, logicalY = e.y;
+                engine::GameEngine::Get().SetLogicalXY(logicalX, logicalY);
+                buildingOutlineX_ = logicalX;
+                buildingOutlineY_ = logicalY;
+                // TODO: here we would check the square against existing entities (and maybe mobs)
+
             }
         });
 
@@ -267,8 +295,8 @@ namespace game
                 {
                     if(playerSprite_->GetPlayerCombatUnit().IsInCombat())
                     {
-                        // userInterface_->WriteLineToConsole("Cannot exit game while in combat.", 
-                        //    1.0f, 0.0f, 0.0f, 1.0f);
+                        userInterface_->UI_Console_WriteLine("Cannot exit game while in combat.", 
+                            1.0f, 0.0f, 0.0f, 1.0f);
                         return false;
                     }
                 }
@@ -311,7 +339,7 @@ namespace game
             if(autosaveTimer_ >= AUTOSAVE_FREQUENCY)
             {
                 autosaveTimer_ -= AUTOSAVE_FREQUENCY;
-                // userInterface_->WriteLineToConsole("Autosaving...", 0.6f, 0.6f, 0.6f, 1.0f);
+                userInterface_->UI_Console_WriteLine("Autosaving...", 0.6f, 0.6f, 0.6f, 1.0f);
                 SaveGame();
             }
 
@@ -319,8 +347,9 @@ namespace game
             playerSprite_->Update(dtime);
             
             // update health on UI
-            // userInterface_->PlayerUnitFrame_SetHealth(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(), 
-            //    playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
+            userInterface_->UI_UnitFrame_SetHealth(
+                playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(),
+                playerSprite_->GetPlayerCombatUnit().GetMaxHealth(), true);
 
             // update entities.
             for(auto each : loadedEntities_)
@@ -364,9 +393,9 @@ namespace game
             if(target_.GetTargetSpriteType() == Target::SPRITE_TYPE::MOBSPR)
             {
                 MobSprite* target = (MobSprite*)target_.GetTargetSprite();
-                // userInterface_->TargetUnitFrame_SetHealth(
-                //    target->GetCombatUnit().GetCurrentHealth(),
-                //    target->GetCombatUnit().GetMaxHealth(), "");
+                userInterface_->UI_UnitFrame_SetHealth(
+                    target->GetCombatUnit().GetCurrentHealth(),
+                    target->GetCombatUnit().GetMaxHealth(), false);
             }
 
             // run one pass of despawning at least one out of range mobsprite.
@@ -405,7 +434,7 @@ namespace game
             for(const auto& eachEntry : logs)
             {
                 // TODO: different combat text color than white?
-                // userInterface_->WriteLineToConsole(eachEntry);
+                userInterface_->UI_Console_WriteLine(eachEntry);
             }
 
             // pass through once to check for dead mobs and give EXP based on scale. 
@@ -414,7 +443,7 @@ namespace game
             // if player died reset to spawn point for now
             if(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth() == 0)
             {
-                // userInterface_->WriteLineToConsole("You died.", 0.85f, 0.f, 0.f, 1.f);
+                userInterface_->UI_Console_WriteLine("You died.", 0.85f, 0.f, 0.f, 1.f);
                 int ix, iy;
                 std::vector<int> SPAWN_POINT;
                 configuration_.GetVar("SPAWN_POINT", SPAWN_POINT);
@@ -429,12 +458,11 @@ namespace game
                 ClearTarget();
             }
 
-            // update cooldown indicators in UserInterface. For now left side = LMB, right side=RMB
-            //  even though that is slightly backwards. Maybe change the UI file?
-            //userInterface_->LeftHandFrame_SetValue( 1.0f -
-            //    playerSprite_->GetPlayerCombatUnit().GetRemainingRightCooldownAsValue());
-            //userInterface_->RightHandFrame_SetValue( 1.0f -
-            //    playerSprite_->GetPlayerCombatUnit().GetRemainingLeftCooldownAsValue());
+            // update cooldown indicators in UserInterface.
+            userInterface_->UI_ActionBar_SetLeftCDValue( 1.0f -
+                playerSprite_->GetPlayerCombatUnit().GetRemainingRightCooldownAsValue());
+            userInterface_->UI_ActionBar_SetRightCDValue( 1.0f -
+                playerSprite_->GetPlayerCombatUnit().GetRemainingLeftCooldownAsValue());
 
             // TODO: bound player to map area
 
@@ -487,6 +515,11 @@ namespace game
             // rendering with camera takes negative camera coordinates
             // NOTE: unpolished tile edges look glitchy
             tileMap_->Render(-camera_.x,-camera_.y, program);
+            // if a building is being placed, draw the outline
+            if(isPlacingBuilding_)
+            {
+                buildingOutline_->DrawOnScreenAt(buildingOutlineX_, buildingOutlineY_, program);
+            }
             // render the visual target before the actual sprites being targeted
             target_.Render(-camera_, program);
             RenderSortPass();
@@ -502,6 +535,49 @@ namespace game
             battle_->RenderAnimations(-(int)(camera_.x), -(int)(camera_.y), program);
         }
         engine::ui::Root::Get()->Render(gc);
+    }
+
+    void IsleGame::StartCrafting(const std::string& itemToCraft)
+    {
+        // cancel existing actions no matter outcome. 
+        if(playerAction_ != PlayerAction::None)
+        {
+            userInterface_->UI_Console_WriteLine("Action cancelled by player", 1.0f, 0.0f, 0.0f, 1.0f);
+        }
+        StopActionSound();
+        playerAction_ = PlayerAction::None; // set to crafting once validation is done
+        userInterface_->UI_CastBar_SetValue(0.0f);
+        currentCastTime_ = 0.0f; // reset cast time counter because this attempted action cancels anything else
+        // determine the necessary craft time of this item by iterating through list of craftables
+        //  as well as determine if the item is a valid entry
+        bool valid = false;
+        maxCastTime_ = 1.0f; // default value
+        for(const auto& craftable : crafting_.GetCraftables())
+        {
+            if(craftable.name == itemToCraft)
+            {
+                maxCastTime_ = (float)craftable.time;
+                valid = true;
+                currentlyCraftYield_ = craftable.yield;
+                break;
+            }
+        }
+        // if this is not a valid entry, either the UI is broken or player is up to funny business
+        if(!valid)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: An attempt made to craft an invalid item: %s", itemToCraft.c_str());
+            return;
+        }
+        // the UI is supposed to validate inventory first so go ahead and try to craft the item.
+        //  if the items are not present then the player simply wasted their time casting
+        userInterface_->UI_CastBar_SetActivity("Crafting...");
+        userInterface_->UI_CastBar_SetVisible(true); 
+        playerAction_ = PlayerAction::Crafting;
+        currentlyCrafting_ = itemToCraft;
+        std::string ACTION_SOUND;
+        configuration_.GetVar("ACTION_SOUND", ACTION_SOUND);
+        actionSoundChannel_ = engine::GameEngine::Get().GetSoundManager().PlaySound(ACTION_SOUND);
     }
 
     void IsleGame::StartGame()
@@ -543,8 +619,6 @@ namespace game
         swimFilter_ = new SwimFilter(tileMap_->GetSwimmingTexture());
         // Setup render list
         SetupRenderList();
-        // Update experience bar to reflect current xp levels
-        UpdatePlayerExperience(false);
         // load sounds
         auto& sm = engine::GameEngine::Get().GetSoundManager();
         //  TODO: differentiate action types and sounds in configuration
@@ -559,12 +633,14 @@ namespace game
         // Setup lua UI
         userInterface_ = new UserInterface(*this);
         // set UI information
-        //userInterface_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
-        //    playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel());
-        //userInterface_->PlayerUnitFrame_SetHealth(playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(), 
-        //    playerSprite_->GetPlayerCombatUnit().GetMaxHealth());
+        userInterface_->UI_UnitFrame_SetNameAndLevel(saveSlot_,
+            playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel(), "player", true);
+        userInterface_->UI_UnitFrame_SetHealth(
+            playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(),
+            playerSprite_->GetPlayerCombatUnit().GetMaxHealth(), true);
         userInterface_->UI_Inventory_Setup();
-        //userInterface_->SetFoodstuffBarData(inventory_->GetItemCount("foodstuff"));
+        // Update experience bar to reflect current xp levels
+        UpdatePlayerExperience(false);
         // setup keybinds
         SetupKeybinds();
     }
@@ -757,8 +833,32 @@ namespace game
         });
 
         keybinds_.AddKeybind(SDLK_c, [this]() {
-            // userInterface_->CraftingWindow_Toggle();
+            userInterface_->UI_Crafting_Toggle();
         });
+
+        // use 'X' key for testing stuff. In this case, building placement
+        keybinds_.AddKeybind(SDLK_x, [this](){
+            if(isPlacingBuilding_)
+                return; // already placing a building--nothing to do here
+            isPlacingBuilding_ = true;
+            CreateBuildingOutline(64, 64); // pretend we selected a 64x64 building to place
+        });
+    }
+
+    void IsleGame::CreateBuildingOutline(int width, int height)
+    {
+        if(buildingOutline_)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: buildingOutline_ is non-null (possible memory leak)!", __FUNCTION__);
+        }
+        buildingOutline_ = new BuildingOutline(width, height);
+    }
+    
+    void IsleGame::DestroyBuildingOutline()
+    {
+        delete buildingOutline_;
+        buildingOutline_ = nullptr;
     }
 
     // TODO: make a Lua utility function for this in the configuration file and make the 
@@ -953,8 +1053,8 @@ namespace game
                         expEarned = (int)((float)expEarned * penaltyMult);
                     }
                     bool dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(expEarned);
-                    // userInterface_->WriteLineToConsole(std::string("You gained ") + std::to_string(expEarned) +
-                    //    " exp!", 1.0f, 0.0f, 1.0f, 1.0f);
+                    userInterface_->UI_Console_WriteLine(std::string("You gained ") + std::to_string(expEarned)
+                        + " exp!", 1.0f, 0.0f, 1.0f, 1.0f);
                     UpdatePlayerExperience(dinged);
                     // check loot table for possible loot
                     const auto& lootTable = (*mobIt)->GetLootTable();
@@ -964,8 +1064,8 @@ namespace game
                         bool itemDrops = engine::GameEngine::Get().PercentChance(entry.chance);
                         if(itemDrops)
                         {
-                            //userInterface_->WriteLineToConsole(std::string("You looted ") +
-                            //    std::to_string(entry.count) + " " + entry.item);
+                            userInterface_->UI_Console_WriteLine(std::string("You looted ") +
+                                std::to_string(entry.count) + " " + entry.item);
                             inventory_->AddItem(entry.item, entry.count);
                             userInterface_->UI_Inventory_Setup();
                         }
@@ -1058,7 +1158,7 @@ namespace game
         float dist = glm::distance(bottomCenter, playerCenter);
         if(dist > MAX_DISTANCE)
         {
-            // userInterface_->WriteLineToConsole("Out of range!", 1.f, 0.f, 0.f, 1.f);
+            userInterface_->UI_Console_WriteLine("Out of range!", 1.f, 0.f, 0.f, 1.f);
             StopActionSound();
         }
         else 
@@ -1077,7 +1177,8 @@ namespace game
             std::string ACTION_SOUND;
             configuration_.GetVar("ACTION_SOUND", ACTION_SOUND);
             actionSoundChannel_ = sm.PlaySound(ACTION_SOUND);
-            // userInterface_->ToggleCastBar(true);
+            userInterface_->UI_CastBar_SetVisible(true);
+            userInterface_->UI_CastBar_SetActivity("Harvesting...");
         }
     }
 
@@ -1093,7 +1194,7 @@ namespace game
     void IsleGame::ClearTarget()
     {   
         target_.SetTargetSprite(nullptr, Target::TARGET_TYPE::NEUTRAL, Target::SPRITE_TYPE::NONE);
-        // userInterface_->TargetUnitFrame_Toggle(false);
+        userInterface_->UI_UnitFrame_SetVisible(false, false);
     }
 
     void IsleGame::RemoveEntityFromLoaded(Entity* ent)
@@ -1120,19 +1221,19 @@ namespace game
     void IsleGame::CheckActionCast(float dtime)
     {
         if(playerAction_ == PlayerAction::None)
-        {
-            // userInterface_->ToggleCastBar(false);
+        { // TODO: more cleanly set this instead of forcing it every update cycle
+            userInterface_->UI_CastBar_SetVisible(false);
             return;
         }
 
         currentCastTime_ += dtime;
-        // userInterface_->SetCastBarValue(currentCastTime_ / maxCastTime_);
+        userInterface_->UI_CastBar_SetValue(currentCastTime_ / maxCastTime_);
         // handle completion of action
         if(currentCastTime_ >= maxCastTime_)
         {
             // cast time is complete so act accordingly
             bool dinged = false; // level up flag
-            StopActionSound();
+            StopActionSound(); // TODO: different sounds for different actions
             if(playerAction_ == PlayerAction::Harvesting)
             {
                 // if the current target isn't of type Entity then something has gone horribly wrong because
@@ -1156,14 +1257,14 @@ namespace game
                         FarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y,
                             false, time(nullptr)));
                     inventory_->AddItem(itemToAdd.name, itemToAdd.num);
-                    //userInterface_->WriteLineToConsole(std::string("You harvested ") 
-                    //    + std::to_string(itemToAdd.num) 
-                    //    + " " + itemToAdd.name);
+                    userInterface_->UI_Console_WriteLine(std::string("You harvested ") 
+                        + std::to_string(itemToAdd.num) 
+                        + " " + itemToAdd.name);
                     // add experience based on number of items farmed
                     dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
-                    // userInterface_->WriteLineToConsole(std::string(" And gained ") 
-                    //    + std::to_string(itemToAdd.num) 
-                    //    + " exp", 1.0f, 0.f, 1.0f, 1.0f);
+                    userInterface_->UI_Console_WriteLine(std::string(" And gained ") 
+                        + std::to_string(itemToAdd.num) 
+                        + " exp", 1.0f, 0.f, 1.0f, 1.0f);
                     userInterface_->UI_Inventory_Setup();
                     UpdatePlayerExperience(dinged);
                     ClearTarget(); // to prevent accidentally harvesting instead of farming item
@@ -1181,17 +1282,17 @@ namespace game
                     {
                         if(each.name != "exp")
                         {
-                            // userInterface_->WriteLineToConsole(std::string("You receive ") 
-                            //    + std::to_string(each.num) 
-                            //    + " " + each.name);
+                            userInterface_->UI_Console_WriteLine(std::string("You receive ") 
+                                + std::to_string(each.num) 
+                                + " " + each.name);
                             inventory_->AddItem(each.name, each.num);
                             userInterface_->UI_Inventory_Setup();
                         }
                         else 
                         {   // item exp is a special handled case, not added to inventory
-                            // userInterface_->WriteLineToConsole(std::string("You gain ") 
-                            //    + std::to_string(each.num) + " experience.", 
-                            //    1.0f, 0.0f, 1.0f, 1.0f);
+                            userInterface_->UI_Console_WriteLine(std::string("You gain ") 
+                                + std::to_string(each.num) + " experience.", 
+                                1.0f, 0.0f, 1.0f, 1.0f);
                             dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
                             UpdatePlayerExperience(dinged);
                         }
@@ -1203,16 +1304,16 @@ namespace game
                         {
                             if(each.name != "exp")
                             {
-                                //userInterface_->WriteLineToConsole(std::string("You received ") 
-                                //    + std::to_string(each.num) + " " + each.name);
+                                userInterface_->UI_Console_WriteLine(std::string("You received ") 
+                                    + std::to_string(each.num) + " " + each.name);
                                 inventory_->AddItem(each.name, each.num);
                                 userInterface_->UI_Inventory_Setup();
                             }
                             else 
                             {
-                                //userInterface_->WriteLineToConsole(std::string("You gain ") 
-                                //    + std::to_string(each.num) 
-                                //    + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                                userInterface_->UI_Console_WriteLine(std::string("You gain ") 
+                                    + std::to_string(each.num) 
+                                    + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
                                 dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
                                 UpdatePlayerExperience(dinged);
                             }
@@ -1223,11 +1324,23 @@ namespace game
                     }
                 }
             }
-            // TODO: else if to check crafting, etc.
-
+            else if(playerAction_ == PlayerAction::Crafting)
+            {
+                bool successfulCraft = crafting_.CraftItem(currentlyCrafting_, *inventory_);
+                if(successfulCraft)
+                {
+                    std::string msg = "You crafted " + std::to_string(currentlyCraftYield_) + " " 
+                        + currentlyCrafting_ + "!";
+                    userInterface_->UI_Console_WriteLine(msg, 0.75f, 0.75f, 0.1f, 0.95f);
+                    currentlyCrafting_ = "";
+                    currentlyCraftYield_ = 0;
+                    // resetup inventory window
+                    userInterface_->UI_Inventory_Setup();
+                }
+            }
             // in all cases the cast time completion indicates that the action is finished
             playerAction_ = PlayerAction::None;
-            //userInterface_->ToggleCastBar(false);
+            userInterface_->UI_CastBar_SetVisible(false);
             StopActionSound();
         }
     }
@@ -1236,17 +1349,18 @@ namespace game
     {
         if(dinged) // TODO: play a sound when player gets a level increase
         {
-            //userInterface_->WriteLineToConsole(std::string("You are now level ") + std::to_string(
-            //    playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel()) 
-            //    + "!", 1.0f, 1.0f, 0.0f, 1.0f);
+            userInterface_->UI_Console_WriteLine(std::string("You are now level ") + std::to_string(
+                playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel()) 
+                + "!", 1.0f, 1.0f, 0.0f, 1.0f);
             // update UI to reflect new level
-            //userInterface_->PlayerUnitFrame_SetNameAndLevel(saveSlot_, 
-            //    playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel());
+            userInterface_->UI_UnitFrame_SetNameAndLevel(saveSlot_, 
+                playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel(),
+                "player", true);
         }
         int experience = playerSprite_->GetPlayerCombatUnit().GetCurrentExperience();
         int maxExperience = playerSprite_->GetPlayerCombatUnit().GetMaxExperience();
         float value = (float)experience / (float)maxExperience;
-        //userInterface_->SetExperienceBar(value);
+        userInterface_->UI_ExperienceBar_SetValue(value);
         // print information for debugging purposes.
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
             "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);

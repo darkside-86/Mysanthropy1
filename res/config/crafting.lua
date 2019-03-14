@@ -4,6 +4,7 @@
 
 CRAFTABLE {
     name = "rope",
+    yield = 1, -- optional, 1 is default for number of items created
     requires = {
         5, "grass",
         2, "vine"

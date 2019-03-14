@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "BuildingOutline.hpp"
 #include "combat/Battle.hpp"
 #include "Configuration.hpp"
 #include "Crafting.hpp"
@@ -89,6 +90,11 @@ namespace game
         // get save slot name
         inline std::string GetSaveSlot() { return saveSlot_; }
 
+        // general functions //////////////////////////////////////////////////
+
+        // Attempt to start crafting a specified item by setting up cast bar and cast info
+        void StartCrafting(const std::string& itemToCraft);
+
     private:
 
         // menu handling and starting /////////////////////////////////////////////
@@ -111,6 +117,10 @@ namespace game
 
         // Other methods //////////////////////////////////////////////////////
 
+        // Creates the building on map UI objects
+        void CreateBuildingOutline(int width, int height);
+        // Destroys the building on map UI objects
+        void DestroyBuildingOutline();
         // load a sprite and animations from lost guardian folder
         PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp);
         // unload textures associated with lost guardian sprite and destroy sprite
@@ -200,14 +210,22 @@ namespace game
         //  an invalid channel and is ignored. TODO: a class to organize playing of different types of sounds
         //  according to player action
         int actionSoundChannel_ = -1;
+        // The name of the item the crafting cast is making (if any)
+        std::string currentlyCrafting_ = "";
+        // the number of the crafted item that will appear. This is set for informational purposes.
+        int currentlyCraftYield_ = 0;
+        // determines the meaning of the mouse click
+        bool isPlacingBuilding_ = false;
+        // indicates building placement ok or not ok
+        BuildingOutline* buildingOutline_ = nullptr;
+        // indicates where to draw the building outline ON SCREEN (not world pos)
+        int buildingOutlineX_ = 0, buildingOutlineY_ = 0;
         // Autosave frequency
         static constexpr float AUTOSAVE_FREQUENCY = 120.0f; // in seconds
         // Autosave timer
         float autosaveTimer_ = 0.0f;
         // which slot to use for current game
         std::string saveSlot_ = "slot0"; // by default
-        // toggles the inventory window
-        bool showingInventory_ = false;
         // Camera coordinates to determine where on screen objects are rendered. Render functions that take
         //  a camera vector should receive a negated camera parameter.
         glm::vec2 camera_ = {0.f,0.f};

@@ -92,6 +92,9 @@ namespace engine { namespace ui {
 ///////////////////////////////////////////////////////////////////////////////
 
     // lua : UIObject.AddOnClicked(self, someFunction)
+    // *** TODO FOR ALL Event adders: counter should just check the callback table
+    //     for the first available nil slot instead of blindly incrementing !!!!
+    //
     static int lua_UIObject_AddOnClicked(lua_State *L)
     {
         static lua_Integer counter = 0;

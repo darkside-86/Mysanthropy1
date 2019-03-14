@@ -37,11 +37,36 @@ namespace game
         virtual ~UserInterface();
 
     //-- C++ interface to Lua defined UI methods ------------------------------
-
+    
+        // Set the left CD indicator bar to value (0-1)
+        void UI_ActionBar_SetLeftCDValue(float value);
+        // Set the right CD indicator bar to value (0-1)
+        void UI_ActionBar_SetRightCDValue(float value);
+        // Set the activity text of the cast bar
+        void UI_CastBar_SetActivity(const std::string activity);
+        // Set the fill color of the cast bar
+        void UI_CastBar_SetFillColor(float r, float g, float b, float a);
+        // Set the value (between 0 and 1) to change the width of the fill
+        void UI_CastBar_SetValue(float value);
+        // Set the visibility of the cast bar
+        void UI_CastBar_SetVisible(bool visible);
+        // Write a colored line of text to the console. TODO: Wrap
+        void UI_Console_WriteLine(const std::string& text, float r=1.f, float g=1.f, float b=1.f, float a=1.f);
+        // Show or hide the crafting window
+        void UI_Crafting_Toggle();
+        // Sets percentage (0 to 1) of progress of experience bar
+        void UI_ExperienceBar_SetValue(float value);
         // Shows or hides the InventoryFrame depending on its current visibility
         void UI_Inventory_Toggle();
         // Destroys and repopulates inventory item grid
         void UI_Inventory_Setup();
+        // Sets unit frame name and level
+        void UI_UnitFrame_SetNameAndLevel(const std::string& name, 
+                int level, const std::string& hostility, bool isPlayer=false);
+        // Sets a unit frame health
+        void UI_UnitFrame_SetHealth(int ch, int mh, bool isp=false);
+        // Sets visibility of a unit frame
+        void UI_UnitFrame_SetVisible(bool vis, bool isp=false);
 
     //-------------------------------------------------------------------------
 
@@ -53,14 +78,24 @@ namespace game
 
     //-- lua bound functions --------------------------------------------------
 
+        // Game_StartCrafting(itemName) : 
+        // Tell the game to begin crafting a specified item. The game checks for the validity and requirements.
+        // Because crafting is not instant there's no way to get a meaningful return value here.
+        static int lua_Game_StartCrafting(lua_State* L);
+
+        // Returns an array of craftable items according to the database. The fields of each entry are
+        // name : string, required : [ { item:string, count:integer }... ], time : integer, building : string,
+        // level : integer, yield : integer
+        static int lua_Game_Crafting_GetCraftables(lua_State* L);
+
         // Game_Inventory_ConvertItemToFoodstuff(name,count) : boolean
         // Attempts to convert a given number of item `name' into foodstuff
         //  currency. Returns true on success, else false.
         static int lua_Game_Inventory_ConvertItemToFoodstuff(lua_State* L);
 
-        // Game_Inventory_GetItems() : {...}
+        // Game_Inventory_GetItems([name]) : {...}
         // returns an array of items currently inventory. fields of each element are
-        // name and durability.
+        // name and durability. If name is specified, only returns items whose name matches
         static int lua_Game_Inventory_GetItems(lua_State* L);
 
         // Game_ItemTable_GetItemEntries() : {...}

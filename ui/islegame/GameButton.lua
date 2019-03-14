@@ -20,10 +20,7 @@
 Include("ui/islegame/Fonts.lua")
 Include("ui/islegame/Textures.lua")
 
--- Implements a button by... (TODO: Subclass frame use fancy borders)
-
---UIButton.New(inventoryFrame, TEXTURE_UIBLANK, 
--- "Convert food to foodstuff", "sans14", 2)
+-- Implements a nicer button than stock UIButton (TODO: Subclass uiframe to use fancy borders)
 GameButton = {
     New = function(parent, text, padding, selectable)
         selectable = selectable or false
