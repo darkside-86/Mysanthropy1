@@ -58,7 +58,7 @@ namespace game
 
     Sprite::~Sprite()
     {
-
+        // TODO: texture management must be handled intelligently with a cache in TextureManager
     }
 
     void Sprite::Update(float dtime)

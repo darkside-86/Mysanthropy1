@@ -1,4 +1,4 @@
-// Building.hpp
+// BuildingEntry.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -20,6 +20,8 @@
 
 #include <string>
 #include <vector>
+
+#include "Inventory.hpp"
 
 namespace game 
 {
@@ -86,6 +88,8 @@ namespace game
         // info for buildings that can be used to make items over a long time without direct user interaction
         class CraftingInfo
         { public:
+            // something to identify the entry. Not exactly an item db entry because crafting drops multiple items
+            std::string title;
             // required item(s) to craft this item
             std::vector<Requirement> sources;
             // time in seconds the craft takes the building to complete
@@ -112,6 +116,16 @@ namespace game
         BuildingEntry() {}
         BuildingEntry(const BuildingEntry& entry) 
         {
+            name = entry.name;
+            title = entry.title;
+            tooltip = entry.tooltip;
+            texture = entry.texture;
+            width = entry.width;
+            height = entry.height;
+            required = entry.required;
+            collision = entry.collision;
+            time = entry.time;
+            level = entry.level;
             if(entry.harvesting)
             {
                 delete harvesting;
@@ -122,6 +136,7 @@ namespace game
                 delete farming;
                 farming = new FarmingInfo(*(entry.farming));
             }
+            crafting = entry.crafting;
             if(entry.removing)
             {
                 delete removing;
@@ -133,6 +148,21 @@ namespace game
             if(harvesting) delete harvesting;
             if(farming) delete farming;
             if(removing) delete removing;
+        }
+
+    // Useful methods 
+
+        // checks material requirement against inventory counts
+        bool CanConstruct(Inventory& inv) const
+        {
+            for(const auto& each : required)
+            {
+                if(inv.GetItemCount(each.name) < each.count)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
     // Database entry fields //////////////////////////////////////////////////

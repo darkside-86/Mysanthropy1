@@ -33,6 +33,7 @@ namespace game
     public:
         BuildingTable();
         virtual ~BuildingTable();
+        const BuildingEntry* GetEntry(const std::string& name) const;
         inline const std::unordered_map<std::string, const BuildingEntry>& GetBuildingEntries() const
             { return buildingEntries_; }
     private:

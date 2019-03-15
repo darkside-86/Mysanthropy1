@@ -23,6 +23,9 @@
 #include <string>
 #include <vector>
 
+#include "Building.hpp"
+#include "BuildingEntry.hpp"
+#include "BuildingTable.hpp"
 #include "PlayerCommand.hpp"
 
 namespace game
@@ -51,6 +54,17 @@ namespace game
             int level;
             // 1 for boy, 0 for girl
             int boy; 
+        };
+        // serializable representation of a building placed by user
+        class BuildingData
+        { public:
+            std::string name; // primary key to building database
+            int x, y; // location on map
+            // chars for booleans for definitive size in file
+            char harvesting=false, farming=false, crafting=false;
+            Building::HarvestData harvestData;
+            Building::FarmData farmData;
+            Building::CraftData craftData;
         };
         // file extension of savegame file
         static constexpr char* FILE_EXT = ".sav";
@@ -87,6 +101,10 @@ namespace game
         void SavePlayerData(const PLAYER_DATA& data);
         // Loads data read about player
         PLAYER_DATA GetPlayerData();
+        // writes an array of buildings into internal buildingdata array
+        void SaveBuildingData(const std::vector<Building*>& buildings);
+        // converts building data array into building sprites. Caller owns pointers
+        std::vector<Building*> GenerateBuildings(const BuildingTable& db);
         // Inventory should access this to fill and read its item count data
         inline std::vector<ItemData>& GetItemData() { return items_; }
         // Discards all information read from file. Automatically called between writing and reading files
@@ -107,6 +125,8 @@ namespace game
         std::vector<ItemData> items_;
         // player info
         PLAYER_DATA playerData_;
+        // buildings
+        std::vector<BuildingData> buildingData_;
         // timestamp of last read save
         time_t timeStamp_;
     };

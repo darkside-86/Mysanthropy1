@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "Building.hpp"
 #include "BuildingEntry.hpp"
 #include "BuildingOutline.hpp"
 #include "BuildingTable.hpp"
@@ -79,6 +80,8 @@ namespace game
 
         // accessors //////////////////////////////////////////////////////////
 
+        // returns reference to building table database
+        inline const BuildingTable& GetBuildingTable() const { return buildingTable_; }
         // returns a reference to the inventory object (not const because inventory list is always changing)
         inline Inventory& GetInventory() { return *inventory_; }
         // get the item database
@@ -133,8 +136,10 @@ namespace game
         void CleanupLoadedEntities();
         // Destroy mob spawners
         void CleanupMobSpawners();
+        // Destroy all buildings
+        void CleanupBuildings();
         // Sets up the renderList_ vector by filling it with entities and the player (mobs are added individually
-        //  as needed later)
+        //  as needed later. Buildings added during gameplay are added as needed)
         void SetupRenderList();
         // Perform one pass of a sort of sprites by Y value to emulate orthogonal view
         void RenderSortPass();
@@ -146,6 +151,10 @@ namespace game
         void RemoveSpriteFromRenderList(const Sprite* sprite);
         // Check to see if a sprite is colliding with the collision box of an entity
         bool EntityCollisionCheck(Sprite* sprite);
+        // Check to see if a sprite is colliding with anything in the buildings list
+        bool BuildingCollisionCheck(Sprite* sprite);
+        // Validate a building location based on tiles and other entities
+        bool ValidateBuildingLocation(const BuildingEntry* be, int x, int y);
         // Check to see if point x,y is inside of rectangle defined by left, top, right, and bottom params
         bool CheckPoint(float x, float y, float left, float top, float right, float bottom);
         // Checks the distance between player and targeted entity and begins click action
@@ -222,6 +231,8 @@ namespace game
         bool isPlacingBuilding_ = false;
         // indicates building placement ok or not ok
         BuildingOutline* buildingOutline_ = nullptr;
+        // entry to be built
+        const BuildingEntry* buildingEntry_ = nullptr;
         // indicates where to draw the building outline ON SCREEN (not world pos)
         int buildingOutlineX_ = 0, buildingOutlineY_ = 0;
         // Autosave frequency
@@ -241,6 +252,8 @@ namespace game
         std::vector<MobSpawner*> mobSpawners_;
         // list of mob sprites. Owns pointers
         std::vector<MobSprite*> mobSprites_;
+        // list of buildings. Owns pointers.
+        std::vector<Building*> buildings_;
     };
 
 }

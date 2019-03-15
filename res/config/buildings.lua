@@ -11,7 +11,7 @@ BUILDING {
         {"foodstuff", 25}, {"wood", 25}
     },
     collision = { 0, 0, 32, 32 },
-    time = 30, -- 30 seconds to build
+    time = 15, -- N seconds to build
     level = 1
     -- TODO torndown fields for item drops when destroyed,
     -- harvestable... max, drops, etc. (e.g. a well with 100/100 clicks for water)
@@ -63,6 +63,7 @@ BUILDING {
     level = 6,
     crafting = {
         {
+            title = "Grass",
             sources = { {"grass_seed", 1} },
             time=4*60*60,
             pending = "grass_growing.png", -- drawn on top of 'building'
@@ -74,6 +75,7 @@ BUILDING {
             }
         },
         {
+            title = "Batata",
             sources = { {"batata_seed", 1} },
             time = 6 * 60 * 60,
             pending = "batata_growing.png",

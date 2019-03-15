@@ -118,6 +118,7 @@ add_executable (
         combat/CombatUnit.cpp
         combat/Formula.cpp
         combat/PlayerCombatUnit.cpp
+        game/Building.cpp
         game/BuildingOutline.cpp
         game/BuildingTable.cpp
         game/Configuration.cpp

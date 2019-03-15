@@ -116,6 +116,41 @@ namespace game
         }
         // write player experience and current level and gender
         out.write((char*)&playerData_, sizeof(playerData_));
+        // write the number of buildings and each building data
+        size_t numBuildings = buildingData_.size();
+        out.write((char*)&numBuildings, sizeof(numBuildings));
+        for(size_t i=0; i < numBuildings; ++i)
+        {
+            size_t strLen = buildingData_[i].name.size();
+            out.write((char*)&strLen, sizeof(strLen));
+            out.write((char*)&buildingData_[i].name[0], strLen);
+            out.write((char*)&buildingData_[i].x, sizeof(buildingData_[i].x));
+            out.write((char*)&buildingData_[i].y, sizeof(buildingData_[i].y));
+            // the write of each info struct depends on the associated boolean
+            out.write((char*)&buildingData_[i].harvesting, sizeof(buildingData_[i].harvesting));
+            if(buildingData_[i].harvesting)
+            {
+                out.write((char*)&buildingData_[i].harvestData.remainingClicks,
+                            sizeof(buildingData_[i].harvestData.remainingClicks));
+            }
+            out.write((char*)&buildingData_[i].farming, sizeof(buildingData_[i].farming));
+            if(buildingData_[i].farming)
+            {
+                out.write((char*)&buildingData_[i].farmData.remainingFarms,
+                            sizeof(buildingData_[i].farmData.remainingFarms));
+                out.write((char*)buildingData_[i].farmData.lastFarmTime, 
+                            sizeof(buildingData_[i].farmData.lastFarmTime));
+            }
+            out.write((char*)&buildingData_[i].crafting, sizeof(buildingData_[i].crafting));
+            if(buildingData_[i].crafting)
+            {
+                out.write((char*)&buildingData_[i].craftData.craftingBegan,
+                            sizeof(buildingData_[i].craftData.craftingBegan));
+                strLen = buildingData_[i].craftData.itemCrafting.size();
+                out.write((char*)&strLen, sizeof(strLen));
+                out.write((char*)&buildingData_[i].craftData.itemCrafting[0], strLen);
+            }
+        }
         // write the current system time.
         time_t currentTime = time(nullptr);
         out.write((char*)&currentTime, sizeof(currentTime));
@@ -199,6 +234,39 @@ namespace game
         in.read((char*)&playerData_, sizeof(playerData_));
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
             "PLAYER GENDER = %s", playerData_.boy ? "boy" : "girl");
+        // read buildings
+        size_t numBuildings;
+        in.read((char*)&numBuildings, sizeof(numBuildings));
+        for(size_t i=0; i < numBuildings; ++i)
+        {
+            BuildingData data;
+            size_t strLen;
+            in.read((char*)&strLen, sizeof(strLen));
+            data.name.resize(strLen);
+            in.read((char*)&data.name[0], strLen);
+            in.read((char*)&data.x, sizeof(data.x));
+            in.read((char*)&data.y, sizeof(data.y));
+            in.read((char*)&data.harvesting, sizeof(data.harvesting));
+            if(data.harvesting)
+            {
+                in.read((char*)&data.harvestData.remainingClicks, sizeof(data.harvestData.remainingClicks));
+            }
+            in.read((char*)&data.farming, sizeof(data.farming));
+            if(data.farming)
+            {
+                in.read((char*)&data.farmData.remainingFarms, sizeof(data.farmData.remainingFarms));
+                in.read((char*)&data.farmData.lastFarmTime, sizeof(data.farmData.lastFarmTime));
+            }
+            in.read((char*)&data.crafting, sizeof(data.crafting));
+            if(data.crafting)
+            {
+                in.read((char*)&data.craftData.craftingBegan, sizeof(data.craftData.craftingBegan));
+                in.read((char*)&strLen, sizeof(strLen));
+                data.craftData.itemCrafting.resize(strLen);
+                in.read((char*)&data.craftData.itemCrafting[0], strLen);
+            }
+            buildingData_.push_back(data);
+        }
         // read timestamp
         in.read((char*)&timeStamp_, sizeof(timeStamp_));
         in.close();
@@ -213,6 +281,7 @@ namespace game
         farmCommands_.clear();
         items_.clear();
         playerData_ = {0,0,0};
+        buildingData_.clear();
     }
 
     void Persistence::SavePlayerData(const PLAYER_DATA& data)
@@ -223,5 +292,62 @@ namespace game
     Persistence::PLAYER_DATA Persistence::GetPlayerData()
     {
         return playerData_;
+    }
+
+    void Persistence::SaveBuildingData(const std::vector<Building*>& buildings)
+    {
+        buildingData_.clear();
+        for(const auto& each : buildings)
+        {
+            BuildingData data;
+            data.name = each->GetEntry().name;
+            data.x = (int)each->position.x;
+            data.y = (int)each->position.y;
+            if(each->GetEntry().harvesting)
+            {
+                data.harvesting = true;
+                data.harvestData.remainingClicks = each->GetRemainingHarvests();
+            }
+            if(each->GetEntry().farming)
+            {
+                data.farming = true;
+                data.farmData.lastFarmTime = each->GetLastFarmTime();
+                data.farmData.remainingFarms = each->GetRemainingFarms();
+            }
+            if(each->GetEntry().crafting.size() != 0)
+            {
+                data.crafting = true;
+                data.craftData.craftingBegan = each->GetLastCraftStartTime();
+                data.craftData.itemCrafting = each->GetItemCrafting();
+            }
+            buildingData_.push_back(data);
+        }
+    }
+    
+    std::vector<Building*> Persistence::GenerateBuildings(const BuildingTable& db)
+    {
+        std::vector<Building*> buildings;
+        for(const auto& each : buildingData_)
+        {
+            // Building ctor is very picky so we have to validate our information first
+            const auto& findEntry = db.GetBuildingEntries().find(each.name);
+            if(findEntry == db.GetBuildingEntries().end())
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
+                    "%s: Possible save game corruption: building `%s' is not in database!",
+                    __FUNCTION__, each.name.c_str());
+            }
+            const BuildingEntry& entry = findEntry->second;
+            const Building::HarvestData* harvestData = nullptr;
+            if(entry.harvesting) harvestData = &each.harvestData;
+            const Building::FarmData* farmData = nullptr;
+            if(entry.farming) farmData = &each.farmData;
+            const Building::CraftData* craftData = nullptr;
+            if(entry.crafting.size() != 0) craftData = &each.craftData;
+            // TODO: check boolean flags in each against pointer results.
+            Building* newBuilding = new Building(entry, each.x, each.y, harvestData, farmData, craftData);
+            buildings.push_back(newBuilding);
+        }
+        return buildings;
     }
 }

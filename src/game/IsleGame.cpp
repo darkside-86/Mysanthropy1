@@ -150,9 +150,31 @@ namespace game
                         int toPlaceY = buildingOutlineY_ + (int)camera_.y;
                         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
                             "I want to place a building at %d, %d", toPlaceX, toPlaceY);
-                        // TODO: here is where we would validate placement once more before placing
-                        DestroyBuildingOutline();
                         isPlacingBuilding_ = false;
+                        // because it either cancels it or starts building 
+                        if(ValidateBuildingLocation(buildingEntry_, 
+                            (int)camera_.x + buildingOutlineX_, 
+                            (int)camera_.y + buildingOutlineY_))
+                        {
+                            // we don't destroy building outline until building is completely built.
+                            // TODO: the outline can be used for construction indicator
+                            playerAction_ = PlayerAction::Building;
+                            maxCastTime_ = (float)buildingEntry_->time;
+                            currentCastTime_ = 0.0f;
+                            userInterface_->UI_CastBar_SetActivity("Building...");
+                            userInterface_->UI_CastBar_SetVisible(true);
+                            std::string ACTION_SOUND;
+                            configuration_.GetVar("ACTION_SOUND", ACTION_SOUND);
+                            actionSoundChannel_ = engine::GameEngine::Get().GetSoundManager().PlaySound(
+                                ACTION_SOUND);
+                        }
+                        else
+                        {
+                            DestroyBuildingOutline(); // here, do  
+                                                      // destroy outline bc attempt to place invalid spot = cancel
+                            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                                "I can't place building there!");
+                        }
                         return;
                     }
 
@@ -262,6 +284,10 @@ namespace game
                 }
                 else if(e.button == 3)
                 {
+                    // this is also the button to cancel building placement
+                    isPlacingBuilding_ = false;
+                    DestroyBuildingOutline();
+
                     // use our left hand ability on the target. (Targeting can only be done with
                     // primary mouse button)
                     // TODO: implement function that uses generic left hand ability of equipped weapon 
@@ -279,7 +305,15 @@ namespace game
                 engine::GameEngine::Get().SetLogicalXY(logicalX, logicalY);
                 buildingOutlineX_ = logicalX;
                 buildingOutlineY_ = logicalY;
-                // TODO: here we would check the square against existing entities (and maybe mobs)
+                if(ValidateBuildingLocation(buildingEntry_, buildingOutlineX_ + (int)camera_.x, 
+                    buildingOutlineY_ + (int)camera_.y))
+                {
+                    buildingOutline_->ClearError();
+                }
+                else 
+                {
+                    buildingOutline_->SetToError();
+                }
 
             }
         });
@@ -387,6 +421,12 @@ namespace game
                     mobSprites_.push_back(mobSprite);
                     renderList_.push_back(mobSprite);
                 }
+            }
+
+            // update buildings
+            for(auto it : buildings_)
+            {
+                it->Update(dtime);
             }
 
             // update target information
@@ -516,9 +556,10 @@ namespace game
             // NOTE: unpolished tile edges look glitchy
             tileMap_->Render(-camera_.x,-camera_.y, program);
             // if a building is being placed, draw the outline
-            if(isPlacingBuilding_)
+            if(isPlacingBuilding_ || playerAction_ == PlayerAction::Building)
             {
-                buildingOutline_->DrawOnScreenAt(buildingOutlineX_, buildingOutlineY_, program);
+                if(buildingOutline_)
+                    buildingOutline_->DrawOnScreenAt(buildingOutlineX_, buildingOutlineY_, program);
             }
             // render the visual target before the actual sprites being targeted
             target_.Render(-camera_, program);
@@ -713,6 +754,8 @@ namespace game
         {
             inventory_->AddItem(eachItemData.name, eachItemData.count, eachItemData.durability);
         }
+        // process buildings.
+        buildings_ = saveData_.GenerateBuildings(buildingTable_);
 
         // log the timestamp of the last save time
         time_t currentTime = time(nullptr);
@@ -751,6 +794,8 @@ namespace game
             playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel(),
             playerSprite_->IsBoy()
         });
+        // save buildings
+        saveData_.SaveBuildingData(buildings_);
         saveData_.WriteToFile(saveSlot_);
     }
 
@@ -800,6 +845,7 @@ namespace game
             // destroy entities and mob spawners
             CleanupLoadedEntities();
             CleanupMobSpawners();
+            CleanupBuildings();
             // destroy mobs
             for(auto eachMob : mobSprites_)
             {
@@ -838,10 +884,20 @@ namespace game
 
         // use 'X' key for testing stuff. In this case, building placement
         keybinds_.AddKeybind(SDLK_x, [this](){
-            if(isPlacingBuilding_)
-                return; // already placing a building--nothing to do here
+            if(isPlacingBuilding_ || playerAction_ == PlayerAction::Building)
+                return; // already placing or building a building--nothing to do here
+            const BuildingEntry* be = buildingTable_.GetEntry("campfire");
+            if(be == nullptr)
+                return;
+            if(!be->CanConstruct(*inventory_))
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
+                    "You don't have enough materials for this building!");
+                return;
+            }
             isPlacingBuilding_ = true;
-            CreateBuildingOutline(64, 64); // pretend we selected a 64x64 building to place
+            CreateBuildingOutline(be->width, be->height); // pretend we selected a campfire from the UI
+            buildingEntry_ = be;
         });
     }
 
@@ -936,6 +992,15 @@ namespace game
         mobSpawners_.clear();
     }
 
+    void IsleGame::CleanupBuildings()
+    {
+        for(auto it=buildings_.begin(); it != buildings_.end(); ++it)
+        {
+            delete *it;
+        }
+        buildings_.clear();
+    }
+
     void IsleGame::SetupRenderList()
     {
         renderList_.clear();
@@ -943,6 +1008,10 @@ namespace game
         for(int i=0; i < loadedEntities_.size(); ++i)
         {
             renderList_.push_back(loadedEntities_[i]);
+        }
+        for(int i=0; i < buildings_.size(); ++i)
+        {
+            renderList_.push_back(buildings_[i]);
         }
     }
 
@@ -1130,6 +1199,91 @@ namespace game
             }
         }
         return false;
+    }
+
+    bool IsleGame::BuildingCollisionCheck(Sprite* sprite)
+    {
+        // get the sprite's corners and the corners of the building and check for intersection
+        float sprL, sprT, sprR, sprB;
+        float bL, bT, bR, bB;
+        sprite->GetCollisionBox(sprL, sprT, sprR, sprB);
+        for(auto it : buildings_)
+        {
+            it->GetCollisionBox(bL, bT, bR, bB);
+            if(sprite != it && it->HasValidCollisionBox())
+            {
+                if(    CheckPoint(sprL, sprT, bL, bT, bR, bB)
+                    || CheckPoint(sprR, sprT, bL, bT, bR, bB)
+                    || CheckPoint(sprL, sprB, bL, bT, bR, bB)
+                    || CheckPoint(sprR, sprB, bL, bT, bR, bB)
+                    || CheckPoint(bL, bT, sprL, sprT, sprR, sprB)
+                    || CheckPoint(bR, bT, sprL, sprT, sprR, sprB)
+                    || CheckPoint(bL, bB, sprL, sprT, sprR, sprB)
+                    || CheckPoint(bR, bB, sprL, sprT, sprR, sprB)   
+                  )
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    bool IsleGame::ValidateBuildingLocation(const BuildingEntry* be, int x, int y)
+    {
+        float left = (float)x;
+        float top = (float)y;
+        float right = (float)be->width + left;
+        float bottom = (float)be->height + top;
+        // can't collide with existing entities' collision box
+        for(auto each : loadedEntities_)
+        {
+            float el, et, er, eb;
+            each->GetCollisionBox(el, et, er, eb);
+            if( CheckPoint(left, top, el, et, er, eb) ||
+                CheckPoint(right, top, el, et, er, eb) ||
+                CheckPoint(left, bottom, el, et, er, eb) ||
+                CheckPoint(right, bottom, el, et, er, eb) ||
+                CheckPoint(el, et, left, top, right, bottom) ||
+                CheckPoint(er, et, left, top, right, bottom) ||
+                CheckPoint(el, eb, left, top, right, bottom) ||
+                CheckPoint(er, eb, left, top, right, bottom)
+            )
+                return false; // not a valid location due to collision with entity
+        }
+
+        for(auto each : buildings_)
+        {
+            float el, et, er, eb;
+            el = each->position.x;
+            et = each->position.y;
+            er = each->position.x + (float)each->GetEntry().width;
+            eb = each->position.y + (float)each->GetEntry().height;
+            if( CheckPoint(left, top, el, et, er, eb) ||
+                CheckPoint(right, top, el, et, er, eb) ||
+                CheckPoint(left, bottom, el, et, er, eb) ||
+                CheckPoint(right, bottom, el, et, er, eb) ||
+                CheckPoint(el, et, left, top, right, bottom) ||
+                CheckPoint(er, et, left, top, right, bottom) ||
+                CheckPoint(el, eb, left, top, right, bottom) ||
+                CheckPoint(er, eb, left, top, right, bottom)
+            )
+                return false; // not a valid location due to collision with building
+        }
+        
+        // calculate what 4 tiles the corners are on and pass through tiles
+        int tileLeft = x / tileMap_->GetTileSet()->GetTileWidth();
+        int tileTop = y / tileMap_->GetTileSet()->GetTileHeight();
+        int tileRight = (x + be->width) / tileMap_->GetTileSet()->GetTileWidth();
+        int tileBottom = (y + be->height) / tileMap_->GetTileSet()->GetTileHeight();
+        for(int iy = tileTop; iy <= tileBottom; ++iy)
+        {
+            for(int ix = tileLeft; ix <= tileRight; ++ix)
+            {
+                if(!tileMap_->TileIsBuildable(ix, iy))
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     bool IsleGame::CheckPoint(float x, float y, float left, float top, float right, float bottom)
@@ -1337,6 +1491,44 @@ namespace game
                     // resetup inventory window
                     userInterface_->UI_Inventory_Setup();
                 }
+            }
+            else if(playerAction_ == PlayerAction::Building)
+            {
+                // validate data
+                Building::HarvestData hdata;
+                Building::FarmData fdata;
+                Building::CraftData cdata;
+                if(buildingEntry_->harvesting)
+                {
+                    hdata.remainingClicks = buildingEntry_->harvesting->maxClicks;
+                }
+                if(buildingEntry_->farming)
+                {
+                    fdata.lastFarmTime = time(nullptr);
+                    fdata.remainingFarms = buildingEntry_->farming->maxFarms;
+                }
+                if(buildingEntry_->crafting.size() > 0)
+                {
+                    cdata.craftingBegan = time(nullptr); // not really necessary or meaningful
+                    cdata.itemCrafting = "";
+                }
+                int toPlaceX = buildingOutlineX_ + (int)camera_.x;
+                int toPlaceY = buildingOutlineY_ + (int)camera_.y;
+                Building* newBuilding = new Building(*buildingEntry_, toPlaceX, toPlaceY, 
+                    buildingEntry_->harvesting? &hdata: nullptr,
+                    buildingEntry_->farming? &fdata: nullptr, 
+                    buildingEntry_->crafting.size() > 0? &cdata: nullptr);
+                newBuilding->Construct(*inventory_);
+                userInterface_->UI_Inventory_Setup();
+                buildings_.push_back(newBuilding);
+                renderList_.push_back(newBuilding);
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                    "I built %x, a %s and added it to the lists...", newBuilding, buildingEntry_->name.c_str());
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO, 
+                    "Its position is %f, %f, whereas the player is at %f, %f", newBuilding->position.x,
+                    newBuilding->position.y, playerSprite_->position.x, playerSprite_->position.y);
+                buildingEntry_ = nullptr;
+                DestroyBuildingOutline();
             }
             // in all cases the cast time completion indicates that the action is finished
             playerAction_ = PlayerAction::None;

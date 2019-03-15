@@ -49,6 +49,20 @@ namespace game
 
     }
     
+    const BuildingEntry* BuildingTable::GetEntry(const std::string& name) const
+    {
+        const BuildingEntry* be = nullptr;
+        const auto& it = buildingEntries_.find(name);
+        if(it != buildingEntries_.end())
+        {
+            be = &(it->second);
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
+                "Ref's size: %d, %d. Pointer's size: %d, %d", it->second.width, it->second.height, 
+                be->width, be->height);
+        }
+        return be;
+    }
+
     int BuildingTable::lua_Building(lua_State* L)
     {
         // retrieve building table object from registry
@@ -265,7 +279,8 @@ namespace game
         }
         lua_pop(L, 1);
 
-        // crafting : nil or [ {sources: [ [string, integer]... ], time:integer, pending:string or nil,
+        // crafting : nil or [ { title : string,
+        //                      sources: [ [string, integer]... ], time:integer, pending:string or nil,
         //                      completed: string or nil, results: [ [string,integer,number]... ] }... ]
         lua_pushstring(L, "crafting");
         lua_gettable(L, 1);
@@ -278,6 +293,11 @@ namespace game
                 lua_pushinteger(L, i);
                 lua_gettable(L, -2);
                 BuildingEntry::CraftingInfo crafting;
+
+                lua_pushstring(L, "title");
+                lua_gettable(L, -2);
+                crafting.title = luaL_checkstring(L, -1);
+                lua_pop(L, 1);
 
                 lua_pushstring(L, "sources");
                 lua_gettable(L, -2);
