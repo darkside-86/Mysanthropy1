@@ -274,9 +274,28 @@ namespace game
                             InteractWithEntity(*found);
                             return;
                         }
-                        // TODO: else-if statement here to handle buildings?
-                        else // no target was found so cancel action and clear existing target
+                        else 
                         {
+                            // maybe we targeted a building?
+                            const auto& bd = std::find_if(buildings_.begin(), buildings_.end(),
+                                [this, clickedX, clickedY](const Building* bding) -> bool {
+                                    int x = (int)camera_.x + clickedX;
+                                    int y = (int)camera_.y + clickedY;
+                                    return x >= (int)bding->position.x
+                                        && x <= (int)bding->position.x + bding->GetWidth()
+                                        && y >= (int)bding->position.y
+                                        && y <= (int)bding->position.y + bding->GetHeight();
+                                }
+                            );
+                            if(bd != buildings_.end())
+                            {
+                                target_.SetTargetSprite(*bd, Target::TARGET_TYPE::FRIENDLY, 
+                                    Target::SPRITE_TYPE::BUILDSPR);
+                                // print all the information in InteractWithBuilding
+                                InteractWithBuilding(*bd);
+                                return;
+                            }
+                            // by this point there is no target found
                             playerAction_ = PlayerAction::None;
                             ClearTarget();
                         }
@@ -588,6 +607,13 @@ namespace game
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
                 "%s: Invalid building `%s' selected!", __FUNCTION__, building.c_str());
+            return;
+        }
+        // make sure building is not supposed to be hidden from UI
+        if(buildingEntry_->hidden)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: This type of building cannot be placed directly", __FUNCTION__, building.c_str());
             return;
         }
         // UI provides top layer of inventory validation, this is another layer.
@@ -929,6 +955,29 @@ namespace game
     {
         delete buildingOutline_;
         buildingOutline_ = nullptr;
+    }
+
+    Building* IsleGame::CreateNewBuilding(const std::string& bdName, int x, int y)
+    {
+        const BuildingEntry* entry = buildingTable_.GetEntry(bdName);
+        if(entry == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Cannot create a `%s' as it has no entry", __FUNCTION__, bdName.c_str());
+            return nullptr;
+        }
+        // setup required paramaters for constructor.
+        Building::HarvestData hdata;
+        Building::FarmData fdata;
+        Building::CraftData cdata;
+        hdata.remainingClicks = entry->harvesting? entry->harvesting->maxClicks: 0;
+        fdata.lastFarmTime = time(nullptr);
+        fdata.remainingFarms = entry->farming? entry->farming->maxFarms: 0;
+        cdata.craftingBegan = time(nullptr);
+        cdata.itemCrafting = "";
+        Building* newBdg = new Building(*entry, x, y, entry->harvesting? &hdata: nullptr,
+            entry->farming? &fdata: nullptr, entry->crafting.size() > 0? &cdata: nullptr);
+        return newBdg;
     }
 
     // TODO: make a Lua utility function for this in the configuration file and make the 
@@ -1350,6 +1399,81 @@ namespace game
         }
     }
 
+    void IsleGame::InteractWithBuilding(Building* bd)
+    {
+        // first, print information about building in console.
+        userInterface_->UI_Console_WriteLine(bd->GetEntry().title + " building");
+        if(bd->IsHarvestable())
+        {
+            if(bd->GetEntry().harvesting->maxClicks != -1)
+            {
+                userInterface_->UI_Console_WriteLine("Harvestable (" 
+                    + std::to_string(bd->GetRemainingHarvests()) + "/"
+                    + std::to_string(bd->GetEntry().harvesting->maxClicks) + ")");
+            }
+        }
+        if(bd->IsFarmable())
+        {
+            std::string msg = "Ready to collect ";
+            if(bd->IsReadyToFarm())
+            {
+                msg += "now";
+            }
+            else 
+            {
+                time_t farmTimePassed = time(nullptr) - bd->GetLastFarmTime();
+                time_t farmTimeRemaining = bd->GetEntry().farming->frequency - farmTimePassed;
+                msg += "in " + engine::GameEngine::Get().FormatTimeInSeconds((int)farmTimeRemaining);
+            }
+            userInterface_->UI_Console_WriteLine(msg);
+        }
+        if(bd->IsCraftable())
+        {
+            if(bd->IsReadyForPickup())
+            {
+                userInterface_->UI_Console_WriteLine("Item ready for pickup");
+            }
+        }
+        // check range with same rules as entity target range
+        const float MAX_DISTANCE = 64.f;
+        glm::vec2 bottomCenter = bd->position;
+        bottomCenter.x += (float)bd->GetWidth() / 2.f;
+        bottomCenter.y += (float)bd->GetHeight();
+        glm::vec2 playerCenter = playerSprite_->position;
+        playerCenter.x += (float)playerSprite_->GetWidth() / 2.f;
+        playerCenter.y += (float)playerSprite_->GetHeight() / 2.f;
+        float dist = glm::distance(bottomCenter, playerCenter);
+        if(dist > MAX_DISTANCE)
+        {
+            userInterface_->UI_Console_WriteLine("Out of range!", 1.f, 0.2f, 0.0f, 1.f);
+            return;
+        }
+
+        // next, interaction depends on building state prioritized as defined in GetInteraction
+        const auto inteTp = bd->GetInteraction();
+        currentCastTime_ = 0.0f;
+        switch(inteTp)
+        {
+        case Building::Interaction::ReadyToCraft:
+            // TODO: handle this because interact does not handle this
+            break;
+        
+        case Building::Interaction::None:
+            return; // nothing to do
+
+        case Building::Interaction::PickupCrafted:
+            maxCastTime_ = 4.0f; // just set it to that for now.
+        case Building::Interaction::Farm:
+            maxCastTime_ = (float)bd->GetEntry().farming->time;
+        case Building::Interaction::Harvest:
+            maxCastTime_ = (float)bd->GetEntry().harvesting->time;
+            // TODO: play action sound
+            userInterface_->UI_CastBar_SetVisible(true);
+            playerAction_ = PlayerAction::Harvesting;
+            break;
+        }  
+    }
+
     void IsleGame::StopActionSound()
     {
         if(actionSoundChannel_ != -1)
@@ -1386,6 +1510,25 @@ namespace game
         delete ent;
     }
 
+    void IsleGame::RemoveBuildingFromList(Building* bdg)
+    {
+        // Remove from list and clear if targeted then delete pointer.
+        auto found = std::find_if(buildings_.begin(), buildings_.end(),
+            [this, bdg](const Building* b) {
+                return bdg == b;
+            }
+        );
+        if(found != buildings_.end())
+        {
+            buildings_.erase(found);
+        }
+        if(target_.GetTargetSprite() == bdg)
+        {
+            ClearTarget();
+        }
+        delete bdg;
+    }
+
     void IsleGame::CheckActionCast(float dtime)
     {
         if(playerAction_ == PlayerAction::None)
@@ -1406,90 +1549,133 @@ namespace game
             {
                 // if the current target isn't of type Entity then something has gone horribly wrong because
                 // target switching should have cancelled the harvest
-                if(target_.GetTargetSpriteType() != Target::SPRITE_TYPE::ENTSPR)
+                if(target_.GetTargetSpriteType() == Target::SPRITE_TYPE::ENTSPR)
                 {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
-                        "%s: Target is not an entity (this point should have never been reached!)", 
-                        __FUNCTION__);
-                    playerAction_ = PlayerAction::None;
-                    return;
-                }
-                // now it is safe to cast targeted sprite to the Entity
-                Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
-                if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
-                {
-                    // check farming
-                    auto itemToAdd = targetedEntity->Farm();
-                    harvesting_->SetFarmCommand((int)targetedEntity->position.x, 
-                        (int)targetedEntity->position.y, 
-                        FarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y,
-                            false, time(nullptr)));
-                    inventory_->AddItem(itemToAdd.name, itemToAdd.num);
-                    userInterface_->UI_Console_WriteLine(std::string("You harvested ") 
-                        + std::to_string(itemToAdd.num) 
-                        + " " + itemToAdd.name);
-                    // add experience based on number of items farmed
-                    dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
-                    userInterface_->UI_Console_WriteLine(std::string(" And gained ") 
-                        + std::to_string(itemToAdd.num) 
-                        + " exp", 1.0f, 0.f, 1.0f, 1.0f);
-                    userInterface_->UI_Inventory_Setup();
-                    UpdatePlayerExperience(dinged);
-                    ClearTarget(); // to prevent accidentally harvesting instead of farming item
-                }
-                else 
-                {
-                    // check harvest-clicking
-                    targetedEntity->DecRemainingClicks();
-                    harvesting_->SetHarvestCommand((int)targetedEntity->position.x, 
-                        (int)targetedEntity->position.y, 
-                        targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
-                    // get the item(s) to add.
-                    auto itemsToAdd = targetedEntity->OnInteract();
-                    for(auto each : itemsToAdd)
+                    // now it is safe to cast targeted sprite to the Entity
+                    Entity* targetedEntity = (Entity*)target_.GetTargetSprite();
+                    if(targetedEntity->IsFarmable() && targetedEntity->IsReadyForPickup())
                     {
-                        if(each.name != "exp")
-                        {
-                            userInterface_->UI_Console_WriteLine(std::string("You receive ") 
-                                + std::to_string(each.num) 
-                                + " " + each.name);
-                            inventory_->AddItem(each.name, each.num);
-                            userInterface_->UI_Inventory_Setup();
-                        }
-                        else 
-                        {   // item exp is a special handled case, not added to inventory
-                            userInterface_->UI_Console_WriteLine(std::string("You gain ") 
-                                + std::to_string(each.num) + " experience.", 
-                                1.0f, 0.0f, 1.0f, 1.0f);
-                            dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
-                            UpdatePlayerExperience(dinged);
-                        }
+                        // check farming
+                        auto itemToAdd = targetedEntity->Farm();
+                        harvesting_->SetFarmCommand((int)targetedEntity->position.x, 
+                            (int)targetedEntity->position.y, 
+                            FarmCommand((int)targetedEntity->position.x, (int)targetedEntity->position.y,
+                                false, time(nullptr)));
+                        inventory_->AddItem(itemToAdd.name, itemToAdd.num);
+                        userInterface_->UI_Console_WriteLine(std::string("You harvested ") 
+                            + std::to_string(itemToAdd.num) 
+                            + " " + itemToAdd.name);
+                        // add experience based on number of items farmed
+                        dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(itemToAdd.num);
+                        userInterface_->UI_Console_WriteLine(std::string(" And gained ") 
+                            + std::to_string(itemToAdd.num) 
+                            + " exp", 1.0f, 0.f, 1.0f, 1.0f);
+                        userInterface_->UI_Inventory_Setup();
+                        UpdatePlayerExperience(dinged);
+                        ClearTarget(); // to prevent accidentally harvesting instead of farming item
                     }
-                    if(targetedEntity->GetRemainingClicks() == 0)
+                    else 
                     {
-                        auto items = targetedEntity->OnDestroy();
-                        for(auto each : items)
+                        // check harvest-clicking
+                        targetedEntity->DecRemainingClicks();
+                        harvesting_->SetHarvestCommand((int)targetedEntity->position.x, 
+                            (int)targetedEntity->position.y, 
+                            targetedEntity->GetMaxClicks() - targetedEntity->GetRemainingClicks());
+                        // get the item(s) to add.
+                        auto itemsToAdd = targetedEntity->OnInteract();
+                        for(auto each : itemsToAdd)
                         {
                             if(each.name != "exp")
                             {
-                                userInterface_->UI_Console_WriteLine(std::string("You received ") 
-                                    + std::to_string(each.num) + " " + each.name);
+                                userInterface_->UI_Console_WriteLine(std::string("You receive ") 
+                                    + std::to_string(each.num) 
+                                    + " " + each.name);
                                 inventory_->AddItem(each.name, each.num);
                                 userInterface_->UI_Inventory_Setup();
                             }
                             else 
-                            {
+                            {   // item exp is a special handled case, not added to inventory
                                 userInterface_->UI_Console_WriteLine(std::string("You gain ") 
-                                    + std::to_string(each.num) 
-                                    + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                                    + std::to_string(each.num) + " experience.", 
+                                    1.0f, 0.0f, 1.0f, 1.0f);
                                 dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
                                 UpdatePlayerExperience(dinged);
                             }
                         }
-                        RemoveSpriteFromRenderList(targetedEntity);
-                        RemoveEntityFromLoaded(targetedEntity);
-                        ClearTarget();
+                        if(targetedEntity->GetRemainingClicks() == 0)
+                        {
+                            auto items = targetedEntity->OnDestroy();
+                            for(auto each : items)
+                            {
+                                if(each.name != "exp")
+                                {
+                                    userInterface_->UI_Console_WriteLine(std::string("You received ") 
+                                        + std::to_string(each.num) + " " + each.name);
+                                    inventory_->AddItem(each.name, each.num);
+                                    userInterface_->UI_Inventory_Setup();
+                                }
+                                else 
+                                {
+                                    userInterface_->UI_Console_WriteLine(std::string("You gain ") 
+                                        + std::to_string(each.num) 
+                                        + " experience", 1.0f, 0.0f, 1.0f, 1.0f);
+                                    dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(each.num);
+                                    UpdatePlayerExperience(dinged);
+                                }
+                            }
+                            RemoveSpriteFromRenderList(targetedEntity);
+                            RemoveEntityFromLoaded(targetedEntity);
+                            ClearTarget();
+                        }
                     }
+                }
+                else if(target_.GetTargetSpriteType() == Target::SPRITE_TYPE::BUILDSPR)
+                {
+                    Building* bd = (Building*)target_.GetTargetSprite();
+                    const auto inteTp = bd->GetInteraction();
+                    bd->Interact(*inventory_); // todo: return vector of strings for loot message
+                    // depending on the previous state, actions must be taken to determine the possible removal or
+                    //  changing of building.
+                    switch(inteTp)
+                    {
+                    case Building::Interaction::Harvest:
+                        // in this case gotta check remaining harvests vs max harvests 
+                        // and if 0 remove the building or
+                        //  is harvesting.completed field is not "" replace the building with that field.
+                        if(bd->GetRemainingHarvests() == 0)
+                        {
+                            std::string onComplete = bd->GetEntry().harvesting->completed;
+                            int x = (int)bd->position.x;
+                            int y = (int)bd->position.y;
+                            RemoveSpriteFromRenderList(bd);
+                            RemoveBuildingFromList(bd);
+                            if(onComplete != "")
+                            {
+                                Building* replacement = CreateNewBuilding(onComplete, x, y);
+                                renderList_.push_back(replacement);
+                                buildings_.push_back(replacement);
+                            }
+                        }
+                        break;
+                    case Building::Interaction::Farm:
+                        // in this case gotta check farm state and possibly chance the building
+                        if(bd->GetRemainingFarms() == 0 && bd->GetEntry().farming->maxFarms != -1)
+                        {
+                            std::string onComplete = bd->GetEntry().farming->completed;
+                            int x = (int)bd->position.x;
+                            int y = (int)bd->position.y;
+                            RemoveSpriteFromRenderList(bd);
+                            RemoveBuildingFromList(bd);
+                            if(onComplete != "")
+                            {
+                                Building* replacement = CreateNewBuilding(onComplete, x, y);
+                                renderList_.push_back(replacement);
+                                buildings_.push_back(replacement);
+                            }
+                        }
+                        break;
+                    }
+                    userInterface_->UI_Inventory_Setup();
                 }
             }
             else if(playerAction_ == PlayerAction::Crafting)

@@ -5,6 +5,7 @@ BUILDING {
     title = "Campfire",
     tooltip = "Allows you to cook delicious food",
     texture = "res/textures/buildings/campfire.png",
+    hidden = false, -- optional, hidden is false by default
     width = 32,
     height = 32,
     required = {
@@ -30,7 +31,7 @@ BUILDING {
         {"foodstuff", 100}, {"stone", 100}
     },
     collision = {0, 13, 32, 32},
-    time = 45, -- time in seconds to build
+    time = 30, -- time in seconds to build
     level = 3, -- min level required to build the structure
     harvesting = {
         maxClicks = 100, -- can be used to get water up to 100 times
@@ -38,7 +39,7 @@ BUILDING {
         drops = {
             {"water", 1, 100.0} -- 100% chance to drop 1 water per harvest
         },
-        completed = "dry_well" -- what the building turns into once fully harvested
+        completed = "drywell" -- what the building turns into once fully harvested
     },
     removing = { -- when player selects "Tear down" from the building interface
         time = 25, -- how many seconds it takes to complete action
@@ -46,6 +47,29 @@ BUILDING {
             {"stone", 25, 25.0}
         }
     }   
+}
+
+BUILDING {
+    name = "drywell",
+    title = "Dried up well",
+    tooltip = "This well has dried up and should be torn down",
+    texture = "res/textures/buildings/drywell.png",
+    hidden = true, -- can't select a dry well to build.
+    width = 32,
+    height = 45,
+    required = {
+        -- This should NEVER be directly built anyway
+    },
+    collision = {0, 13, 32, 32},
+    time = 9999, -- player never builds these directly
+    level = 3,
+    harvesting = {
+        maxClicks = 10,
+        time = 3,
+        drops = {
+            {"stone", 1, 100.0}
+        },
+    }
 }
 --[[
 BUILDING {

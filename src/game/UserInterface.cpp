@@ -260,6 +260,9 @@ namespace game
              lua_pushstring(L, "texture");
              lua_pushstring(L, kv.second.texture.c_str());
              lua_settable(L, -3);
+             lua_pushstring(L, "hidden");
+             lua_pushboolean(L, kv.second.hidden);
+             lua_settable(L, -3);
              lua_pushstring(L, "width");
              lua_pushinteger(L, kv.second.width);
              lua_settable(L, -3);

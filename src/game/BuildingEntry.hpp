@@ -120,6 +120,7 @@ namespace game
             title = entry.title;
             tooltip = entry.tooltip;
             texture = entry.texture;
+            hidden = entry.hidden;
             width = entry.width;
             height = entry.height;
             required = entry.required;
@@ -175,6 +176,8 @@ namespace game
         std::string tooltip;
         // path to the texture representing the building
         std::string texture;
+        // whether or not UI should show it
+        bool hidden = false;
         // the size in logical pixels
         int width, height;
         // item requirements to place the building

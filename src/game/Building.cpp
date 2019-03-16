@@ -327,7 +327,7 @@ namespace game
             {
                 AddLoot(inv, each);
             }
-            // change the crafting data
+            // change the crafting data and building state
             craftingItem_ = "";
             readyForPickup_ = false;
             // (we don't need to change the texture because the craft quad will not be rendered unless

@@ -20,6 +20,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Entity.hpp"
+#include "Building.hpp"
 #include "MobSprite.hpp"
 #include "ogl/ErrorCheck.hpp"
 #include "Target.hpp"
@@ -158,6 +159,18 @@ namespace game
             }
             float value = (float)ent->GetRemainingClicks() / (float)ent->GetMaxClicks();
             newX = value * (float)ent->GetWidth();
+        }
+        else if(targetSpriteType_ == SPRITE_TYPE::BUILDSPR)
+        {
+            Building* bd = (Building*)target_;
+            if(!bd->IsHarvestable())
+            {
+                // only meaningful if harvestable limited number of times
+                if(bd->GetEntry().harvesting->maxClicks == -1)
+                    return;
+            }
+            float value = (float)bd->GetRemainingHarvests() / (float)bd->GetEntry().harvesting->maxClicks;
+            newX = value * (float)bd->GetWidth();
         }
         else if(targetSpriteType_ == SPRITE_TYPE::MOBSPR)
         {

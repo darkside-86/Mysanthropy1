@@ -44,7 +44,8 @@ BuildingFrame = {
                 - frame.content.infoPanel.buildBtn:GetHeight())
         frame.content.infoPanel.buildBtn:AddOnClicked(function() 
             -- validate building 
-            if frame.selectedBuildName == nil  or buildTable[frame.selectedBuildName] == nil then 
+            if frame.selectedBuildName == nil  or buildTable[frame.selectedBuildName] == nil 
+                    or buildTable[frame.selectedBuildName].hidden then 
                 print("Nothing valid selected for building") -- todo: error messages on window
                 return 
             end
@@ -77,33 +78,35 @@ BuildingFrame = {
         frame.content.listPanel.elements = {}
         -- todo: build array out of database sorted by level and then title
         for k,v in pairs(buildTable) do 
-            local bf = UIFrame.New(frame.content.listPanel, GRID_SIZE, GRID_SIZE, xCounter, yCounter, 
+            if v.hidden == false then 
+                local bf = UIFrame.New(frame.content.listPanel, GRID_SIZE, GRID_SIZE, xCounter, yCounter, 
                     TEXTURE_UIBLANK)
-            bf:SetColor(0,0,0,0)
-            bf:SetBorderSize(1)
-            bf:SetBorderColor(0,0,0,1)
-            bf.icon = UITexture.New(bf, v.texture, GRID_SIZE, GRID_SIZE)
-            bf:AddOnClicked(function() 
-                -- fill the information panel with building requirements
-                frame.content.infoPanel.elements = {}
-                collectgarbage("collect")
-                local x = 0 
-                for reqI, reqV in ipairs(v.required) do 
-                    local reqItem = UITexture.New(frame.content.infoPanel, itemTable[reqV.name].icon, 
-                            GRID_SIZE, GRID_SIZE)
-                    reqItem:SetXPos(x)
-                    reqItem.countLbl = UILabel.New(reqItem, tostring(reqV.count), "sans14", 0,0,0,1)
-                    table.insert(frame.content.infoPanel.elements, reqItem)
-                    x = x + GRID_SIZE
+                bf:SetColor(0,0,0,0)
+                bf:SetBorderSize(1)
+                bf:SetBorderColor(0,0,0,1)
+                bf.icon = UITexture.New(bf, v.texture, GRID_SIZE, GRID_SIZE)
+                bf:AddOnClicked(function() 
+                    -- fill the information panel with building requirements
+                    frame.content.infoPanel.elements = {}
+                    collectgarbage("collect")
+                    local x = 0 
+                    for reqI, reqV in ipairs(v.required) do 
+                        local reqItem = UITexture.New(frame.content.infoPanel, itemTable[reqV.name].icon, 
+                                GRID_SIZE, GRID_SIZE)
+                        reqItem:SetXPos(x)
+                        reqItem.countLbl = UILabel.New(reqItem, tostring(reqV.count), "sans14", 0,0,0,1)
+                        table.insert(frame.content.infoPanel.elements, reqItem)
+                        x = x + GRID_SIZE
+                    end
+                    -- select this specific building
+                    frame.selectedBuildName = v.name
+                end)
+                table.insert(frame.content.listPanel.elements, bf)
+                xCounter = xCounter + GRID_SIZE 
+                if xCounter - GRID_SIZE > frame.content.listPanel:GetWidth() then 
+                    xCounter = 0
+                    yCounter = yCounter + GRID_SIZE
                 end
-                -- select this specific building
-                frame.selectedBuildName = v.name
-            end)
-            table.insert(frame.content.listPanel.elements, bf)
-            xCounter = xCounter + GRID_SIZE 
-            if xCounter - GRID_SIZE > frame.content.listPanel:GetWidth() then 
-                xCounter = 0
-                yCounter = yCounter + GRID_SIZE
             end
         end
         return frame

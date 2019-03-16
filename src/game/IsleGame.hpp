@@ -128,6 +128,8 @@ namespace game
         void CreateBuildingOutline(int width, int height);
         // Destroys the building on map UI objects
         void DestroyBuildingOutline();
+        // Create a building from the entries at x,y with needed default values. Bypass construction
+        Building* CreateNewBuilding(const std::string& bdName, int x, int y);
         // load a sprite and animations from lost guardian folder
         PlayerSprite* LoadPlayerLGSpr(const std::string& name, int w, int h, bool boy, int level, int exp);
         // unload textures associated with lost guardian sprite and destroy sprite
@@ -161,12 +163,16 @@ namespace game
         bool CheckPoint(float x, float y, float left, float top, float right, float bottom);
         // Checks the distance between player and targeted entity and begins click action
         void InteractWithEntity(Entity* ent);
+        // Interacts with building depending on distance and the state/type of building
+        void InteractWithBuilding(Building* bd);
         // Stop playing action sound
         void StopActionSound();
         // Clear target
         void ClearTarget();
-        // Remove an entity from the list of loaded entities
+        // Remove an entity from the list of loaded entities and clear if targeted. 
         void RemoveEntityFromLoaded(Entity* ent);
+        // Remove a building from the building_ list and clear if targeted.
+        void RemoveBuildingFromList(Building* bdg);
         // Locate an entity by its location. There are not supposed to be more than one entities at any
         //  given exact pixel coordinate.
         Entity* FindEntityByLocation(int x, int y);

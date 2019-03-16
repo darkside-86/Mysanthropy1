@@ -91,7 +91,7 @@ namespace game
         static int lua_Game_StartCrafting(lua_State* L);
 
         // Game_BuildTable_GetEntries() : { {name:{ name:string, title:string, tooltip:string,
-        //  texture:string, width:integer, height:integer, required:[{name:string, count:integer}...],
+        //  texture:string, hidden:boolean width:integer, height:integer, required:[{name:string, count:integer}...],
         //  collision = {left:integer, top:integer, right:integer, bottom:integer}, time:integer, level:integer
         //  harvesting:nil or {maxClicks:integer, time:integer, drops:[{item:string, count:integer, 
         //   chance:number}...], completed:string}, 

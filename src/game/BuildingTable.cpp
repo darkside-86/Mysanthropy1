@@ -98,6 +98,13 @@ namespace game
         entry.texture = luaL_checkstring(L, -1);
         lua_pop(L, 1);
 
+        // hidden : nil or boolean
+        lua_pushstring(L, "hidden");
+        lua_gettable(L, 1);
+        if(!lua_isnil(L, -1)) // value is set to false by default
+            entry.hidden = lua_toboolean(L, -1);
+        lua_pop(L, 1);
+
         // width : integer
         lua_pushstring(L, "width");
         lua_gettable(L, 1);
