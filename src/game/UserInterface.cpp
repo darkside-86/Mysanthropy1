@@ -36,8 +36,12 @@ namespace game
         lua_pushlightuserdata(script_, this);
         lua_settable(script_, LUA_REGISTRYINDEX);
         // set globals
+        lua_pushcfunction(script_, lua_Game_StartBuilding);
+        lua_setglobal(script_, "Game_StartBuilding");
         lua_pushcfunction(script_, lua_Game_StartCrafting);
         lua_setglobal(script_, "Game_StartCrafting");
+        lua_pushcfunction(script_, lua_Game_BuildTable_GetEntries);
+        lua_setglobal(script_, "Game_BuildTable_GetEntries");
         lua_pushcfunction(script_, lua_Game_Crafting_GetCraftables);
         lua_setglobal(script_, "Game_Crafting_GetCraftables");
         lua_pushcfunction(script_, lua_Game_Inventory_ConvertItemToFoodstuff);
@@ -85,6 +89,13 @@ namespace game
         lua_getglobal(script_, "UI_ActionBar_SetRightCDValue");
         lua_pushnumber(script_, value);
         int ok = lua_pcall(script_, 1, 0, 0);
+        if(ok != LUA_OK) PrintLuaError(script_);
+    }
+
+    void UserInterface::UI_BuildingFrame_Toggle()
+    {
+        lua_getglobal(script_, "UI_BuildingFrame_Toggle");
+        int ok = lua_pcall(script_, 0, 0, 0);
         if(ok != LUA_OK) PrintLuaError(script_);
     }
 
@@ -212,12 +223,263 @@ namespace game
 
     // Lua bound C++ functions ////////////////////////////////////////////////
 
+    int UserInterface::lua_Game_StartBuilding(lua_State* L)
+    {
+        UserInterface* ui = GetUserInterface(L);
+        const std::string buildName = luaL_checkstring(L, 1);
+        ui->game_.StartBuilding(buildName);
+        return 0;
+    }
+
     int UserInterface::lua_Game_StartCrafting(lua_State* L)
     {
         UserInterface* ui = GetUserInterface(L);
         const std::string itemName = luaL_checkstring(L, 1);
         ui->game_.StartCrafting(itemName);
         return 0;
+    }
+
+    int UserInterface::lua_Game_BuildTable_GetEntries(lua_State* L)
+    {
+        UserInterface* ui = GetUserInterface(L);
+        lua_newtable(L);
+        const auto& entries = ui->game_.GetBuildingTable().GetBuildingEntries();
+        for(const auto& kv : entries)
+        {
+            lua_pushstring(L, kv.first.c_str());
+            lua_newtable(L);
+             lua_pushstring(L, "name");
+             lua_pushstring(L, kv.second.name.c_str());
+             lua_settable(L, -3);
+             lua_pushstring(L, "title");
+             lua_pushstring(L, kv.second.title.c_str());
+             lua_settable(L, -3);
+             lua_pushstring(L, "tooltip");
+             lua_pushstring(L, kv.second.tooltip.c_str());
+             lua_settable(L, -3);
+             lua_pushstring(L, "texture");
+             lua_pushstring(L, kv.second.texture.c_str());
+             lua_settable(L, -3);
+             lua_pushstring(L, "width");
+             lua_pushinteger(L, kv.second.width);
+             lua_settable(L, -3);
+             lua_pushstring(L, "height");
+             lua_pushinteger(L, kv.second.height);
+             lua_settable(L, -3);
+             lua_pushstring(L, "required");
+             lua_newtable(L);
+              size_t reqCounter = 1;
+              for(const auto& req : kv.second.required)
+              {
+                  lua_pushinteger(L, reqCounter);
+                  lua_newtable(L);
+                   lua_pushstring(L, "name");
+                   lua_pushstring(L, req.name.c_str());
+                   lua_settable(L, -3);
+                   lua_pushstring(L, "count");
+                   lua_pushinteger(L, req.count);
+                   lua_settable(L, -3);
+                  lua_settable(L, -3);
+                  ++reqCounter;
+              }
+             lua_settable(L, -3);
+             lua_pushstring(L, "collision");
+             lua_newtable(L);
+              lua_pushstring(L, "left");
+              lua_pushinteger(L, kv.second.collision.left);
+              lua_settable(L, -3);
+              lua_pushstring(L, "top");
+              lua_pushinteger(L, kv.second.collision.top);
+              lua_settable(L, -3);
+              lua_pushstring(L, "right");
+              lua_pushinteger(L, kv.second.collision.right);
+              lua_settable(L, -3);
+              lua_pushstring(L, "bottom");
+              lua_pushinteger(L, kv.second.collision.bottom);
+              lua_settable(L, -3);
+             lua_settable(L, -3);
+             lua_pushstring(L, "time");
+             lua_pushinteger(L, kv.second.time);
+             lua_settable(L, -3);
+             lua_pushstring(L, "level");
+             lua_pushinteger(L, kv.second.level);
+             lua_settable(L, -3);
+             // harvesting is nil if not present in entry
+             if(kv.second.harvesting)
+             {
+                 lua_pushstring(L, "harvesting");
+                 lua_newtable(L);
+                  lua_pushstring(L, "maxClicks");
+                  lua_pushinteger(L, kv.second.harvesting->maxClicks);
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "time");
+                  lua_pushinteger(L, kv.second.harvesting->time);
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "drops");
+                  lua_newtable(L);
+                   size_t dropCounter = 1;
+                   for(const auto& drop : kv.second.harvesting->drops)
+                   {
+                       lua_pushinteger(L, dropCounter);
+                       lua_newtable(L);
+                        lua_pushstring(L, "item");
+                        lua_pushstring(L, drop.item.c_str());
+                        lua_settable(L, -3);
+                        lua_pushstring(L, "count");
+                        lua_pushinteger(L, drop.count);
+                        lua_settable(L, -3);
+                        lua_pushstring(L, "chance");
+                        lua_pushnumber(L, drop.chance);
+                        lua_settable(L, -3);
+                       lua_settable(L, -3);
+                       ++dropCounter;
+                   }
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "completed");
+                  lua_pushstring(L, kv.second.harvesting->completed.c_str());
+                  lua_settable(L, -3);
+                 lua_settable(L, -3);
+             }
+             // farming is nil if not present in entry
+             if(kv.second.farming)
+             {
+                 lua_pushstring(L, "farming");
+                 lua_newtable(L);
+                  lua_pushstring(L, "maxFarms");
+                  lua_pushinteger(L, kv.second.farming->maxFarms);
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "time");
+                  lua_pushinteger(L, kv.second.farming->time);
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "frequency");
+                  lua_pushinteger(L, kv.second.farming->frequency);
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "pending");
+                  lua_pushstring(L, kv.second.farming->pending.c_str());
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "drops");
+                  lua_newtable(L);
+                   size_t dropI=1;
+                   for(const auto& drop : kv.second.farming->drops)
+                   {
+                       lua_pushinteger(L, dropI);
+                       lua_newtable(L);
+                        lua_pushstring(L, "item");
+                        lua_pushstring(L, drop.item.c_str());
+                        lua_settable(L, -3);
+                        lua_pushstring(L, "count");
+                        lua_pushinteger(L, drop.count);
+                        lua_settable(L, -3);
+                        lua_pushstring(L, "chance");
+                        lua_pushnumber(L, drop.chance);
+                        lua_settable(L, -3);
+                       lua_settable(L, -3);
+                       ++dropI;
+                   }
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "completed");
+                  lua_pushstring(L, kv.second.farming->completed.c_str());
+                  lua_settable(L, -3);
+                 lua_settable(L, -3);
+             }
+             // crafting is nil if the list is empty
+             if(kv.second.crafting.size() > 0)
+             {
+                 lua_pushstring(L, "crafting");
+                 lua_newtable(L);
+                  size_t craftCounter = 1;
+                  for(const auto& craft : kv.second.crafting)
+                  {
+                      lua_pushinteger(L, craftCounter);
+                      lua_newtable(L);
+                       lua_pushstring(L, "title");
+                       lua_pushstring(L, craft.title.c_str());
+                       lua_settable(L, -3);
+                       lua_pushstring(L, "sources");
+                       lua_newtable(L);
+                        size_t sourceCounter = 1;
+                        for(const auto& source : craft.sources)
+                        {
+                            lua_pushinteger(L, sourceCounter);
+                            lua_newtable(L);
+                             lua_pushstring(L, "name");
+                             lua_pushstring(L, source.name.c_str());
+                             lua_settable(L, -3);
+                             lua_pushstring(L, "count");
+                             lua_pushinteger(L, source.count);
+                             lua_settable(L, -3);
+                            lua_settable(L, -3);
+                            ++sourceCounter;
+                        }
+                       lua_settable(L, -3);
+                       lua_pushstring(L, "time");
+                       lua_pushinteger(L, craft.time);
+                       lua_settable(L, -3);
+                       lua_pushstring(L, "pending");
+                       lua_pushstring(L, craft.pending.c_str());
+                       lua_settable(L, -3);
+                       lua_pushstring(L, "completed");
+                       lua_pushstring(L, craft.completed.c_str());
+                       lua_settable(L, -3);
+                       lua_pushstring(L, "results");
+                       lua_newtable(L);
+                        size_t resultCounter = 1;
+                        for(const auto& result : craft.results)
+                        {
+                            lua_pushinteger(L, resultCounter);
+                            lua_newtable(L);
+                             lua_pushstring(L, "item");
+                             lua_pushstring(L, result.item.c_str());
+                             lua_settable(L, -3);
+                             lua_pushstring(L, "count");
+                             lua_pushinteger(L, result.count);
+                             lua_settable(L, -3);
+                             lua_pushstring(L, "chance");
+                             lua_pushnumber(L, result.chance);
+                             lua_settable(L, -3);
+                            lua_settable(L, -3);
+                            ++resultCounter;
+                        }
+                       lua_settable(L, -3);
+                      lua_settable(L, -3);
+                      ++craftCounter;
+                  }
+                 lua_settable(L, -3);
+             }
+             // removing is also an optional table
+             if(kv.second.removing)
+             {
+                 lua_pushstring(L, "removing");
+                 lua_newtable(L);
+                  lua_pushstring(L, "time");
+                  lua_pushinteger(L, kv.second.removing->time);
+                  lua_settable(L, -3);
+                  lua_pushstring(L, "drops");
+                  lua_newtable(L);
+                   size_t dropCounter = 1;
+                   for(const auto& drop : kv.second.removing->drops)
+                   {
+                       lua_pushinteger(L, dropCounter);
+                       lua_newtable(L);
+                        lua_pushstring(L, "item");
+                        lua_pushstring(L, drop.item.c_str());
+                        lua_settable(L, -3);
+                        lua_pushstring(L, "count");
+                        lua_pushinteger(L, drop.count);
+                        lua_settable(L, -3);
+                        lua_pushstring(L, "chance");
+                        lua_pushnumber(L, drop.chance);
+                        lua_settable(L, -3);
+                       lua_settable(L, -3);
+                       ++dropCounter;
+                   }
+                  lua_settable(L, -3);
+                 lua_settable(L, -3);
+             }
+
+            lua_settable(L, -3);
+        }
+        return 1;
     }
 
     int UserInterface::lua_Game_Crafting_GetCraftables(lua_State* L)

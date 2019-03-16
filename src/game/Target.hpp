@@ -36,7 +36,7 @@ namespace game
         // target hostility determines target colors: green, yellow, or red
         enum TARGET_TYPE { FRIENDLY, NEUTRAL, HOSTILE };
         // light RTTI data for what exactly to render above the sprite for the "healthbar"
-        enum SPRITE_TYPE { MOBSPR, ENTSPR, NONE };
+        enum SPRITE_TYPE { BUILDSPR, MOBSPR, ENTSPR, NONE };
 
         // ctor
         Target();

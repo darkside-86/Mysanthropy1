@@ -578,6 +578,29 @@ namespace game
         engine::ui::Root::Get()->Render(gc);
     }
 
+    void IsleGame::StartBuilding(const std::string& building)
+    {
+        if(isPlacingBuilding_ || playerAction_ == PlayerAction::Building)
+            return; // already placing or building a building--nothing to do here
+        buildingEntry_ = buildingTable_.GetEntry(building);
+        // UI provides top layer validation of building selection, this is another layer
+        if(buildingEntry_ == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Invalid building `%s' selected!", __FUNCTION__, building.c_str());
+            return;
+        }
+        // UI provides top layer of inventory validation, this is another layer.
+        if(!buildingEntry_->CanConstruct(*inventory_))
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "You don't have enough materials for this building!");
+            return;
+        }
+        isPlacingBuilding_ = true;
+        CreateBuildingOutline(buildingEntry_->width, buildingEntry_->height); 
+    }
+
     void IsleGame::StartCrafting(const std::string& itemToCraft)
     {
         // cancel existing actions no matter outcome. 
@@ -878,26 +901,17 @@ namespace game
             // userInterface_->ShowMMPopup(true);
         });
 
+        keybinds_.AddKeybind(SDLK_b, [this](){
+            userInterface_->UI_BuildingFrame_Toggle();
+        });
+
         keybinds_.AddKeybind(SDLK_c, [this]() {
             userInterface_->UI_Crafting_Toggle();
         });
 
-        // use 'X' key for testing stuff. In this case, building placement
+        // use 'X' key for testing stuff. In this case, nothing atm
         keybinds_.AddKeybind(SDLK_x, [this](){
-            if(isPlacingBuilding_ || playerAction_ == PlayerAction::Building)
-                return; // already placing or building a building--nothing to do here
-            const BuildingEntry* be = buildingTable_.GetEntry("campfire");
-            if(be == nullptr)
-                return;
-            if(!be->CanConstruct(*inventory_))
-            {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
-                    "You don't have enough materials for this building!");
-                return;
-            }
-            isPlacingBuilding_ = true;
-            CreateBuildingOutline(be->width, be->height); // pretend we selected a campfire from the UI
-            buildingEntry_ = be;
+
         });
     }
 

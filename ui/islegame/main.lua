@@ -18,6 +18,7 @@
 -------------------------------------------------------------------------------
 
 Include("ui/islegame/ActionBar.lua")
+Include("ui/islegame/BuildingFrame.lua")
 Include("ui/islegame/CastBar.lua")
 Include("ui/islegame/Console.lua")
 Include("ui/islegame/CraftingFrame.lua")
@@ -28,15 +29,19 @@ Include("ui/islegame/UnitFrame.lua")
 
 -- global singleton for all the UI components
 UI = {
-    actionBar = ActionBar.New(nil),
-    castBar = CastBar.New(nil, GetScreenWidth() / 5, 16),
-    console = Console.New(nil),
-    crafting = CraftingFrame.New(nil),
+    -- unit frames and console and exp bar go at the bottom of z index
     dataBar = DataBar.New(nil, 24),
-    expBar = ExperienceBar.New(nil),
-    inventory = InventoryFrame.New(nil),
+    console = Console.New(nil),
     playerUnitFrame = UnitFrame.New(nil),
-    targetUnitFrame = UnitFrame.New(nil)
+    targetUnitFrame = UnitFrame.New(nil),
+    actionBar = ActionBar.New(nil),
+    expBar = ExperienceBar.New(nil),
+    -- next are crafting windows
+    buildingFrame = BuildingFrame.New(nil),
+    crafting = CraftingFrame.New(nil),
+    inventory = InventoryFrame.New(nil),
+    -- casting bar stays at top
+    castBar = CastBar.New(nil, GetScreenWidth() / 5, 16)
 }
 
 -- Action bar methods ---------------------------------------------------------
@@ -47,6 +52,12 @@ end
 
 function UI_ActionBar_SetRightCDValue(value)
     UI.actionBar:SetRightCDValue(value)
+end
+
+-- Building frame methods -----------------------------------------------------
+-------------------------------------------------------------------------------
+function UI_BuildingFrame_Toggle()
+    UI.buildingFrame:SetVisible(not UI.buildingFrame:IsVisible())
 end
 
 -- Cast bar methods -----------------------------------------------------------
@@ -95,6 +106,7 @@ end
 
 function UI_Inventory_Setup()
     UI.inventory:Setup()
+    UI.dataBar:SetFoodstuff()
 end
 
 -- Unit frame methods ---------------------------------------------------------
@@ -138,6 +150,7 @@ local function _main()
     UI.castBar:SetVisible(false)
     UI.crafting:SetVisible(false)
     UI.targetUnitFrame:SetVisible(false)
+    UI.buildingFrame:SetVisible(false)
     -- Show foodstuff amount now that inventory component is loaded
     UI.dataBar:SetFoodstuff()
     -- move console to above data bar

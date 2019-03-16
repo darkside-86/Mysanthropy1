@@ -42,6 +42,8 @@ namespace game
         void UI_ActionBar_SetLeftCDValue(float value);
         // Set the right CD indicator bar to value (0-1)
         void UI_ActionBar_SetRightCDValue(float value);
+        // Toggle the building frame visibility
+        void UI_BuildingFrame_Toggle();
         // Set the activity text of the cast bar
         void UI_CastBar_SetActivity(const std::string activity);
         // Set the fill color of the cast bar
@@ -78,14 +80,35 @@ namespace game
 
     //-- lua bound functions --------------------------------------------------
 
+        // Game_StartBuilding(buildName) :
+        // Tell the game to start placing a building outline on the ground to select a place to
+        //  to start building. Argument is database key for building to build.
+        static int lua_Game_StartBuilding(lua_State* L);
+
         // Game_StartCrafting(itemName) : 
         // Tell the game to begin crafting a specified item. The game checks for the validity and requirements.
         // Because crafting is not instant there's no way to get a meaningful return value here.
         static int lua_Game_StartCrafting(lua_State* L);
 
-        // Returns an array of craftable items according to the database. The fields of each entry are
-        // name : string, required : [ { item:string, count:integer }... ], time : integer, building : string,
-        // level : integer, yield : integer
+        // Game_BuildTable_GetEntries() : { {name:{ name:string, title:string, tooltip:string,
+        //  texture:string, width:integer, height:integer, required:[{name:string, count:integer}...],
+        //  collision = {left:integer, top:integer, right:integer, bottom:integer}, time:integer, level:integer
+        //  harvesting:nil or {maxClicks:integer, time:integer, drops:[{item:string, count:integer, 
+        //   chance:number}...], completed:string}, 
+        //  farming:nil or {maxFarms:integer, time:integer, 
+        //   frequency:integer, pending:string, drops:[{item:string, count:integer, chance:number}...],
+        //   completed:string},
+        //  crafting:nil or [{title:string, sources:[{name:string, count:integer}...], time:integer,
+        //   pending:string, completed:string, results:[{item:string, count:integer, chance:number}...]}...]
+        //  removal:nil or {time:integer, drops:[{item:string, count:integer, chance:number}...]}...}
+        // Returns list of all possible buildings and information about each. Should only be called
+        //  once because the database never changes during game play.
+        static int lua_Game_BuildTable_GetEntries(lua_State* L);
+
+        // Game_Crafting_GetCraftables() : { name : string, required : [ { item:string, count:integer }... ], 
+        //  time : integer, building : string, level : integer, yield : integer }
+        // Returns list of all craftable items according to the database. Should be called only once as
+        //  crafting database never changes during game play.
         static int lua_Game_Crafting_GetCraftables(lua_State* L);
 
         // Game_Inventory_ConvertItemToFoodstuff(name,count) : boolean

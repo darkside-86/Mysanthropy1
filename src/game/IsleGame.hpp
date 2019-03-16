@@ -97,6 +97,8 @@ namespace game
 
         // general functions //////////////////////////////////////////////////
 
+        // Attempt to start selecting a building to place and then build once clicked
+        void StartBuilding(const std::string& building);
         // Attempt to start crafting a specified item by setting up cast bar and cast info
         void StartCrafting(const std::string& itemToCraft);
 
