@@ -613,7 +613,15 @@ namespace game
         if(buildingEntry_->hidden)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-                "%s: This type of building cannot be placed directly", __FUNCTION__, building.c_str());
+                "%s: This type of building `%s' cannot be placed directly", __FUNCTION__, 
+                building.c_str());
+            return;
+        }
+        // make sure level requirement is met
+        if(buildingEntry_->level > playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel())
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "You aren't high enough level to build this!");
             return;
         }
         // UI provides top layer of inventory validation, this is another layer.
@@ -642,14 +650,19 @@ namespace game
         //  as well as determine if the item is a valid entry
         bool valid = false;
         maxCastTime_ = 1.0f; // default value
+        const Craftable* cftb = nullptr;
         for(const auto& craftable : crafting_.GetCraftables())
         {
             if(craftable.name == itemToCraft)
             {
-                maxCastTime_ = (float)craftable.time;
-                valid = true;
-                currentlyCraftYield_ = craftable.yield;
-                break;
+                if(craftable.level <= playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel())
+                {
+                    maxCastTime_ = (float)craftable.time;
+                    valid = true;
+                    currentlyCraftYield_ = craftable.yield;
+                    cftb = &craftable;
+                    break;
+                }
             }
         }
         // if this is not a valid entry, either the UI is broken or player is up to funny business
@@ -659,6 +672,35 @@ namespace game
                 "%s: An attempt made to craft an invalid item: %s", itemToCraft.c_str());
             return;
         }
+
+        // check building requirements
+        bool buildingCloseEnough = true;
+        if(cftb->building != "")
+        {
+            buildingCloseEnough = false;
+            for(const Building* bdg : buildings_)
+            {
+                if(bdg->GetEntry().name == cftb->building)
+                {
+                    glm::vec2 bcenter = { bdg->position.x + (float)bdg->GetWidth() / 2.f,
+                        bdg->position.y + (float)bdg->position.y + (float)bdg->GetHeight() / 2.f};
+                    float dist = glm::distance(bcenter, playerSprite_->position);
+                    if(dist < 1.4 * 96.f)
+                    {
+                        buildingCloseEnough = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if(!buildingCloseEnough)
+        {
+            std::string message = "You need to be closer to a " + cftb->building + " to craft this!";
+            // userInterface_->UI_Console_WriteLine(message, 1.f, 0.f, 0.f, 1.f);
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, message.c_str());
+            return;
+        }
+
         // the UI is supposed to validate inventory first so go ahead and try to craft the item.
         //  if the items are not present then the player simply wasted their time casting
         userInterface_->UI_CastBar_SetActivity("Crafting...");
@@ -1469,9 +1511,17 @@ namespace game
             maxCastTime_ = (float)bd->GetEntry().harvesting->time;
             // TODO: play action sound
             userInterface_->UI_CastBar_SetVisible(true);
+            PlayActionSound();
             playerAction_ = PlayerAction::Harvesting;
             break;
         }  
+    }
+
+    void IsleGame::PlayActionSound()
+    {
+        std::string ACTION_SOUND;
+        configuration_.GetVar("ACTION_SOUND", ACTION_SOUND);
+        actionSoundChannel_ = engine::GameEngine::Get().GetSoundManager().PlaySound(ACTION_SOUND);        
     }
 
     void IsleGame::StopActionSound()
@@ -1633,7 +1683,8 @@ namespace game
                 {
                     Building* bd = (Building*)target_.GetTargetSprite();
                     const auto inteTp = bd->GetInteraction();
-                    bd->Interact(*inventory_); // todo: return vector of strings for loot message
+                    LootTable lootTable = bd->Interact();
+                    AddLootTable(lootTable);
                     // depending on the previous state, actions must be taken to determine the possible removal or
                     //  changing of building.
                     switch(inteTp)
@@ -1756,5 +1807,27 @@ namespace game
         // print information for debugging purposes.
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::INFO,
             "Experience: %d/%d (%f%%)", experience, maxExperience, value*100.f);
+    }
+
+    void IsleGame::AddLootTable(const LootTable& lt)
+    {
+        for(const Loot& loot : lt)
+        {
+            bool dinged = false;
+            if(loot.item == "exp")
+            {
+                dinged = playerSprite_->GetPlayerCombatUnit().AddExperience(loot.count);
+                userInterface_->UI_Console_WriteLine("You gained " + std::to_string(loot.count)
+                    + " experience.", 1.f, 0.f, 1.f, 1.f);
+                UpdatePlayerExperience(dinged);
+            }
+            else 
+            {
+                inventory_->AddItem(loot.item, loot.count);
+                userInterface_->UI_Console_WriteLine("You receive " + std::to_string(loot.count)
+                    + " " + loot.item);
+                userInterface_->UI_Inventory_Setup();
+            }
+        }
     }
 }

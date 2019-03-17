@@ -50,6 +50,8 @@ namespace game
         lua_setglobal(script_, "Game_Inventory_GetItems");
         lua_pushcfunction(script_, lua_Game_ItemTable_GetItemEntries);
         lua_setglobal(script_, "Game_ItemTable_GetItemEntries");
+        lua_pushcfunction(script_, lua_Game_Player_GetLevel);
+        lua_setglobal(script_, "Game_Player_GetLevel");
         // load core lua UI libraries and the main UI file
         std::vector<const char*> CORE_UI_LIB = {
             "ui/lib/fonts.lua", 
@@ -662,6 +664,13 @@ namespace game
             }
             lua_settable(L, -3);
         }
+        return 1;
+    }
+
+    int UserInterface::lua_Game_Player_GetLevel(lua_State* L)
+    {
+        UserInterface* ui = GetUserInterface(L);
+        lua_pushinteger(L, ui->game_.GetPlayerSprite().GetPlayerCombatUnit().GetAttributeSheet().GetLevel());
         return 1;
     }
 

@@ -37,7 +37,8 @@ BUILDING {
         maxClicks = 100, -- can be used to get water up to 100 times
         time = 5, -- 5 seconds to harvest
         drops = {
-            {"water", 1, 100.0} -- 100% chance to drop 1 water per harvest
+            {"water", 1, 100.0}, -- 100% chance to drop 1 water per harvest
+            {"exp", 1, 100.0}
         },
         completed = "drywell" -- what the building turns into once fully harvested
     },
@@ -67,7 +68,8 @@ BUILDING {
         maxClicks = 10,
         time = 3,
         drops = {
-            {"stone", 1, 100.0}
+            {"stone", 1, 100.0},
+            {"exp", 1, 100.0}
         },
     }
 }

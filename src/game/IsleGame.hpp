@@ -33,6 +33,7 @@
 #include "Inventory.hpp"
 #include "ItemTable.hpp"
 #include "Keybinds.hpp"
+#include "LootTable.hpp"
 #include "MobSpawner.hpp"
 #include "MobSprite.hpp"
 #include "ogl/Texture.hpp"
@@ -165,6 +166,8 @@ namespace game
         void InteractWithEntity(Entity* ent);
         // Interacts with building depending on distance and the state/type of building
         void InteractWithBuilding(Building* bd);
+        // Play the general interact action sound
+        void PlayActionSound();
         // Stop playing action sound
         void StopActionSound();
         // Clear target
@@ -180,6 +183,8 @@ namespace game
         void UpdatePlayerExperience(bool dinged);
         // Checks if an action cast is completed and acts accordingly
         void CheckActionCast(float dtime);
+        // Process a loot table and add the items to inventory while printing information to console
+        void AddLootTable(const LootTable& lt);
 
         // Persistent objects that remain valid the entire IsleGame object life span //
 

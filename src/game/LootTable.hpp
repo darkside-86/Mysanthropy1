@@ -1,4 +1,4 @@
-// Crafting.hpp
+// TileGame.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -21,29 +21,14 @@
 #include <string>
 #include <vector>
 
-#include "Craftable.hpp"
-#include "Inventory.hpp"
-#include "LootTable.hpp"
-
 namespace game
 {
-    // the crafting system. maintains a database of craftable items as well
-    // as managing inventory to create items
-    class Crafting
-    {
-    public:
-        // ctor
-        Crafting();
-        // dtor
-        virtual ~Crafting();
-        // get read-only list of craftable items
-        inline const std::vector<Craftable>& GetCraftables() const { return craftables_; }
-        // try to modify inventory contents to produce a craftable item
-        bool CraftItem(const std::string& itemToCraft, Inventory& inventory);
-    private:
-        // read a lua table as Craftable object and store it
-        static int lua_Craftable(lua_State* L);
-        // list of Craftable items
-        std::vector<Craftable> craftables_;
+    // defines a generic system for returning items from functions
+    class Loot
+    { public:
+        std::string item; // entry into item database
+        int count; // number of the item
     };
+
+    typedef std::vector<Loot> LootTable;
 }

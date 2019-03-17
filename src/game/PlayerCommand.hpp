@@ -68,6 +68,7 @@ namespace game
         int targetX; int targetY; unsigned char readyToFarm; time_t farmedTime;
     };
 
-    // TODO: building command
+    // There is no building command; the vector of building pointers is directly interpreted by
+    //  Persistence.
 
 }

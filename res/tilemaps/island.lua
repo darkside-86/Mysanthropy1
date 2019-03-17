@@ -323,6 +323,20 @@ BEGIN_ENTITY "stone3"
  )
  CLICK_TIME(defaultClickTime)
 END_ENTITY()
+-- 16 : planewing -------------------------------------------------------------
+BEGIN_ENTITY "planewing"
+ USE_TEXTURE "res/textures/objects/planewing.png"
+ WIDTH ( 99 )
+ HEIGHT ( 64 )
+ COLLISION_BOX ( 0, 0, 91, 56 )
+ MAX_CLICKS ( 300 )
+ ON_INTERACT (
+    15.0, 1, "ironingot",
+    20.0, 1, "nail",
+    100.0, 1, "exp"
+ )
+ CLICK_TIME(defaultClickTime)
+END_ENTITY()
 
 -- Mob spawner types ----------------------------------------------------------
 -------------------------------------------------------------------------------

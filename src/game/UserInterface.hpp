@@ -126,6 +126,10 @@ namespace game
         //  keys are the item name. See items.lua for fields.
         static int lua_Game_ItemTable_GetItemEntries(lua_State* L);
 
+        // Game_Player_GetLevel() : integer
+        // Returns the current experience level of the player.
+        static int lua_Game_Player_GetLevel(lua_State* L);
+
     //-------------------------------------------------------------------------
 
         // the lua state

@@ -297,8 +297,9 @@ namespace game
         return Interaction::None;
     }
 
-    bool Building::Interact(Inventory& inv)
+    LootTable Building::Interact()
     {
+        LootTable lt;
         // check the meaning of interact.
         Interaction interaction = GetInteraction();
         if(interaction == Interaction::PickupCrafted)
@@ -320,12 +321,15 @@ namespace game
                 engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
                     "%s: `%s' would be ready to pick up except IT DOESN'T EXIST OR IS INVALID!", 
                     __FUNCTION__, craftingItem_.c_str());
-                return false;
+                return lt;
             }
             // add the results to inventory
             for(const auto& each: craftingInfo->results)
             {
-                AddLoot(inv, each);
+                if(engine::GameEngine::Get().PercentChance(each.chance))
+                {
+                    lt.push_back({each.item, each.count});
+                }
             }
             // change the crafting data and building state
             craftingItem_ = "";
@@ -334,7 +338,7 @@ namespace game
             //  another item starts crafting, in which case the texture will be changed there)
             // (there is no need to change the crafting start timestamp because it is not interpreted
             //  unless something is being crafted, so when another item starts crafting it will be set)
-            return true; // everything went ok
+            return lt; // everything went ok
         }
         // ignore case for Interaction::ReadyToCraft - a separate method must handle that
         else if(interaction == Interaction::Farm)
@@ -344,14 +348,14 @@ namespace game
                 engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
                     "%s: I don't know how we got here but farming is null when it shouldn't be...", 
                     __FUNCTION__);
-                return false;
+                return lt; // loot table is still empty at this point
             }
             // check remaining farms. -1 max means infinite farms
             if(remainingFarms_ <= 0 && entry_.farming->maxFarms != -1)
             {
                 engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
                     "%s: Invalid farm state, remaining farm interactions are <= 0", __FUNCTION__);
-                return false;
+                return lt;
             }
             remainingFarms_--;
             lastFarmTime_ = time(nullptr);
@@ -360,9 +364,12 @@ namespace game
             // add the farm loot
             for(const auto& each : entry_.farming->drops)
             {
-                AddLoot(inv, each);
+                if(engine::GameEngine::Get().PercentChance(each.chance))
+                {
+                    lt.push_back({each.item, each.count});
+                }
             }
-            return true;
+            return lt;
         }
         else if(interaction == Interaction::Harvest)
         {
@@ -371,27 +378,30 @@ namespace game
                 engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
                     "%s: I don't know how we got here but harvesting is null when it shouldn't be!",
                     __FUNCTION__);
-                return false;
+                return lt;
             }
             // check remaining harvests (no such thing as infinite harvests)
             if(remainingClicks_ <= 0)
             {
                 engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
                     "%s: Invalid harvest state, remaining clicks are <= 0", __FUNCTION__);
-                return false;
+                return lt;
             }
             remainingClicks_--;
             for(const auto& each : entry_.harvesting->drops)
             {
-                AddLoot(inv, each);
+                if(engine::GameEngine::Get().PercentChance(each.chance))
+                {
+                    lt.push_back({each.item, each.count});
+                }
             }
-            return true;
+            return lt;
         }
         // Interact shouldn't be called when caller knows that the interact is pointless, so print
         //  a warning if we get to this point.
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING, 
             "%s: There was no valid interaction to occur!", __FUNCTION__);
-        return false;
+        return lt;
     }
 
     bool Building::CraftBegin(Inventory& inv, const std::string& itemToCraft)
@@ -449,24 +459,19 @@ namespace game
         return true;
     }
 
-    bool Building::Remove(Inventory& inv)
+    LootTable Building::Remove()
     {
+        LootTable lt;
         if(entry_.removing == nullptr)
-            return false;
+            return lt;
 
         for(const auto& each : entry_.removing->drops)
         {
-            AddLoot(inv, each);
+            if(engine::GameEngine::Get().PercentChance(each.chance))
+            {
+                lt.push_back({each.item, each.count});
+            }
         }
-        return true;
-    }
-
-    void Building::AddLoot(Inventory& inv, const BuildingEntry::Drop& drop)
-    {
-        bool success = engine::GameEngine::Get().PercentChance(drop.chance);
-        if(success)
-        {
-            inv.AddItem(drop.item, drop.count);
-        }
+        return lt;
     }
 }

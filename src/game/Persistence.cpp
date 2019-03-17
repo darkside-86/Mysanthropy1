@@ -344,7 +344,6 @@ namespace game
             if(entry.farming) farmData = &each.farmData;
             const Building::CraftData* craftData = nullptr;
             if(entry.crafting.size() != 0) craftData = &each.craftData;
-            // TODO: check boolean flags in each against pointer results.
             Building* newBuilding = new Building(entry, each.x, each.y, harvestData, farmData, craftData);
             buildings.push_back(newBuilding);
         }

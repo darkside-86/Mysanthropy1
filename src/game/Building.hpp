@@ -22,6 +22,7 @@
 
 #include "BuildingEntry.hpp"
 #include "Inventory.hpp"
+#include "LootTable.hpp"
 #include "Sprite.hpp"
 
 namespace game
@@ -105,15 +106,13 @@ namespace game
         Interaction GetInteraction();
         // context sensitive interaction, can be harvest, farming, or picking up a craftable
         //  returns true upon meaningful interaction that adds (on chance) to inventory.
-        bool Interact(Inventory& inv);
+        LootTable Interact();
         // returns true if successful craft starts
         bool CraftBegin(Inventory& inv, const std::string& itemToCraft);
         // Returns true if the tearing down of building yields any items
-        bool Remove(Inventory& inv);
+        LootTable Remove();
 
     private:
-        // utility function for adding Drop loot to inventory based on chance
-        void AddLoot(Inventory& inv, const BuildingEntry::Drop& drop);
 
         // data check timer--don't pull system time and iterate crafting set every single cycle because
         //  farm and craft times are in seconds anyway

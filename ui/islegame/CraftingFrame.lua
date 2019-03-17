@@ -75,6 +75,11 @@ CraftingFrame = {
                     return
                 end
             end
+            -- make sure level requirement is met.
+            if frame.content.info.selected.level > Game_Player_GetLevel() then 
+                print("You aren't high enough level to craft this yet")
+                return
+            end
             -- everything passes so tell game to start crafting sequence
             Game_StartCrafting(frame.content.info.selected.name)
         end)

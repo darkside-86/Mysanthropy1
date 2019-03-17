@@ -61,6 +61,10 @@ BuildingFrame = {
                     return
                 end
             end
+            if buildTable[frame.selectedBuildName].level > Game_Player_GetLevel() then 
+                print("You aren't high enough level to build this yet")
+                return
+            end
             Game_StartBuilding(frame.selectedBuildName)
             -- hide the building frame so user can see where to build
             frame:SetVisible(false)

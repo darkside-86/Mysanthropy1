@@ -111,3 +111,16 @@ ITEM_ENTRY {
     type = "equipment",
     equipment = { durability = 5 } -- wooden swords aren't very durable
 }
+
+ITEM_ENTRY {
+    name = "nail",
+    tooltip = "Needed for constructing buildings",
+    icon = "res/textures/items/nail.png"
+}
+
+ITEM_ENTRY {
+    name = "ironingot",
+    title = "Iron Ingot",
+    tooltip = "Can be used for metal working",
+    icon = "res/textures/items/ironingot.png"
+}
