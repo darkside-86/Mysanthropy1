@@ -88,6 +88,24 @@ namespace engine { namespace ui {
         return isInstance;
     }
 
+    // Gets the first non-nil index in a Lua array at -1
+    static size_t FindFirstFreeIndex(lua_State* L)
+    {
+        // start searching at 1
+        size_t start = 1;
+        while(start != (size_t)(-1)) // if in the rare case we loop around just give up
+        {
+            lua_pushinteger(L, start);
+            lua_gettable(L, -2);
+            bool isNil = lua_isnil(L, -1);
+            lua_pop(L, 1);
+            if(isNil)
+                return start;
+            ++start;
+        }
+        return 0; // not a valid array index
+    }
+
 // UIObject ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -97,18 +115,15 @@ namespace engine { namespace ui {
     //
     static int lua_UIObject_AddOnClicked(lua_State *L)
     {
-        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
         // make sure argument is a function
         luaL_checktype(L, 2, LUA_TFUNCTION);
         // Get array of callbacks in the lua registry
         lua_pushstring(L, "ClickedEventCallbacks");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        // increment the counter
-        counter++;
-        // capture the current value of the counter to access the correct callback
-        lua_Integer current = counter;
-        lua_pushinteger(L, counter);
+        // find the first nil index in the callback table
+        lua_Integer current = FindFirstFreeIndex(L);
+        lua_pushinteger(L, current);
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
@@ -160,14 +175,12 @@ namespace engine { namespace ui {
     // lua : UIObject.AddOnHover(self, someFunction)
     static int lua_UIObject_AddOnHover(lua_State* L)
     {
-        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
         luaL_checktype(L, 2, LUA_TFUNCTION);
         lua_pushstring(L, "HoverEventCallbacks");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        counter++;
-        lua_Integer current = counter;
-        lua_pushinteger(L, counter);
+        lua_Integer current = FindFirstFreeIndex(L);
+        lua_pushinteger(L, current);
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
@@ -215,14 +228,12 @@ namespace engine { namespace ui {
 
     static int lua_UIObject_AddOnKeypressed(lua_State* L)
     {
-        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
         luaL_checktype(L, 2, LUA_TFUNCTION);
         lua_pushstring(L, "KeypressedEventCallbacks");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        counter++;
-        lua_Integer current = counter;
-        lua_pushinteger(L, counter);
+        lua_Integer current = FindFirstFreeIndex(L);
+        lua_pushinteger(L, current);
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
@@ -269,14 +280,12 @@ namespace engine { namespace ui {
 
     static int lua_UIObject_AddOnDragged(lua_State* L)
     {
-        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
         luaL_checktype(L, 2, LUA_TFUNCTION);
         lua_pushstring(L, "DraggedEventCallbacks");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        counter++;
-        lua_Integer current = counter;
-        lua_pushinteger(L, counter);
+        lua_Integer current = FindFirstFreeIndex(L);
+        lua_pushinteger(L, current);
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
@@ -324,15 +333,13 @@ namespace engine { namespace ui {
     // lua : UIObject.AddOnTimer(self, someFunction, intMs)
     static int lua_UIObject_AddOnTimer(lua_State* L)
     {
-        static lua_Integer counter = 0;
         Object* self = CheckObject(L, 1);
         luaL_checktype(L, 2, LUA_TFUNCTION);
         unsigned int ms = (unsigned int)luaL_checkinteger(L, 3);
         lua_pushstring(L, "TimerEventCallbacks");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        counter++;
-        lua_Integer current = counter;
-        lua_pushinteger(L, counter);
+        lua_Integer current = FindFirstFreeIndex(L);
+        lua_pushinteger(L, current);
         lua_pushvalue(L, 2);
         lua_settable(L, -3);
         lua_pop(L, 1);
