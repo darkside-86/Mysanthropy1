@@ -32,6 +32,10 @@ namespace game
     {
         position.x = (float)x;
         position.y = (float)y;
+        collisionBox_.left = (float)entry.collision.left;
+        collisionBox_.top = (float)entry.collision.top;
+        collisionBox_.right = (float)entry.collision.right;
+        collisionBox_.bottom = (float)entry.collision.bottom;
         // validate harvest parameters
         if((harvestData == nullptr && entry_.harvesting != nullptr) 
             || (harvestData != nullptr && entry.harvesting == nullptr))

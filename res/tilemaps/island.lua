@@ -392,3 +392,29 @@ BEGIN_MOB_TYPE "redcrab"
  LOOT_TABLE ( "shellfish", 1, 25.0 )
 -- Ends the mob entry and adds it to the list
 END_MOB_TYPE()
+-- 1 : shark ------------------------------------------------------------------
+BEGIN_MOB_TYPE "shark"
+ LEVEL_RANGE(6, 8)
+ DEFAULT_ANIMATION "lf1.png"
+ FR_ANIM_TEXTURE_LIST (
+  "lf1.png"
+ )
+ BK_ANIM_TEXTURE_LIST (
+  "rt1.png"
+ )
+ RT_ANIM_TEXTURE_LIST (
+  "rt1.png"
+ )
+ LF_ANIM_TEXTURE_LIST (
+  "lf1.png"
+ )
+ ANIM_SPEED ( 0.1 )
+ MOB_WIDTH ( 118 )
+ MOB_HEIGHT ( 32 )
+ MOB_SPEED ( 30 )
+ MOB_LEASH ( 400 )
+ MOB_COLLISION_BOX ( 4, 4, 112, 112 )
+ MOB_AGGRO_TYPE ( "hostile" )
+ BIOME "water" -- "both" by default, other options are "land", restricts movement
+ COMBAT_ABILITY_LIST "redcrab"
+END_MOB_TYPE()

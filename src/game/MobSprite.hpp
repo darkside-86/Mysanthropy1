@@ -42,6 +42,7 @@ namespace game
     class MobType
     { public:
         enum AGGRO_TYPE { HOSTILE, NEUTRAL };
+        enum BIOME { BOTH, LAND, WATER};
         // name of combat unit
         std::string name;
         // level range
@@ -68,6 +69,8 @@ namespace game
         BOX collisionBox;
         // how mob aggros
         AGGRO_TYPE aggroType;
+        // restricts mob to liquid or land tile
+        BIOME biome = BIOME::BOTH;
         // loot table
         std::vector<LootEntry> lootTable;
         // list of abilities mob will be able to use
@@ -100,6 +103,8 @@ namespace game
         inline combat::CombatUnit& GetCombatUnit() { return *combatUnit_; }
         // get aggro type
         inline MobType::AGGRO_TYPE GetAggroType() const { return aggroType_; }
+        // get biome
+        inline MobType::BIOME GetBiome() const { return biome_; }
     private:
         // animation speed for each time animation is set
         float animSpeed_;
@@ -121,6 +126,8 @@ namespace game
         combat::CombatUnit* combatUnit_;
         // the aggro type
         MobType::AGGRO_TYPE aggroType_;
+        // biome
+        MobType::BIOME biome_;
     };
 
 }

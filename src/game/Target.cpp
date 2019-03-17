@@ -163,12 +163,12 @@ namespace game
         else if(targetSpriteType_ == SPRITE_TYPE::BUILDSPR)
         {
             Building* bd = (Building*)target_;
-            if(!bd->IsHarvestable())
-            {
-                // only meaningful if harvestable limited number of times
-                if(bd->GetEntry().harvesting->maxClicks == -1)
-                    return;
-            }
+            if(!bd->IsHarvestable()) return;
+            
+            // only meaningful if harvestable limited number of times
+            if(bd->GetEntry().harvesting->maxClicks == -1)
+                return;
+        
             float value = (float)bd->GetRemainingHarvests() / (float)bd->GetEntry().harvesting->maxClicks;
             newX = value * (float)bd->GetWidth();
         }

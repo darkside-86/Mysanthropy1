@@ -28,7 +28,8 @@ namespace game
             std::string("res/textures/sprites/mobs/") + mobType.name + "_"
             + mobType.defaultAnimation), 
         mobType.width, mobType.height), aggroType_(mobType.aggroType), animSpeed_(mobType.animSpeed),
-        speed_(mobType.speed), leash_(mobType.leash), originalPosition_(origPos), lootTable_(mobType.lootTable)
+        speed_(mobType.speed), leash_(mobType.leash), originalPosition_(origPos), lootTable_(mobType.lootTable),
+        biome_(mobType.biome)
     {
         auto& tm = engine::GameEngine::Get().GetTextureManager();
         collisionBox_ = mobType.collisionBox;

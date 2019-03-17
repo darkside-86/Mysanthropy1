@@ -638,6 +638,8 @@ namespace world
         lua_setglobal(scripting_, "MOB_COLLISION_BOX");
         lua_pushcfunction(scripting_, TileMap::lua_MobAggroType);
         lua_setglobal(scripting_, "MOB_AGGRO_TYPE");
+        lua_pushcfunction(scripting_, TileMap::lua_Biome);
+        lua_setglobal(scripting_, "BIOME");
         lua_pushcfunction(scripting_, TileMap::lua_CombatAbilityList);
         lua_setglobal(scripting_, "COMBAT_ABILITY_LIST");
         lua_pushcfunction(scripting_, TileMap::lua_LootTable);
@@ -1002,6 +1004,19 @@ namespace world
         {
             tileMap->currentMobType_.aggroType = game::MobType::AGGRO_TYPE::NEUTRAL;
         }
+        return 0;
+    }
+
+    int TileMap::lua_Biome(lua_State* L)
+    {
+        TileMap* tileMap = GetTileMapObject(L);
+        const char* biomeStr = lua_tostring(L, 1);
+        if(strcmp(biomeStr,"both")==0)
+            tileMap->currentMobType_.biome = game::MobType::BIOME::BOTH;
+        else if(strcmp(biomeStr,"land")==0)
+            tileMap->currentMobType_.biome = game::MobType::BIOME::LAND;
+        else if(strcmp(biomeStr,"water")==0)
+            tileMap->currentMobType_.biome = game::MobType::BIOME::WATER;
         return 0;
     }
         

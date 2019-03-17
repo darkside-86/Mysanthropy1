@@ -422,13 +422,17 @@ namespace game
             CheckTileCollision(playerSprite_);
             CheckTileCollision(playerSprite_);
             // check entity collisions
-            if (EntityCollisionCheck(playerSprite_))
+            if (EntityCollisionCheck(playerSprite_) || BuildingCollisionCheck(playerSprite_))
                 playerSprite_->ReverseMovement(dtime);
             // update mobs
             for(auto mob : mobSprites_)
             {
                 mob->Update(dtime);
                 CheckTileCollision(mob);
+                // enforce mob staying on land
+                if(CheckMobBiome(mob))
+                    mob->ReverseMovement(dtime);
+
             }
             // update mob spawners.
             for(auto it : mobSpawners_)
@@ -1199,6 +1203,37 @@ namespace game
                 pos.x -= right - tileLeft;
             sprite->position = pos;
         }
+    }
+
+    bool IsleGame::CheckMobBiome(MobSprite* mob)
+    {
+        if(mob->GetBiome() == MobType::BIOME::BOTH)
+            return false; // mob can be on land or water
+
+        bool tlLiquid, trLiquid, brLiquid, blLiquid;
+        // calculate tile of each corner
+        int tw = tileMap_->GetTileSet()->GetTileWidth();
+        int th = tileMap_->GetTileSet()->GetTileHeight();
+        int ix0 = (int)mob->position.x / tw;
+        int iy0 = (int)mob->position.y / th;
+        int ix1 = ((int)mob->position.x + mob->GetWidth()) / tw;
+        int iy1 = ((int)mob->position.y + mob->GetHeight()) / th;
+        tlLiquid = tileMap_->TileIsLiquid(ix0, iy0, 0);
+        trLiquid = tileMap_->TileIsLiquid(ix1, iy0, 0);
+        brLiquid = tileMap_->TileIsLiquid(ix1, iy1, 0);
+        blLiquid = tileMap_->TileIsLiquid(ix0, iy1, 0);
+        switch(mob->GetBiome())
+        {
+        case MobType::BIOME::LAND:
+            if(tlLiquid||trLiquid||brLiquid||blLiquid)
+                return true;
+            break;
+        case MobType::BIOME::WATER:
+            if(!tlLiquid || !trLiquid || !brLiquid || !blLiquid)
+                return true;
+            break;
+        }
+        return false;
     }
 
     void IsleGame::CheckMobDeaths()

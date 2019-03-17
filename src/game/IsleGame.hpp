@@ -150,6 +150,8 @@ namespace game
         void RenderSortPass();
         // Check tile collision on a sprite
         void CheckTileCollision(Sprite* sprite);
+        // Enforces mob biome boundaries
+        bool CheckMobBiome(MobSprite* mob);
         // Check mobs for death and loot
         void CheckMobDeaths();
         // Removes a sprite from the render list.
