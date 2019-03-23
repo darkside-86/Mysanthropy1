@@ -17,6 +17,7 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
+#include "combat/CombatClassTable.hpp"
 #include "engine/GameEngine.hpp"
 #include "MobSprite.hpp"
 
@@ -29,12 +30,20 @@ namespace game
             + mobType.defaultAnimation), 
         mobType.width, mobType.height), aggroType_(mobType.aggroType), animSpeed_(mobType.animSpeed),
         speed_(mobType.speed), leash_(mobType.leash), originalPosition_(origPos), lootTable_(mobType.lootTable),
-        biome_(mobType.biome)
+        aggroRadius_(mobType.aggroRadius), biome_(mobType.biome)
     {
         auto& tm = engine::GameEngine::Get().GetTextureManager();
         collisionBox_ = mobType.collisionBox;
-        combatUnit_ = new combat::CombatUnit(false, 
-            mobType.GenerateLevel(), mobType.combatAbilityList, mobType.name);
+
+        const combat::CombatClassEntry* centry = combat::CombatClassTable::Get().GetEntry(mobType.combatClass);
+        if(centry == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                "%s: Can't create mob sprite--no such class `%s'", __FUNCTION__, mobType.combatClass.c_str());
+            return;
+        }
+        combatUnit_ = new combat::CombatUnit(false, mobType.GenerateLevel(), *centry, mobType.name);
+        
 
         const std::string prefix = std::string("res/textures/sprites/mobs/") + mobType.name + "_";
         // right orientation animations
@@ -73,7 +82,14 @@ namespace game
             position.y + (float)height_/2.f
         });
         combatUnit_->Update(dtime);
-        // TODO: check leash among many other things
+        
+        if(leashing_)
+        {
+            velocity = glm::normalize(originalPosition_ - position) * speed_;
+            if(glm::distance(originalPosition_, position) <= 32.f)
+                leashing_ = false;
+        }
+
         patrolTimer_ += dtime;
         if(patrolTimer_ > PATROL_TIME)
         {

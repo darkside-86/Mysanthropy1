@@ -20,21 +20,22 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "Formula.hpp"
+#include "WeaponType.hpp"
 
 namespace combat
 {
+    // Entry into ability database
     class Ability
     { public:
+        // enums
         enum class CastType { Instant, Casted, Channeled };
-        // convenient constructor function
-        Ability(const std::string& nm, int mr, int mxr, bool of, float cd, bool ong, 
-                CastType ct, float ctm, const Formula& f, int lvl, const std::string& anim,
-                const std::string itemcn="", int itemcc=0)
-          : name(nm), minRange(mr), maxRange(mxr), offensive(of), cooldown(cd), onGCD (ong), 
-            castType(ct), castTime(ctm), formula(f), level(lvl), animation(anim), 
-            itemCostName(itemcn), itemCostCount(itemcc) { }
+        enum class TargetType { Enemy, Friendly, Self };
+        enum class RangeType { Target, Conal, Area };
+
+        // ctor
         Ability() {}
         // name. Redundant but super-helpful
         std::string name = "";
@@ -52,7 +53,13 @@ namespace combat
         CastType castType = CastType::Instant;
         // only makes sense for casted or channeled.
         float castTime = 0.0f;
-        // function that calculates the amount of damage, or negative numbers for healing
+        // type of target
+        TargetType targetType = TargetType::Enemy;
+        // range type
+        RangeType rangeType = RangeType::Target;
+        // weapons required (empty list for any)
+        std::vector<WeaponType> weaponsRequired;
+        // function that calculates the amount of damage, or healing
         Formula formula;
         // level requirement of unit to use ability
         int level = 1;
@@ -62,8 +69,9 @@ namespace combat
         std::string itemCostName = "";
         //  item cost number
         int itemCostCount = 0;
+        // dispel options
+        std::vector<OutputType> dispels;
     };
 
-    // TODO: reimplement as vector
-    typedef std::unordered_map<std::string,Ability> AbilityTable;
+    typedef std::unordered_map<std::string,Ability> AbilityList;
 }

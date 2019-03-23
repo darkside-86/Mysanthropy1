@@ -17,41 +17,47 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "AbilityTables.hpp"
+#include "AbilityTable.hpp"
 #include "engine/GameEngine.hpp"
+#include "WeaponType.hpp"
 
 namespace combat
 {
 
-    const AbilityTables& AbilityTables::Get()
+    const AbilityTable& AbilityTable::Get()
     {
-        static AbilityTables singleton;
+        static AbilityTable singleton;
         return singleton;
     }
-    
-    AbilityTables::AbilityTables()
+
+    const Ability* AbilityTable::GetAbility(const std::string& name) const
     {
-        script_ = luaL_newstate();
-        lua_pushstring(script_, "AbilityTables");
-        lua_pushlightuserdata(script_, this);
-        lua_settable(script_, LUA_REGISTRYINDEX);
-        lua_pushcfunction(script_, lua_Ability);
-        lua_setglobal(script_, "ABILITY");
-        lua_pushcfunction(script_, lua_AbilityTable);
-        lua_setglobal(script_, "ABILITY_TABLE");
-        int ok = luaL_dofile(script_, "res/config/abilities.lua");
+        const auto& found = allAbilities_.find(name);
+        if(found == allAbilities_.end())
+            return nullptr;
+        return &found->second;
+    }
+    
+    AbilityTable::AbilityTable()
+    {
+        lua_State* script = luaL_newstate();
+        lua_pushstring(script, "AbilityTable");
+        lua_pushlightuserdata(script, this);
+        lua_settable(script, LUA_REGISTRYINDEX);
+        lua_pushcfunction(script, lua_Ability);
+        lua_setglobal(script, "ABILITY");
+        int ok = luaL_dofile(script, "res/config/abilities.lua");
         if(ok != LUA_OK)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                "%s: Problem parsing ability database: %s", __FUNCTION__, lua_tostring(script_, -1));
-            lua_pop(script_, 1);
+                "%s: Problem parsing ability database: %s", __FUNCTION__, lua_tostring(script, -1));
+            lua_pop(script, 1);
         }
         
-        lua_close(script_);
-        script_ = nullptr;
+        lua_close(script);
     }
 
-    AbilityTables::~AbilityTables()
+    AbilityTable::~AbilityTable()
     {
 
     }
@@ -65,17 +71,20 @@ namespace combat
 //     onGCD = false,
 //     castType = "instant",
 //     castTime = 0,
-//     formula = "!<(0.15,0.30)MAP,Physical;",
+//     targetType = "friendly" or "enemy" or "self"
+//     rangeType = nil or "target" or "conal" or "area"
+//     weaponsRequired = nil or {"...",...}
+//     formula = "..",
 //     animation = "...",
 //     itemCostName = "someitem",
 //     itemCostCount = 1
 // }
-    int AbilityTables::lua_Ability(lua_State* L)
+    int AbilityTable::lua_Ability(lua_State* L)
     {
         // get object
-        lua_pushstring(L, "AbilityTables");
+        lua_pushstring(L, "AbilityTable");
         lua_gettable(L, LUA_REGISTRYINDEX);
-        AbilityTables* at = (AbilityTables*)lua_touserdata(L, -1);
+        AbilityTable* at = (AbilityTable*)lua_touserdata(L, -1);
         lua_pop(L, 1);
 
         std::string name;
@@ -115,7 +124,7 @@ namespace combat
         ability.onGCD = (bool)lua_toboolean(L, -1);
         lua_pop(L, 1);
     // castType : string. Needs to be converted to enum
-    // value is either "instant" -> Ability::CastType::Instant etc.
+    //  value is either "instant" -> Ability::CastType::Instant etc.
         lua_pushstring(L, "castType");
         lua_gettable(L, 1);
         std::string castType = lua_tostring(L, -1);
@@ -128,10 +137,59 @@ namespace combat
         lua_gettable(L, 1);
         ability.castTime = (float)lua_tonumber(L, -1);
         lua_pop(L, 1);
+    // targetType : string
+        lua_pushstring(L, "targetType");
+        lua_gettable(L, 1);
+        std::string ttstr = luaL_checkstring(L, -1);
+        if(ttstr=="friendly")
+            ability.targetType = Ability::TargetType::Friendly;
+        else if(ttstr=="enemy")
+            ability.targetType = Ability::TargetType::Enemy;
+        else 
+            ability.targetType = Ability::TargetType::Self;
+        lua_pop(L, 1);
+    // rangeType : string
+        lua_pushstring(L, "rangeType");
+        lua_gettable(L, 1);
+        if(!lua_isnil(L, -1))
+        {
+            std::string rangestr = luaL_checkstring(L, -1);
+            if(rangestr == "target")
+                ability.rangeType = Ability::RangeType::Target;
+            else if(rangestr == "conal")
+                ability.rangeType = Ability::RangeType::Conal;
+            else if(rangestr == "area")
+                ability.rangeType = Ability::RangeType::Area;
+        }
+        lua_pop(L, 1);
+    // weaponsRequired : array
+        lua_pushstring(L, "weaponsRequired");
+        lua_gettable(L, 1);
+        if(!lua_isnil(L, -1))
+        {
+            size_t numWpns = lua_rawlen(L, -1);
+            for(size_t i=1; i <= numWpns; ++i)
+            {
+                lua_pushinteger(L,i);
+                lua_gettable(L, -2);
+                std::string wpnStr = luaL_checkstring(L, -1);
+                lua_pop(L, 1);
+                if(wpnStr=="unarmed") ability.weaponsRequired.push_back(WeaponType::Unarmed);
+                else if(wpnStr=="dagger") ability.weaponsRequired.push_back(WeaponType::Dagger);
+                else if(wpnStr=="sword1h") ability.weaponsRequired.push_back(WeaponType::Sword1h);
+                else if(wpnStr=="mace1h") ability.weaponsRequired.push_back(WeaponType::Mace1h);
+                else if(wpnStr=="sword2h") ability.weaponsRequired.push_back(WeaponType::Sword2h);
+                else if(wpnStr=="mace2h") ability.weaponsRequired.push_back(WeaponType::Mace2h);
+                else if(wpnStr=="axe2h") ability.weaponsRequired.push_back(WeaponType::Axe2h);
+                else luaL_error(L, "Invalid weapont type %s", wpnStr.c_str());    
+            }
+        }
+        lua_pop(L, 1);
     // formula : string
         lua_pushstring(L, "formula");
         lua_gettable(L, 1);
-        ability.formula = Formula(lua_tostring(L, -1));
+        if(!lua_isnil(L, -1))
+            ability.formula = Formula(lua_tostring(L, -1));
         lua_pop(L, 1);
     // level : int
         lua_pushstring(L, "level");
@@ -162,50 +220,25 @@ namespace combat
         else 
             ability.itemCostCount = 0;
         lua_pop(L, 1);
+    // read optional dispels table
+        lua_pushstring(L, "dispels");
+        lua_gettable(L, 1);
+        if(!lua_isnil(L, -1))
+        {
+            for(size_t i = 1; i <= lua_rawlen(L, -1); ++i)
+            {
+                lua_pushinteger(L, i);
+                lua_gettable(L, -2);
+                std::string disp = luaL_checkstring(L, -1);
+                lua_pop(L, 1);
+                ability.dispels.push_back(StringToOutputType(disp));
+            }
+        }
+        lua_pop(L, 1);
 
         at->allAbilities_[name] = ability;
+        // at->allAbilities_.insert(std::pair<std::string, Ability>(name, ability));
 
         return 0;
     }
-
-// ABILITY_TABLE {
-//     name = "redcrab",
-//     attacks = { "basic_attack" }
-// }
-    int AbilityTables::lua_AbilityTable(lua_State* L)
-    {
-        // get object
-        lua_pushstring(L, "AbilityTables");
-        lua_gettable(L, LUA_REGISTRYINDEX);
-        AbilityTables* at = (AbilityTables*)lua_touserdata(L, -1);
-        lua_pop(L, 1);
-
-        // get the lists_ entry name as field of argument
-        lua_pushstring(L, "name");
-        lua_gettable(L, 1);
-        std::string name = lua_tostring(L, -1);
-        lua_pop(L, 1);
-
-        // get the attacks field, which is an array of string
-        lua_pushstring(L, "attacks");
-        lua_gettable(L, 1);
-        std::vector<std::string> attackList;
-        // iterate through table. elements refer to Ability_s placed into
-        // allAbilities_ with the previous method.
-        for(int i = 1; i <= lua_rawlen(L, -1); ++i)
-        {
-            lua_rawgeti(L, -1, i);
-            attackList.push_back(lua_tostring(L, -1));
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1);
-
-        for(const auto& eachAttackName : attackList)
-        {
-            at->lists_[name][eachAttackName] = at->allAbilities_[eachAttackName];
-        }
-
-        return 0;
-    }
-
 }

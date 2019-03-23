@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// NumericRange.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,28 +18,14 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "CombatClassEntry.hpp"
-#include "CombatUnit.hpp"
-
 namespace combat
 {
-    class PlayerCombatUnit : public CombatUnit 
-    {
+    class NumericRange 
+    { 
     public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
+        NumericRange(float lower, float upper);
+        float Next() const;
     private:
-        int maxExperience_;
-        int currentExperience_;
+        float lower_=1.0f, upper_=1.0f;
     };
 }

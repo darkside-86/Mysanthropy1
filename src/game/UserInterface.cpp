@@ -670,7 +670,7 @@ namespace game
     int UserInterface::lua_Game_Player_GetLevel(lua_State* L)
     {
         UserInterface* ui = GetUserInterface(L);
-        lua_pushinteger(L, ui->game_.GetPlayerSprite().GetPlayerCombatUnit().GetAttributeSheet().GetLevel());
+        lua_pushinteger(L, ui->game_.GetPlayerSprite().GetPlayerCombatUnit().GetCharacterSheet().GetLevel());
         return 1;
     }
 

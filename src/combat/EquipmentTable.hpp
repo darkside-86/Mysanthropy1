@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// EquipmentTable.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,28 +18,25 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "CombatClassEntry.hpp"
-#include "CombatUnit.hpp"
+#include <string>
+#include <unordered_map>
+
+#include <lua/lua.hpp>
+
+#include "EquipmentEntry.hpp"
 
 namespace combat
 {
-    class PlayerCombatUnit : public CombatUnit 
+    // database for equipment
+    class EquipmentTable
     {
     public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
+        EquipmentTable();
+        virtual ~EquipmentTable();
+        const EquipmentEntry* GetEntry(const std::string& name) const;
     private:
-        int maxExperience_;
-        int currentExperience_;
+        static int lua_Equipment(lua_State* L);
+
+        std::unordered_map<std::string, EquipmentEntry> entries_;
     };
 }

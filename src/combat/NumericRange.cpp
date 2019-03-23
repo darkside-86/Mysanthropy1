@@ -1,4 +1,4 @@
-// PlayerSprite.cpp
+// NumericRange.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -17,39 +17,28 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 
-#include "combat/CombatClassTable.hpp"
 #include "engine/GameEngine.hpp"
-#include "PlayerSprite.hpp"
+#include "NumericRange.hpp"
 
-namespace game
+namespace combat
 {
-
-    PlayerSprite::PlayerSprite(ogl::Texture* texture, int w, int h, int level, int exp, bool isBoy) 
-            : Sprite(texture,w,h), isBoy_(isBoy)
-    {      
-        const combat::CombatClassEntry* classEntry = combat::CombatClassTable::Get().GetEntry("survivalist");
-        if(classEntry == nullptr)
+    NumericRange::NumericRange(float lower, float upper) : lower_(lower), upper_(upper) 
+    {   // validate bounds
+        if(lower > upper)
         {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                "Failed to create player due to missing combat class!");
-            return;
+            float swap = upper;
+            upper = lower;
+            lower = swap;
         }
-        combatUnit_ = new combat::PlayerCombatUnit(level, exp, *classEntry);
     }
 
-    PlayerSprite::~PlayerSprite()
+    float NumericRange::Next() const
     {
-        delete combatUnit_;
+        float r = upper_ - lower_;
+        if(r == 0.0f) // don't waste RNG time if no range
+            return lower_;
+        auto& rng = engine::GameEngine::Get().GetRNG();
+        float v = (float)rng() / (float)rng.max();
+        return lower_ + r * v;
     }
-
-    void PlayerSprite::Update(float dtime)
-    {
-        Sprite::Update(dtime);
-        combatUnit_->SetLocation({
-            position.x + (float)width_ / 2.f,
-            position.y + (float)height_ / 2.f
-        });
-        combatUnit_->Update(dtime);
-    }
-
 }

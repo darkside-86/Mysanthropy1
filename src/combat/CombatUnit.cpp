@@ -19,21 +19,32 @@
 
 #include "engine/GameEngine.hpp"
 #include "CombatUnit.hpp"
+#include "StatusEffectTable.hpp"
 
 namespace combat
 {
 
-    CombatUnit::CombatUnit(bool player, int level, const AbilityTable& abilities, 
-                            const std::string& name)
-        : abilities_(abilities), name_(name), attributeSheet_(level, player)
+    CombatUnit::CombatUnit(bool player, int level, const CombatClassEntry& cce, 
+            const std::string& name)
+        : characterSheet_(level, player, cce), name_(name)
     {
-        maxHealth_ = attributeSheet_.GetMaxHealth();
-        currentHealth_ = maxHealth_;
-        // spells are ready upon combat unit creation.
-        for(const auto& eachAbility : abilities_)
+        const AbilityTable& at = AbilityTable::Get();
+        currentHealth_ = characterSheet_.GetMaxHealth();
+        for(const auto& abName : characterSheet_.GetCombatClassEntry().abilityList)
         {
-            cooldowns_.push_back({eachAbility.first, eachAbility.second.cooldown});
+            const Ability* ab = at.GetAbility(abName);
+            if(ab != nullptr)
+            {
+                cooldowns_.push_back({abName, ab->cooldown});
+                printf("[PRINTF] Adding %s to the cooldown table\n", abName.c_str());
+            }
+            else 
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
+                    "%s: No such ability `%s'", __FUNCTION__, abName.c_str());
+            }
         }
+        
     }
 
     CombatUnit::~CombatUnit()
@@ -41,129 +52,157 @@ namespace combat
 
     }
 
-    bool CombatUnit::UseAbility(CombatUnit& other, bool targetIsFriendly,
+    bool CombatUnit::UseTargetAbility(CombatUnit& other, bool targetIsFriendly,
         const std::string& abilityName, std::string& combatLogEntry)
     {
-        auto found = abilities_.find(abilityName);
-        if(found != abilities_.end())
+        const Ability* found = AbilityTable::Get().GetAbility(abilityName);
+        if(found == nullptr)
         {
-            Ability &ab = found->second;
-            // check target and ability friendliness
-            if((ab.offensive && targetIsFriendly) || (!ab.offensive && !targetIsFriendly)  )
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
+                "%s: Ability `%s' not found", __FUNCTION__, abilityName.c_str());
+            return false;
+        }
+        if(found->rangeType != Ability::RangeType::Target)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Use the correct method for the range type!", __FUNCTION__);
+            return false;
+        }
+
+        const Ability &ab = *found;
+        // check target and ability friendliness
+        if((ab.offensive && targetIsFriendly) || (!ab.offensive && !targetIsFriendly)  )
+        {
+            combatLogEntry = std::string("Cannot use ") + abilityName + " on " + other.name_;
+            return false;
+        }
+        // check global CD
+        if( ab.onGCD && globalCooldownCounter_ < GCD )
+        {
+            combatLogEntry = std::string("Cannot use ") + abilityName + " yet (waiting on global cooldown)";
+            return false;
+        }
+        // check ability's cooldown in the CD table
+        auto abTimer = std::find_if(cooldowns_.begin(), cooldowns_.end(), [found](const Cooldown& cd){
+            printf("Comparing CD.name=%s to found->name=%s\n", cd.name.c_str(), found->name.c_str());
+            return found->name == cd.name;
+        });
+        if(abTimer != cooldowns_.end())
+        {
+            if(abTimer->counter < ab.cooldown)
             {
-                combatLogEntry = std::string("Cannot use ") + abilityName + " on " + other.name_;
+                //combatLogEntry = abilityName + " is still on cooldown for " + 
+                //    std::to_string(ab.cooldown - abTimer->counter) + " more seconds.";
                 return false;
             }
-            // check global CD
-            if( ab.onGCD && globalCooldownCounter_ < GCD )
-            {
-                combatLogEntry = std::string("Cannot use ") + abilityName + " yet (waiting on global cooldown)";
-                return false;
-            }
-            // check ability's cooldown in the CD table
-            auto abTimer = std::find_if(cooldowns_.begin(), cooldowns_.end(), [found](const Cooldown& cd){
-                return found->first == cd.name;
-            });
-            if(abTimer != cooldowns_.end())
-            {
-                if(abTimer->counter < ab.cooldown)
-                {
-                    //combatLogEntry = abilityName + " is still on cooldown for " + 
-                    //    std::to_string(ab.cooldown - abTimer->counter) + " more seconds.";
-                    return false;
-                }
-            }
-            else
-            {
-                // because of how cooldown table is created, THIS should never happen.
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
-                    "Invalid ability `%s' for %s", abilityName.c_str(), name_.c_str());
-                combatLogEntry = "<ERROR>";
-                return false;
-            }
-            // check range
-            float distance = glm::distance(location_, other.location_);
-            if(distance < ab.minRange)
-            {
-                combatLogEntry = "Target too close";
-                return false;
-            }
-            if(distance > ab.maxRange)
-            {
-                combatLogEntry = "Target too far away";
-                return false;
-            }
-            // TODO: account for target's armor and resistances and chances to miss/dodge/parry
-            auto outputs = ab.formula.CalculateResults(*this);
-            // apply all the outputs to either self or target depending on nature of output
-            for(const auto& output : outputs)
-            {
-                switch(output.type)
-                {
-                case Output::Type::Direct:
-                    if(output.target == Output::Target::Enemy)
-                    {
-                        other.currentHealth_ -= output.direct.amount;
-                        combatLogEntry = this->name_ + "'s " + found->first + " hit " + other.name_ +
-                            " for " + std::to_string(output.direct.amount) + " " + 
-                            SchoolToString(output.school);
-                    }
-                    else if(output.target == Output::Target::Friendly)
-                    {
-                        other.currentHealth_ += output.direct.amount;
-                        combatLogEntry = this->name_ + "'s" + found->first + " healed " + other.name_ +
-                            " for " + std::to_string(output.direct.amount) + " " +
-                            SchoolToString(output.school);
-                    }
-                    // TODO: something self
-                    break;
-                case Output::Type::OverTime:
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                        "%s: Can't handle DOT/HOTs yet!", __FUNCTION__);
-                    break;
-                case Output::Type::StatusEffect:
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                        "%s: Can't handle buffs/debuffs yet!", __FUNCTION__);
-                    break;
-                }
-            }
-            // set the cooldown of the ability to 0
-            abTimer->counter = 0.0f;
-            // set the global cooldown timer
-            if(ab.onGCD)
-                globalCooldownCounter_ = 0.0f;
-            // determine overkill or overheal amount if any
-            int overKillOrHeal;
-            if(other.currentHealth_ > other.maxHealth_)
-            {
-                overKillOrHeal = -(other.currentHealth_ - other.maxHealth_);
-                other.currentHealth_ = other.maxHealth_;
-                combatLogEntry += " (" + std::to_string(overKillOrHeal) + " overheal)";
-            }
-            else if(other.currentHealth_ < 0)
-            {
-                overKillOrHeal = -other.currentHealth_;
-                other.currentHealth_ = 0;
-                combatLogEntry += " (" + std::to_string(overKillOrHeal) + " overkill)";
-            }
-            // todo: add overheal or overkill to log
-            return true;
         }
         else
         {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
-                "%s: Unit does not have ability `%s'", __FUNCTION__, abilityName.c_str());
+            // because of how cooldown table is created, THIS should never happen.
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "Invalid ability `%s' for %s", abilityName.c_str(), name_.c_str());
+            combatLogEntry = "<ERROR>";
+            return false;
         }
-        return false;
+        // check range
+        float distance = glm::distance(location_, other.location_);
+        if(distance < ab.minRange)
+        {
+            combatLogEntry = "Target too close";
+            return false;
+        }
+        if(distance > ab.maxRange)
+        {
+            combatLogEntry = "Target too far away";
+            return false;
+        }
+        auto outputs = ab.formula.CalculateResults(*this);
+        // apply all the outputs to either self or target depending on nature of output
+        for(const auto& output : outputs)
+        {
+            if(output.statusEffect != "")
+            {
+                other.ApplyStatusEffect(output.statusEffect, output.duration, *this);
+                combatLogEntry = GetName() + " applied " + output.statusEffect + " to " + other.GetName();
+            }
+            else if(output.damage)
+            {
+                // can only dodge physical damage of any kind
+                if(output.outputType == OutputType::Physical)
+                {
+                    float chanceToDodge = other.GetCharacterSheet().GetDodgeChance();
+                    float armorM = other.GetCharacterSheet().GetArmorPercent() / 100.f;
+                    bool dodged = engine::GameEngine::Get().PercentChance(chanceToDodge);
+
+                    if(dodged)
+                    {
+                        combatLogEntry = GetName() + " dodged " + other.GetName() + "'s "
+                                + ab.name;
+                    }
+                    else
+                    {
+                        int amount = output.amount - (int)((float)output.amount * armorM);
+                        other.SetCurrentHealth(other.GetCurrentHealth() - amount);
+                        combatLogEntry = GetName() + "'s " + ab.name + " hit " + other.GetName() 
+                                + " for " + std::to_string(amount) + " physical";
+                    }
+                }
+                else 
+                {
+                    int resistAmount = other.GetCharacterSheet().GetResistance(output.outputType);
+                    other.SetCurrentHealth(other.GetCurrentHealth() - (output.amount - resistAmount));
+                    combatLogEntry = GetName() + "'s " + ab.name + " hit " + other.GetName()
+                            + " for " + std::to_string(output.amount - resistAmount) + " "
+                            + OutputTypeToString(output.outputType);
+                    }
+            }
+            else 
+            {
+                // TODO: factor in resistances when healing
+                other.SetCurrentHealth(other.GetCurrentHealth() + output.amount);
+                combatLogEntry = GetName() + "'s " + ab.name + " healed " + other.GetName()
+                        + " for " + std::to_string(output.amount) + " " 
+                        + OutputTypeToString(output.outputType);
+            }
+        }
+        // set the cooldown of the ability to 0
+        abTimer->counter = 0.0f;
+        // set the global cooldown timer
+        if(ab.onGCD)
+            globalCooldownCounter_ = 0.0f;
+        // determine overkill or overheal amount if any
+        int overKillOrHeal;
+        if(other.currentHealth_ > other.GetMaxHealth())
+        {
+            overKillOrHeal = -(other.currentHealth_ - other.GetMaxHealth());
+            other.currentHealth_ = other.GetMaxHealth();
+            combatLogEntry += " (" + std::to_string(overKillOrHeal) + " overheal)";
+        }
+        else if(other.currentHealth_ < 0)
+        {
+            overKillOrHeal = -other.currentHealth_;
+            other.currentHealth_ = 0;
+            combatLogEntry += " (" + std::to_string(overKillOrHeal) + " overkill)";
+        }
+        for(const auto& disp : ab.dispels)
+        {
+            if(ab.targetType == Ability::TargetType::Enemy)
+                DispelStatusEffect("*", "*", disp, false);
+            else
+                DispelStatusEffect("*", "*", disp, false);
+
+        }
+
+        return true;
     }
 
     bool CombatUnit::AbilityInRange(CombatUnit& other, const std::string& abilityName)
     {
         float distance = glm::distance(location_, other.location_);
-        auto found = abilities_.find(abilityName);
-        if(found != abilities_.end())
+        const auto* found = AbilityTable::Get().GetAbility(abilityName);
+        if(found != nullptr)
         {
-            Ability &ab = found->second;
+            const Ability &ab = *found;
             return !(distance < ab.minRange || distance > ab.maxRange);
         }
         else
@@ -174,19 +213,19 @@ namespace combat
 
     bool CombatUnit::AbilityIsReady(const std::string& abilityName)
     {
-        auto found = abilities_.find(abilityName);
-        if(found == abilities_.end())
+        const auto* found = AbilityTable::Get().GetAbility(abilityName);
+        if(found == nullptr)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
                 "%s: Unable to find `%s' in ability table!", __FUNCTION__, abilityName.c_str());
             return false; // "NULL" ability is never ready
         }
-        std::string abName = found->first;
+        std::string abName = found->name;
         for(const auto& eachCooldown : cooldowns_)
         {
             if(abName == eachCooldown.name)
             {
-                return eachCooldown.counter >= found->second.cooldown;
+                return eachCooldown.counter >= found->cooldown;
             }
         }
         engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
@@ -196,22 +235,22 @@ namespace combat
 
     float CombatUnit::AbilityCooldownRemaining(const std::string& abilityName)
     {
-        const auto& found = abilities_.find(abilityName);
-        if(found == abilities_.end())
+        const auto* found = AbilityTable::Get().GetAbility(abilityName);
+        if(found == nullptr)
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR, 
                 "%s: Unable to query cooldown for `%s'", __FUNCTION__, abilityName.c_str());
             return 0.0f;
         }
         const auto& cdEntry = std::find_if(cooldowns_.begin(), cooldowns_.end(), [found](const Cooldown& cd){
-            return cd.name == found->first;
+            return cd.name == found->name;
         });
         if(cdEntry == cooldowns_.end())
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
                 "%s: Cooldown entry is missing for `%s'", __FUNCTION__, abilityName.c_str());
         }
-        float remaining = found->second.cooldown - cdEntry->counter;
+        float remaining = found->cooldown - cdEntry->counter;
         if(remaining < 0.0f)
             remaining = 0.0f;
         return remaining;
@@ -222,8 +261,10 @@ namespace combat
         return globalCooldownCounter_ >= GCD;
     }
 
-    void CombatUnit::Update(float dtime)
+    std::vector<std::string> CombatUnit::Update(float dtime)
     {
+        std::vector<std::string> combatLogs;
+
         // GCD check
         globalCooldownCounter_ += dtime;
         if(globalCooldownCounter_ > GCD)
@@ -231,32 +272,132 @@ namespace combat
         // individual ability's cooldowns
         for(auto& eachCd : cooldowns_)
         {
-            eachCd.counter += dtime;
-            // todo: check for near max float value? realistically CD counters shouldn't reach that
-            // high of a number in one play session.
+            const Ability* ab = AbilityTable::Get().GetAbility(eachCd.name);
+            float cd = ab == nullptr ? 0.0f : ab->cooldown;
+            if(eachCd.counter < cd)
+                eachCd.counter += dtime;
         }
         // recovery if out of combat (a clear aggro table)
         if(!inCombat_)
         {
-            if(currentHealth_ < maxHealth_)
+            if(currentHealth_ < GetMaxHealth())
             {
                 healthRecoveryTimer_ += dtime;
                 if(healthRecoveryTimer_ >= RECOVERY_RATE)
                 {
                     healthRecoveryTimer_ -= RECOVERY_RATE;
                     currentHealth_ += RECOVERY_AMOUNT;
-                    if(currentHealth_ > maxHealth_)
-                        currentHealth_ = maxHealth_;
+                    if(currentHealth_ > GetMaxHealth())
+                        currentHealth_ = GetMaxHealth();
                 }
             }
         }
+        // tick status effects and remove inactive ones one per cycle
+        std::vector<StatusEffect*>::iterator toRemove = characterSheet_.GetStatusEffects().end();
+        for(auto each = characterSheet_.GetStatusEffects().begin(); 
+                each != characterSheet_.GetStatusEffects().end(); ++each)
+        {
+            (*each)->Update(dtime);
+            if((*each)->TimeForTick())
+            {
+                for(const auto& o : (*each)->GetOutputTicks())
+                {
+                    // handle damage
+                    if(o.type == OutputType::Physical)
+                    {
+                        // physical damage can be mitigated by armor
+                        float armorM = GetCharacterSheet().GetArmorPercent() / 100.f;
+                        int amount = o.amount - (int)((float)o.amount * armorM);
+                        SetCurrentHealth(GetCurrentHealth() - amount);
+                        std::string log = (*each)->GetEntry().name + " ticked for " + std::to_string(amount)
+                                + (amount < 0 ? " healing " : " damage ") + "(physical)";
+                        combatLogs.push_back(log);
+                    }
+                    else 
+                    {
+                        // non-physical damage can only be mitigated by resistance points
+                        int resist = GetCharacterSheet().GetResistance(o.type);
+                        int amount = o.amount - resist;
+                        SetCurrentHealth(GetCurrentHealth() - amount);
+                        std::string log = (*each)->GetEntry().name + " ticked for " + std::to_string(amount)
+                                + (amount < 0 ? " healing (" : " damage (") + OutputTypeToString(o.type)
+                                + ")";
+                        combatLogs.push_back(log);
+                    }
+                }
+            }
+            if(!(*each)->IsActive())
+            {
+                toRemove = each;
+            }
+            if(toRemove != characterSheet_.GetStatusEffects().end())
+            {
+                delete (*toRemove);
+                characterSheet_.GetStatusEffects().erase(toRemove);
+            }
+        }
+        // get rid of everything if unit is "dead"
+        if(currentHealth_ <= 0)
+        {
+            RemoveAllStatusEffects();
+        }
+        
+        return combatLogs;
     }
 
-    Ability CombatUnit::GetAbilityByName(const std::string& name)
+    void CombatUnit::ApplyStatusEffect(const std::string& name, float duration, CombatUnit& src)
     {
-        // this works because of the empty parameter constructor of Ability and the fact
-        //  the table isn't stored internally as const
-        return abilities_[name];
+        const StatusEffectEntry* entry = StatusEffectTable::Get().GetEntry(name);
+        if(entry == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
+                "%s: Unable to apply missing status effect `%s'", __FUNCTION__, name.c_str());
+            return;
+        }
+        StatusEffect *ef = new StatusEffect(*entry, (int)duration, src);
+        characterSheet_.GetStatusEffects().push_back(ef);
+    }
+
+    void CombatUnit::DispelStatusEffect(const std::string& name, const std::string& group, 
+            OutputType type, bool harm)
+    {
+        std::vector<StatusEffect*>::iterator found = characterSheet_.GetStatusEffects().end();
+        for(auto it = characterSheet_.GetStatusEffects().begin(); 
+                it != characterSheet_.GetStatusEffects().end(); ++it)
+        {
+            // only dispel active ones
+            if((*it)->IsActive())
+            {
+                if(((*it)->GetEntry().group == group || group == "*")
+                        && (name == (*it)->GetEntry().name || name == "*")
+                        && (*it)->GetEntry().outputType == type
+                        && (*it)->GetEntry().dispel 
+                        && (*it)->GetEntry().harmful == harm)
+                {
+                    // this is a one
+                    found = it;
+                }
+            }
+        }
+        if(found != characterSheet_.GetStatusEffects().end())
+        {
+            delete *found;
+            characterSheet_.GetStatusEffects().erase(found);
+        }
+    }
+
+    void CombatUnit::RemoveAllStatusEffects()
+    {
+        for(auto& each : characterSheet_.GetStatusEffects())
+        {
+            delete each;
+        }
+        characterSheet_.GetStatusEffects().clear();
+    }
+
+    const std::vector<std::string>& CombatUnit::GetAbilities() const
+    {
+        return characterSheet_.GetCombatClassEntry().abilityList;
     }
 
 }

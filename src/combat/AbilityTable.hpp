@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// AbilityTables.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,28 +18,29 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "CombatClassEntry.hpp"
+#include <string>
+#include <unordered_map>
+
+#include <lua/lua.hpp>
+
 #include "CombatUnit.hpp"
 
 namespace combat
 {
-    class PlayerCombatUnit : public CombatUnit 
+
+    // List of ability tables read from Lua file
+    class AbilityTable
     {
     public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
-    private:
-        int maxExperience_;
-        int currentExperience_;
+        static const AbilityTable& Get();
+        const Ability* GetAbility(const std::string& name) const;
+    private:    
+        AbilityTable();
+        virtual ~AbilityTable();
+
+        static int lua_Ability(lua_State* L);
+        
+        AbilityList allAbilities_;
     };
+
 }

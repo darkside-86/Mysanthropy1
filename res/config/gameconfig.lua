@@ -27,20 +27,4 @@ BASE_MOB_EXP_SCALE = 1.2
 -- the experience penalty for killing lower level mobs per level difference
 MOB_EXP_PENALTY = 0.75
 
--- The amount of core stat increase per level (which stats varies with class)
-CORESTAT_SCALE = 1.11
--- The amount of non-core stat increase per level (which stats varies with class)
-OTHERSTAT_SCALE = 1.01 
-
--- The increase in mob stats (all of its stats) per level
-MOB_STAT_SCALE = 1.13
--- base level (level=1) for core stats (which stats varies according to class)
-CORE_STATS = 5
--- base level (level=1) for non-core stats (which vary according to class)
-OTHER_STATS = 4
-
--- lucky survivalist gets 2 AP stats as well as health (eventually will be changed)
-SURVIVALIST_CORE_STATS = {
-    "Strength", "Agility", "Vitality"
-}
-
+-- all base stats start as 5 and multipled by (configured_multipler)^(LVL-1)

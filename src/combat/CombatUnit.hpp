@@ -26,7 +26,9 @@
 #include <glm/glm.hpp>
 
 #include "Ability.hpp"
-#include "AttributeSheet.hpp"
+#include "AbilityTable.hpp"
+#include "CharacterSheet.hpp"
+#include "CombatClassEntry.hpp"
 
 namespace combat
 {
@@ -40,14 +42,14 @@ namespace combat
     {
     public:
         // ctor
-        CombatUnit(bool player, int level, const AbilityTable& abilities, 
+        CombatUnit(bool player, int level, const CombatClassEntry& cce, 
                 const std::string& name);
         // dtor
         virtual ~CombatUnit();
         // get the name of the unit
         inline std::string GetName() { return name_; }
         // get the stat sheet by reference
-        inline AttributeSheet& GetAttributeSheet() { return attributeSheet_; }
+        inline CharacterSheet& GetCharacterSheet() { return characterSheet_; }
         // get location
         inline glm::vec2 GetLocation() const { return location_; }
         // set location to determine ability range
@@ -57,10 +59,12 @@ namespace combat
         // set current health. used by game to set health of player upon respawn
         inline void SetCurrentHealth(int h) { currentHealth_ = h; }
         // get max health.
-        inline int GetMaxHealth() { maxHealth_ = attributeSheet_.GetMaxHealth(); return maxHealth_; }
+        inline int GetMaxHealth() { return characterSheet_.GetMaxHealth(); }
         // return value = successful cast
-        bool UseAbility(CombatUnit& other, bool targetIsFriendly, 
+        bool UseTargetAbility(CombatUnit& other, bool targetIsFriendly, 
                         const std::string& abilityName, std::string& combatLogEntry);
+        bool UseAreaAbility(const std::string& abilityName, std::string& combatLogEntry);
+        bool UseConalAbility(CombatUnit& primary, const std::string& abilityName, std::string& combatLogEntry);
         // determine if an ability is in range
         bool AbilityInRange(CombatUnit& other, const std::string& abilityName);
         // return true if ability is ready
@@ -70,15 +74,19 @@ namespace combat
         // return true if GCD is off
         bool GlobalCooldownIsOff();
         // updates the cooldown timers and generates 1 health per second when out of combat
-        void Update(float dtime);
+        std::vector<std::string> Update(float dtime);
+        // Apply status effect
+        void ApplyStatusEffect(const std::string& name, float duration, CombatUnit& src);
+        // Dispel status effect
+        void DispelStatusEffect(const std::string& name, const std::string& group, 
+                                OutputType type, bool harm=true);
+        // Remove all good and bad status effects.
+        void RemoveAllStatusEffects();
         // get/set in combat
         inline bool IsInCombat() const { return inCombat_; }
         inline void SetInCombat(bool b) { inCombat_ = b; }
         // get abilities
-        inline const AbilityTable& GetAbilities() const { return abilities_; }
-        // get an ability from unit's  ability table. if not found, returns an ability
-        //  object filled with default empty values such as name=""
-        Ability GetAbilityByName(const std::string& name);
+        const std::vector<std::string>& GetAbilities() const;
     private:
         // disable copy constructor
         CombatUnit(const CombatUnit&);
@@ -86,13 +94,11 @@ namespace combat
         //  name of unit for combat log
         std::string name_;
         // stat sheet
-        AttributeSheet attributeSheet_;
+        CharacterSheet characterSheet_;
         // determines whether or not an ability is in range
         glm::vec2 location_ = {0.f, 0.f};
         // the current health of the unit
         int currentHealth_ = 0;
-        // the max health of the unit.
-        int maxHealth_ = 0;
         // recovery amount : 1 HP
         static constexpr int RECOVERY_AMOUNT = 1;
         // recovery rate : 1 second
@@ -101,8 +107,6 @@ namespace combat
         float healthRecoveryTimer_ = 0.f;
         // determines if unit is in combat
         bool inCombat_ = false;
-        // list of abilities that can be performed
-        AbilityTable abilities_;
         // GCD
         static constexpr float GCD = 1.0f;
         // GCD counter

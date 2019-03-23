@@ -23,7 +23,7 @@
 
 #include <glm/glm.hpp>
 
-#include "combat/AbilityTables.hpp"
+#include "combat/AbilityTable.hpp"
 #include "combat/CombatUnit.hpp"
 #include "Configuration.hpp"
 #include "engine/GameEngine.hpp"
@@ -43,8 +43,11 @@ namespace game
     { public:
         enum AGGRO_TYPE { HOSTILE, NEUTRAL };
         enum BIOME { BOTH, LAND, WATER};
+
         // name of combat unit
         std::string name;
+        // name of mob's class
+        std::string combatClass;
         // level range
         int levelLower, levelUpper;
         // default animation frame to use for missing animations
@@ -69,12 +72,12 @@ namespace game
         BOX collisionBox;
         // how mob aggros
         AGGRO_TYPE aggroType;
+        // mob aggro radius
+        int aggroRadius=1;
         // restricts mob to liquid or land tile
         BIOME biome = BIOME::BOTH;
         // loot table
         std::vector<LootEntry> lootTable;
-        // list of abilities mob will be able to use
-        combat::AbilityTable combatAbilityList;
         // TODO: much more!!!
 
         int GenerateLevel() const {
@@ -93,6 +96,12 @@ namespace game
         virtual ~MobSprite();
         // update. 
         void Update(float dtime) override;
+        // get normal speed
+        const float GetSpeed() const { return speed_; }
+        // is leashing
+        inline bool IsLeashing() const { return leashing_; }
+        // set leashing
+        inline void Leash(bool leash=true) { leashing_ = leash; }
         // was killed by player?
         inline bool KilledByPlayer() const { return killedByPlayer_; }
         // set killed by player
@@ -103,6 +112,8 @@ namespace game
         inline combat::CombatUnit& GetCombatUnit() { return *combatUnit_; }
         // get aggro type
         inline MobType::AGGRO_TYPE GetAggroType() const { return aggroType_; }
+        // get aggro radius
+        inline int GetAggroRadius() const { return aggroRadius_; }
         // get biome
         inline MobType::BIOME GetBiome() const { return biome_; }
     private:
@@ -112,6 +123,8 @@ namespace game
         float speed_;
         // leash distance
         float leash_;
+        // whether or not mob is leashing
+        bool leashing_ = false;
         // patrol timer
         float patrolTimer_ = 0.0f;
         // how often to change path
@@ -126,6 +139,8 @@ namespace game
         combat::CombatUnit* combatUnit_;
         // the aggro type
         MobType::AGGRO_TYPE aggroType_;
+        // aggro radius
+        int aggroRadius_ = 1;
         // biome
         MobType::BIOME biome_;
     };

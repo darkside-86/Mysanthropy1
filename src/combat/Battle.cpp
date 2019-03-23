@@ -63,6 +63,16 @@ namespace combat
         }
     }
 
+    bool Battle::MobInCombat(game::MobSprite* mobSprite)
+    {
+        for(const game::MobSprite* m : mobSprites_)
+        {
+            if(mobSprite == m)
+                return true;
+        }
+        return false;
+    }
+
     void Battle::AddPlayer(game::PlayerSprite* playerSprite)
     {
         // only one player for now
@@ -87,17 +97,22 @@ namespace combat
         if(target.GetTargetSpriteType() == game::Target::SPRITE_TYPE::MOBSPR)
         {
             game::MobSprite* targetedMob = (game::MobSprite*)target.GetTargetSprite();
-            bool hit =  playerSprite_->GetPlayerCombatUnit().UseAbility(targetedMob->GetCombatUnit(), false,
+            // TODO: handle non-target abilities (area and conal)
+            bool hit =  playerSprite_->GetPlayerCombatUnit().UseTargetAbility(targetedMob->GetCombatUnit(), false,
                 abilityName, combatLogEntry);
             if(hit)
             {
                 AddMob(targetedMob);
                 // play the animation if mob was hit
-                const Ability ab = playerSprite_->GetPlayerCombatUnit().GetAbilityByName(abilityName);
-                if(ab.animation != "") // make sure there is an animation to actually play
+                const Ability* ab = AbilityTable::Get().GetAbility(abilityName);
+                if(ab != nullptr)
                 {
-                    animationSystem_.AddAndStartNewAnimation(ab.name, playerSprite_->GetPlayerCombatUnit(), 
-                        targetedMob->GetCombatUnit(), playerSprite_->GetWidth());
+                    if(ab->animation != "") // make sure there is an animation to actually play
+                    {
+                        animationSystem_.AddAndStartNewAnimation(ab->name, 
+                                playerSprite_->GetPlayerCombatUnit(), 
+                                targetedMob->GetCombatUnit(), playerSprite_->GetWidth());
+                    }
                 }
             }
         }
@@ -130,6 +145,7 @@ namespace combat
                 if(!eachMob->GetCombatUnit().AbilityInRange(playerSprite_->GetPlayerCombatUnit(), ab.name))
                 {
                     eachMob->velocity = playerSprite_->position - eachMob->position;
+                    eachMob->velocity = glm::normalize(eachMob->velocity) * eachMob->GetSpeed();
                 }
                 else // check to see if random ability and GCD are off CD and use them if so
                 {
@@ -142,7 +158,8 @@ namespace combat
                         {
                             // all conditions are met so use offensive attack on player
                             std::string combatLogEntry;
-                            eachMob->GetCombatUnit().UseAbility(playerSprite_->GetPlayerCombatUnit(), false, 
+                            // TODO: handle non-target type abilities
+                            eachMob->GetCombatUnit().UseTargetAbility(playerSprite_->GetPlayerCombatUnit(), false, 
                                 ab.name, combatLogEntry);
                             // play the associated animation.
                             animationSystem_.AddAndStartNewAnimation(ab.animation, eachMob->GetCombatUnit(),
@@ -186,9 +203,15 @@ namespace combat
     const Ability Battle::PickRandomAbility(CombatUnit& unit)
     {
         const auto& abilityTable = unit.GetAbilities();
-        const std::vector<std::pair<std::string, Ability> > listView(abilityTable.begin(), abilityTable.end());
         auto &rng = engine::GameEngine::Get().GetRNG();
-        return listView[rng() % listView.size()].second;
+        const std::string& randomlyPicked = abilityTable[rng() % abilityTable.size()];
+        const Ability* randomAb = AbilityTable::Get().GetAbility(randomlyPicked);
+        if(randomAb == nullptr)
+        {
+            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
+                "Attempt to pick a non-existent random ability!");
+        }
+        return *randomAb; // safely copy i guess?
     }
 
 }

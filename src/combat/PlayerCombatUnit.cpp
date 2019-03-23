@@ -22,8 +22,8 @@
 
 namespace combat
 {
-    PlayerCombatUnit::PlayerCombatUnit(int level, int exp, const AbilityTable& abilities)
-        : CombatUnit(true, level, abilities, "player")
+    PlayerCombatUnit::PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass)
+        : CombatUnit(true, level, playerClass, "player")
     {
         SetLevel(level);
         currentExperience_ = exp;
@@ -36,7 +36,7 @@ namespace combat
 
     void PlayerCombatUnit::SetLevel(int level)
     {
-        GetAttributeSheet().SetLevel(level);
+        GetCharacterSheet().SetLevel(level);
         auto &config = game::Configuration::Get();
         float EXPERIENCE_SCALE;
         config.GetVar("EXPERIENCE_SCALE", EXPERIENCE_SCALE);
@@ -50,7 +50,7 @@ namespace combat
     bool PlayerCombatUnit::AddExperience(int exp)
     {
         currentExperience_ += exp;
-        int currentLevel = GetAttributeSheet().GetLevel();
+        int currentLevel = GetCharacterSheet().GetLevel();
         if(currentExperience_ >= maxExperience_)
         {
             currentExperience_ -= maxExperience_;
@@ -64,22 +64,12 @@ namespace combat
     {
         // TODO: when weapons are implemented, the attack name differs.
         //  but for now "unarmed_right" is what were querying.
-        const auto& ab = GetAbilities().find("unarmed_right");
-        if(ab == GetAbilities().end())
-            return 0.0f;
-        if(ab->second.cooldown == 0.0f)
-            return 0.0f;
-        return AbilityCooldownRemaining("unarmed_right") / ab->second.cooldown;
+        return AbilityCooldownRemaining("unarmed_right");
     }
 
     float PlayerCombatUnit::GetRemainingLeftCooldownAsValue()
     {
         // see notes for get...rightcooldown
-        const auto& ab = GetAbilities().find("unarmed_left");
-        if(ab == GetAbilities().end())
-            return 0.0f;
-        if(ab->second.cooldown == 0.0f)
-            return 0.0f;
-        return AbilityCooldownRemaining("unarmed_left") / ab->second.cooldown;
+        return AbilityCooldownRemaining("unarmed_left");
     }
 }

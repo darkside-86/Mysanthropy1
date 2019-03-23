@@ -224,7 +224,7 @@ namespace game
                             }
                             userInterface_->UI_UnitFrame_SetNameAndLevel(
                                 (*mobFound)->GetCombatUnit().GetName(),
-                                (*mobFound)->GetCombatUnit().GetAttributeSheet().GetLevel(), 
+                                (*mobFound)->GetCombatUnit().GetCharacterSheet().GetLevel(), 
                                 hostility, false);
                             userInterface_->UI_UnitFrame_SetHealth(
                                 (*mobFound)->GetCombatUnit().GetCurrentHealth(), 
@@ -432,7 +432,25 @@ namespace game
                 // enforce mob staying on land
                 if(CheckMobBiome(mob))
                     mob->ReverseMovement(dtime);
+                // test mob aggro
+                if(mob->GetAggroType() == MobType::AGGRO_TYPE::HOSTILE)
+                {
+                    bool playerInWater = SpriteIsSwimming(playerSprite_);
+                    float dist = glm::distance(mob->position, playerSprite_->position);
+                    if( ((mob->GetBiome() == MobType::BIOME::WATER && playerInWater) ||
+                            (mob->GetBiome() == MobType::BIOME::LAND && !playerInWater) ||
+                            (mob->GetBiome() == MobType::BIOME::BOTH)) && 
+                            dist < mob->GetAggroRadius() )
+                    {
+                        battle_->AddMob(mob);
+                    }
+                    else if(battle_->MobInCombat(mob))
+                    {
+                        battle_->RemoveMob(mob);
+                        mob->Leash();
+                    }
 
+                }
             }
             // update mob spawners.
             for(auto it : mobSpawners_)
@@ -622,7 +640,7 @@ namespace game
             return;
         }
         // make sure level requirement is met
-        if(buildingEntry_->level > playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel())
+        if(buildingEntry_->level > playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel())
         {
             engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::ERROR,
                 "You aren't high enough level to build this!");
@@ -659,7 +677,7 @@ namespace game
         {
             if(craftable.name == itemToCraft)
             {
-                if(craftable.level <= playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel())
+                if(craftable.level <= playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel())
                 {
                     maxCastTime_ = (float)craftable.time;
                     valid = true;
@@ -770,7 +788,7 @@ namespace game
         userInterface_ = new UserInterface(*this);
         // set UI information
         userInterface_->UI_UnitFrame_SetNameAndLevel(saveSlot_,
-            playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel(), "player", true);
+            playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel(), "player", true);
         userInterface_->UI_UnitFrame_SetHealth(
             playerSprite_->GetPlayerCombatUnit().GetCurrentHealth(),
             playerSprite_->GetPlayerCombatUnit().GetMaxHealth(), true);
@@ -886,7 +904,7 @@ namespace game
         saveData_.SavePlayerData({
             // experience, level, gender
             playerSprite_->GetPlayerCombatUnit().GetCurrentExperience(),
-            playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel(),
+            playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel(),
             playerSprite_->IsBoy()
         });
         // save buildings
@@ -1245,8 +1263,8 @@ namespace game
             {
                 if((*mobIt)->KilledByPlayer())
                 {
-                    int level = (*mobIt)->GetCombatUnit().GetAttributeSheet().GetLevel();
-                    int levelDiff = playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel() - level;
+                    int level = (*mobIt)->GetCombatUnit().GetCharacterSheet().GetLevel();
+                    int levelDiff = playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel() - level;
                     int BASE_MOB_EXP;
                     configuration_.GetVar("BASE_MOB_EXP", BASE_MOB_EXP);
                     float BASE_MOB_EXP_SCALE;
@@ -1828,11 +1846,11 @@ namespace game
         if(dinged) // TODO: play a sound when player gets a level increase
         {
             userInterface_->UI_Console_WriteLine(std::string("You are now level ") + std::to_string(
-                playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel()) 
+                playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel()) 
                 + "!", 1.0f, 1.0f, 0.0f, 1.0f);
             // update UI to reflect new level
             userInterface_->UI_UnitFrame_SetNameAndLevel(saveSlot_, 
-                playerSprite_->GetPlayerCombatUnit().GetAttributeSheet().GetLevel(),
+                playerSprite_->GetPlayerCombatUnit().GetCharacterSheet().GetLevel(),
                 "player", true);
         }
         int experience = playerSprite_->GetPlayerCombatUnit().GetCurrentExperience();

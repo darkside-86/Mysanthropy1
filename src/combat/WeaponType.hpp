@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// WeaponType.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -17,29 +17,22 @@
 // along with this program.If not, see < https://www.gnu.org/licenses/>.
 //-----------------------------------------------------------------------------
 #pragma once
-
-#include "CombatClassEntry.hpp"
-#include "CombatUnit.hpp"
+#include <string>
 
 namespace combat
 {
-    class PlayerCombatUnit : public CombatUnit 
-    {
-    public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
-    private:
-        int maxExperience_;
-        int currentExperience_;
+    // enumerates possible weapon types for equipment and ability weapon requirements
+    enum class WeaponType 
+    { 
+        Unarmed, // includes fist weapons
+        Dagger, 
+        Sword1h, 
+        Mace1h, 
+        Sword2h, 
+        Mace2h, 
+        Axe2h 
     };
+
+    WeaponType StringToWeaponType(const std::string& str);
+    std::string WeaponTypeToString(WeaponType t);
 }

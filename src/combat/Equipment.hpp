@@ -1,4 +1,4 @@
-// AbilityTables.hpp
+// Equipment.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,32 +18,24 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
-#include <lua/lua.hpp>
-
-#include "CombatUnit.hpp"
+#include "EquipmentEntry.hpp"
 
 namespace combat
 {
-
-    // List of ability tables read from Lua file
-    class AbilityTables
+    // Represents an item that becomes a piece of equipment when placed in slot
+    class Equipment
     {
     public:
-        static const AbilityTables& Get();
-        const std::unordered_map<std::string, AbilityTable>& GetLists() const { return lists_; }
-    private:    
-        AbilityTables();
-        virtual ~AbilityTables();
-
-        static int lua_Ability(lua_State* L);
-        static int lua_AbilityTable(lua_State* L);
+        Equipment(const EquipmentEntry&, int remainingDurability);
         
-        AbilityTable allAbilities_;
-        std::unordered_map<std::string, AbilityTable> lists_;
-        lua_State* script_;
-    };
+        inline const EquipmentEntry& GetEntry() const { return equipmentEntry_; }
+        inline int GetRemainingDurability() const { return remainingDurability_; }
+        void SetRemainingDurability(int dur);
+        inline bool IsBroken() const { return remainingDurability_ == 0; }
+        int GetAttribute(const Attribute attr) const;
 
+    private:
+        const EquipmentEntry& equipmentEntry_;
+        int remainingDurability_;
+    };
 }

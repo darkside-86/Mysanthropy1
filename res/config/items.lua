@@ -109,7 +109,7 @@ ITEM_ENTRY {
     icon = "res/textures/items/wooden_sword.png",
     -- foodstuff = 0 -- eating a sword is a terrible idea for most people
     type = "equipment",
-    equipment = { durability = 5 } -- wooden swords aren't very durable
+    equipment = { durability = 5 } -- these wooden swords aren't very durable
 }
 
 ITEM_ENTRY {

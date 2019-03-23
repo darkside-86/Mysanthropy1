@@ -89,14 +89,25 @@ set (
 
 add_executable ( 
     TileMapEditor
-        combat/AbilityTables.cpp
-        combat/AttributeSheet.cpp
-        combat/Formula.cpp
+        combat/AbilityTable.cpp
+        combat/Attribute.cpp
+        combat/CharacterSheet.cpp
+        combat/CombatClassTable.cpp
         combat/CombatUnit.cpp
+        combat/Equipment.cpp
+        combat/EquipmentTable.cpp
+        combat/Formula.cpp
+        combat/NumericRange.cpp
+        combat/OutputType.cpp
+        combat/StatusEffect.cpp
+        combat/StatusEffectTable.cpp
+        combat/WeaponType.cpp
         editor/TileEditor.cpp
         editor/main.cpp
         game/Configuration.cpp
         game/Entity.cpp
+        game/Inventory.cpp
+        game/Item.cpp
         game/MobSpawner.cpp
         game/MobSprite.cpp
         game/Sprite.cpp
@@ -108,16 +119,25 @@ add_executable (
 
 add_executable ( 
     RPG
-        combat/AbilityTables.cpp
+        combat/AbilityTable.cpp
         combat/Animation.cpp
         combat/AnimationEntry.cpp
         combat/AnimationSystem.cpp
         combat/AnimationTable.cpp
-        combat/AttributeSheet.cpp
+        combat/Attribute.cpp
         combat/Battle.cpp
+        combat/CharacterSheet.cpp
+        combat/CombatClassTable.cpp
         combat/CombatUnit.cpp
+        combat/Equipment.cpp
+        combat/EquipmentTable.cpp
         combat/Formula.cpp
+        combat/NumericRange.cpp
+        combat/OutputType.cpp
         combat/PlayerCombatUnit.cpp
+        combat/StatusEffect.cpp
+        combat/StatusEffectTable.cpp
+        combat/WeaponType.cpp
         game/Building.cpp
         game/BuildingOutline.cpp
         game/BuildingTable.cpp

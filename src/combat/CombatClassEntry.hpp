@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// CombatClassEntry.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,28 +18,32 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "CombatClassEntry.hpp"
-#include "CombatUnit.hpp"
+#include <string>
+#include <vector>
 
-namespace combat
+namespace combat 
 {
-    class PlayerCombatUnit : public CombatUnit 
+    // entry to database of classes for determining base stat calculation
+    class CombatClassEntry
     {
     public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
-    private:
-        int maxExperience_;
-        int currentExperience_;
+        // database key
+        std::string name;
+        // title for UI
+        std::string title;
+        // tooltip for UI
+        std::string tooltip;
+        // whether or not player can be this class
+        bool playable;
+        // primary stat multipliers
+        float strength;
+        float agility;
+        float intellect;
+        float dexterity;
+        float wisdom;
+        float knowledge;
+        float vitality;
+        // list of abilities
+        std::vector<std::string> abilityList;
     };
 }

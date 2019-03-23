@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// OutputType.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,28 +18,25 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "CombatClassEntry.hpp"
-#include "CombatUnit.hpp"
+#include <string>
 
 namespace combat
 {
-    class PlayerCombatUnit : public CombatUnit 
+    enum class OutputType
     {
-    public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
-    private:
-        int maxExperience_;
-        int currentExperience_;
+        Unspecified,
+        MagicUnspecified,
+        Physical,
+        Earth,
+        Air,
+        Fire,
+        Frost,
+        Shadow,
+        Holy,
+        Nature,
+        Life
     };
+
+    OutputType StringToOutputType(const std::string& str);
+    std::string OutputTypeToString(const OutputType t);
 }

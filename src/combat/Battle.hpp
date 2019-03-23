@@ -48,6 +48,8 @@ namespace combat
         void AddMob(game::MobSprite* mobSprite);
         // Removes a mob from the combat list. 
         void RemoveMob(game::MobSprite* mobSprite);
+        // determines if mob is in combat
+        bool MobInCombat(game::MobSprite* mobSprite);
         // Sets the player sprite
         void AddPlayer(game::PlayerSprite* playerSprite);
         // returns combat log result

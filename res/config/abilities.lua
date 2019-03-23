@@ -11,7 +11,10 @@ ABILITY {
     onGCD = false,
     castType = "instant",
     castTime = 0,
-    formula = "!<(0.25,0.5)MAP+0.5LVL,Physical;", -- todo: add fist weapon damage
+    targetType = "enemy",
+    rangeType = "target",
+    weaponsRequired = { "unarmed" },
+    formula = "<(0.25,0.5)MAP+0.5LVL+1WPN,Physical;",
     level = 1,
     animation = "unarmed_right"
 }
@@ -25,9 +28,46 @@ ABILITY {
     onGCD = false,
     castType = "instant",
     castTime = 0,
-    formula = "!<(0.2,0.4)MAP+0.5LVL,Physical;",
+    targetType = "enemy",
+    rangeType = "target",
+    weaponsRequired = { "unarmed" },
+    formula = "<(0.2,0.4)MAP+0.5LVL+1WPN,Physical;",
     level = 1,
     animation = "unarmed_left"
+}
+
+ABILITY {
+    name = "sword_right",
+    minRange = 0,
+    maxRange = 35,
+    offensive = true,
+    cooldown = 1.4,
+    onGCD = false,
+    castType = "instant",
+    castTime = 0,
+    targetType = "enemy",
+    rangeType = "target",
+    weaponsRequired = { "sword1h" },
+    formula = "<(0.35,0.7)MAP+0.5LVL+1WPN,Physical;",
+    level = 1,
+    animation = "sword_right"
+}
+
+ABILITY {
+    name = "sword_left",
+    minRange = 0,
+    maxRange = 35,
+    offensive = true,
+    cooldown = 1.5,
+    onGCD = false,
+    castType = "instant",
+    castTime = 0,
+    targetType = "enemy",
+    rangeType = "target",
+    weaponsRequired = { "sword1h" },
+    formula = "<(0.28,0.56)MAP+0.5LVL+1WPN,Physical;", 
+    level = 1,
+    animation = "sword_left"
 }
 
 ABILITY {
@@ -39,39 +79,59 @@ ABILITY {
     onGCD = true,
     castType = "instant",
     castTime = 0,
-    formula = "!<(0.2)RAP,Earth;!?0.5SPD,Earth:8;",
+    targetType = "enemy",
+    rangeType = "target",
+    itemCost = { 1, "stone" },
+    formula = "<(0.1)RAP,Earth;/Slow4.5;",
     level = 5
     -- TODO: animation
 }
 
--- PLAYER CONFIGURATIONS ------------------------------------------------------
--------------------------------------------------------------------------------
-
-ABILITY_TABLE {
-    name = "player_survivalist",
-    attacks = { "unarmed_right", "unarmed_left", "throw_stone" }
+ABILITY {
+    name = "first_aid",
+    minRange = 0,
+    maxRange = 32, -- meaningless because it's self cast
+    offensive = false,
+    cooldown = 15,
+    onGCD = true,
+    castType = "channeled",
+    castTime = 5,
+    targetType = "friendly",
+    rangeType = "target",
+    formula = ">(1,2)LVL,Physical;",
+    tickRate = 1,
+    level = 6
 }
 
--- NPC ABILITIES --------------------------------------------------------------
--------------------------------------------------------------------------------
+ABILITY {
+    name = "gauze",
+    minRange = 0,
+    maxRange = 32,
+    offensive = false,
+    cooldown = 30,
+    onGCD = true,
+    castType = "instant",
+    castTime = 0,
+    targetType = "friendly",
+    rangeType = "target",
+    -- no formula, this is just a simple dispel
+    dispels = { "Physical" }, -- only dispels one physical debuff. Could put physical twice e.g.
+    level = 7
+}
+
 ABILITY {
     name = "basic_attack",
     minRange = 0,
     maxRange = 32,
     offensive = true,
-    cooldown = 1.0,
+    cooldown = 0,
     onGCD = true,
     castType = "instant",
     castTime = 0,
-    formula = "!<(0.2,0.4)MAP+0.5LVL,Physical;",
-    level = 1,
-    animation = "basic_attack"
+    targetType = "enemy",
+    rangeType = "target",
+    formula = "<(0.1,0.9)MAP;",
+    level = 1
 }
 
--- NPC CONFIGURATIONS ---------------------------------------------------------
--------------------------------------------------------------------------------
 
-ABILITY_TABLE {
-    name = "redcrab",
-    attacks = { "basic_attack" }
-}

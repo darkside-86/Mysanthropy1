@@ -20,210 +20,60 @@
 #include "CombatUnit.hpp"
 #include "engine/GameEngine.hpp"
 #include "Formula.hpp"
+#include "StatusEffectTable.hpp"
 
 namespace combat
 {
-    float NumericRange::Next() const
-    {
-        float r = upper_ - lower_;
-        if(r == 0.0f) // don't waste RNG time if no range
-            return lower_;
-        auto& rng = engine::GameEngine::Get().GetRNG();
-        float v = (float)rng() / (float)rng.max();
-        return lower_ + r * v;
-    }
-
-    // TODO: add future inputs
-    AttributeInput StringToAttributeInput(const std::string str)
-    {
-        if(str == "NIL")
-            return AttributeInput::NIL;
-        else if(str == "STR")
-            return AttributeInput::STR;
-        else if(str == "AGI")
-            return AttributeInput::AGI;
-        else if(str == "INT")
-            return AttributeInput::INT;
-        else if(str == "DEX")
-            return AttributeInput::DEX;
-        else if(str == "WIS")
-            return AttributeInput::WIS;
-        else if(str == "KNO")
-            return AttributeInput::KNO;
-        else if(str == "VIT")
-            return AttributeInput::VIT;
-        else if(str == "MAP")
-            return AttributeInput::MAP;
-        else if(str == "RAP")
-            return AttributeInput::RAP;
-        else if(str == "ARM")
-            return AttributeInput::ARM;
-        else if(str == "SPD")
-            return AttributeInput::SPD;
-        else if(str == "HP")
-            return AttributeInput::HP;
-        else if(str == "LVL")
-            return AttributeInput::LVL;
-        
-        return AttributeInput::INV;
-    }
-
-    std::string SchoolToString(const School s)
-    {
-        switch(s)
-        {
-        case School::Air: return "Air";
-        case School::Earth: return "Earth";
-        case School::Fire: return "Fire";
-        case School::Frost: return "Frost";
-        case School::Holy: return "Holy";
-        case School::Life: return "Life";
-        case School::Nature: return "Nature";
-        case School::Physical: return "Physical";
-        case School::Shadow: return "Shadow";
-        default: return "Unknown"; // compiler gave a warning but all cases are handled?
-        }
-    }
-
-    School StringToSchool(const std::string& str)
-    {
-        if(str == "Air")
-            return School::Air;
-        if(str == "Earth")
-            return School::Earth;
-        if(str == "Fire")
-            return School::Fire;
-        if(str == "Frost")
-            return School::Frost;
-        if(str == "Holy")
-            return School::Holy;
-        if(str == "Life")
-            return School::Life;
-        if(str == "Nature")
-            return School::Nature;
-        if(str == "Physical")
-            return School::Physical;
-        if(str == "Shadow")
-            return School::Shadow;
-
-        return School::Physical; // sane default
-    }
-
-    Output Output::StatusEffect(Target t, School s, const std::vector<StatusEffectData>& sed)
+    Output Expression::RunCalculation(CombatUnit& src) const
     {
         Output o;
-        o.type = Type::StatusEffect; o.target = t; o.school = s;
-        for(int i=0; i < MAX_STATUS_EFFECTS; ++i)
+        o.outputType = outputType;
+        if(statusEffectName != "")
         {
-            if(i >= sed.size())
-            {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                    "%s: Status effects are discarded due to limit of %lu", 
-                    __FUNCTION__, MAX_STATUS_EFFECTS);
-                break;
-            }
-            o.statusEffect.data[i] = sed[i];
+            o.statusEffect = statusEffectName;
+            o.duration = (float)statusEffectDuration;
         }
-        return o;
-    }
-
-    Output Expression::RunCalculation(CombatUnit& unit) const
-    {
-        // first get the sum of the algebraic expression
-        float sum = 0;
-        std::vector<StatusEffectData> data; 
-
-        for(const auto& term : terms)
+        else 
         {
-            if(outputType == Output::Type::Direct || outputType == Output::Type::OverTime)
+            o.damage = damage;
+            for(const auto& term : terms)
             {
-                float coef = term.coefficient.Next();
-                float var = 1.0f;
+                float out = 0.0f;
                 switch(term.variable)
                 {
-                case AttributeInput::STR:
-                    var = (float)unit.GetAttributeSheet().GetStrength();
+                case Attribute::Strength: 
+                case Attribute::Agility:
+                case Attribute::Intellect:
+                case Attribute::Dexterity:
+                case Attribute::Wisdom:
+                case Attribute::Knowledge:
+                case Attribute::Vitality:
+                case Attribute::Weapon:
+                    out += (float)src.GetCharacterSheet().CalculateAttribute(term.variable);
                     break;
-                case AttributeInput::AGI:
-                    var = (float)unit.GetAttributeSheet().GetAgility();
+                case Attribute::MeleeAttackPower:
+                    out += (float)src.GetCharacterSheet().GetMeleeAttackPower();
                     break;
-                case AttributeInput::INT:
-                    var = (float)unit.GetAttributeSheet().GetIntellect();
+                case Attribute::RangedAttackPower:
+                    out += (float)src.GetCharacterSheet().GetRangedAttackPower();
                     break;
-                case AttributeInput::DEX:
-                    var = (float)unit.GetAttributeSheet().GetDexterity();
+                case Attribute::SpellPower:
+                    out += (float)src.GetCharacterSheet().GetSpellPower();
                     break;
-                case AttributeInput::WIS:
-                    var = (float)unit.GetAttributeSheet().GetWisdom();
+                case Attribute::MaxHealth:
+                    out += (float)src.GetCharacterSheet().GetMaxHealth();
                     break;
-                case AttributeInput::KNO:
-                    var = (float)unit.GetAttributeSheet().GetKnowledge();
+                case Attribute::MaxMana:
+                    out += (float)src.GetCharacterSheet().GetMaxMana();
                     break;
-                case AttributeInput::VIT:
-                    var = (float)unit.GetAttributeSheet().GetVitality();
+                case Attribute::Level:
+                    out += (float)src.GetCharacterSheet().GetLevel();
                     break;
-                case AttributeInput::HP:
-                    var = (float)unit.GetAttributeSheet().GetMaxHealth();
-                    break;
-                case AttributeInput::MAP:
-                    var = (float)unit.GetAttributeSheet().GetMeleeAttackPower();
-                    break;
-                case AttributeInput::RAP:
-                    var = (float)unit.GetAttributeSheet().GetRangedAttackPower();
-                    break;
-                // TODO: handle all inputs
-                case AttributeInput::LVL:
-                    var = (float)unit.GetAttributeSheet().GetLevel();
-                    break;
-                case AttributeInput::NIL:
-                default:
-                    var = 1.0f;
+                // TODO: handle rest of possible inputs
                 }
-                sum += coef * var;
+                out *= term.coefficient.Next();
+                o.amount += (int)out;
             }
-            else 
-            {
-                data.push_back({term.coefficient.Next(), term.variable});
-            }
-        }
-        Output o;        
-        o.target = outputTarget;
-        o.school = outputSchool;
-        o.type = outputType;
-        o.itemCostName = outputItemRequired;
-        o.itemCostCount = outputItemCount;
-        for(const auto& wpn : weaponsRequired)
-        {
-            o.requiredWeapons.push_back(wpn);
-        }
-        // the expression describes the type of output to create and return.
-        switch(outputType)
-        {
-        case Output::Type::Direct:
-            o.direct.amount = (int)sum;
-            break;
-        case Output::Type::OverTime:
-            // return Output::OverTime(outputTarget, outputSchool, (int)sum, duration);
-            o.overTime.amount = (int)sum;
-            o.overTime.duration = duration;
-            break;
-        case Output::Type::StatusEffect:
-            // return Output::StatusEffect(outputTarget, outputSchool, data);
-            o.statusEffect.duration = duration;
-            for(int i=0; i < data.size(); ++i)
-            {
-                if(i >= Output::MAX_STATUS_EFFECTS)
-                {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::WARNING,
-                        "Ran out of status effect slots for output");
-                    break;
-                }
-                o.statusEffect.data[i] = data[i];
-            }
-            break;
-        default:
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
-                "%s: Invalid/no output specified for expression result", __FUNCTION__);
         }
         return o;
     }
@@ -371,92 +221,49 @@ namespace combat
             Expression currentExpression;
             // look for the specifier
             token = parser.GetNextToken();
-            // the first char should be '!', '@', or '#'. Anything else is a compile error.
-            if(token.size() == 1)
+            // the first char should be '<', '>', or '/'. Anything else is a compile error.
+
+            if(token == "<")
             {
-                switch(token[0])
+                currentExpression.damage = true;
+            }
+            else if(token == ">")
+            {
+                currentExpression.damage = false;
+            }
+            else if(token == "/")
+            {
+                token = parser.GetNextToken();
+                currentExpression.statusEffectName = token;
+                token = parser.GetNextToken();
+                currentExpression.statusEffectDuration = (int)atoi(token.c_str());
+                token = parser.GetNextToken();
+                if(token == ";")
                 {
-                case '!': currentExpression.outputTarget = Output::Target::Enemy; break;
-                case '@': currentExpression.outputTarget = Output::Target::Friendly; break;
-                case '#': currentExpression.outputTarget = Output::Target::Self; break;
-                default: engine::GameEngine::Get().GetLogger().Logf(
-                            engine::Logger::Severity::FATAL,
-                            "%s: Wrong target specifier token `%s'!", 
-                            __FUNCTION__, token.c_str());
+                    expressions.push_back(currentExpression);
+                    continue;
                 }
-            }
-            else 
-            {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
-                    "%s: Wrong type of token `%s' at beginning of expression!", __FUNCTION__, token.c_str());
-            }
-            // the next char should be < > or ?
-            token = parser.GetNextToken();
-            if(token.size() == 1)
-            {
-                switch(token[0])
-                {
-                case '<': currentExpression.outputType = Output::Type::Direct; break;
-                case '>': currentExpression.outputType = Output::Type::OverTime; break; 
-                case '?': currentExpression.outputType = Output::Type::StatusEffect; break;
-                default: engine::GameEngine::Get().GetLogger().Logf(
-                            engine::Logger::Severity::FATAL,
-                            "%s: Incorrect type specifier token `%s'!", 
-                            __FUNCTION__, token.c_str());
-                }
-            }
-            else 
-            {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
-                    "%s: Wrong type of token `%s' for type specifier!", __FUNCTION__, token.c_str());                
-            }
-            // check weapon requirement (TODO: process this in CombatUnit)
-            token = parser.GetNextToken();
-            if(token == "~")
-            {
-                token = parser.GetNextToken();
-                for(int i=0; i < token.length(); ++i)
-                {
-                    switch(token[i])
-                    {
-                    case 'a': currentExpression.weaponsRequired.push_back(WeaponRequired::Axe); break;
-                    case 'h': currentExpression.weaponsRequired.push_back(WeaponRequired::Hammer); break;
-                    case 't': currentExpression.weaponsRequired.push_back(WeaponRequired::Staff); break;
-                    case 's': currentExpression.weaponsRequired.push_back(WeaponRequired::Sword); break;
-                    case 'u': currentExpression.weaponsRequired.push_back(WeaponRequired::Unarmed); break;
-                    default: engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                        "%s: Invalid weapon requirement `%c'", __FUNCTION__, token[i]);
-                    }
-                }
-                token = parser.GetNextToken();
-            }
-            // Check for name of debuff. Order is important btw
-            if(token.size() == 0)
-            {
-                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                    "%s: Unexpected end of expressions!", __FUNCTION__);
-            }
-            if(token == "{")
-            {
-                token = parser.GetNextToken();
-                // the semantics of the token are not checked so this allows for a stupid name for
-                // an effect such as "-4-5-.-..2" or "!"
-                currentExpression.outputName = token;
-                token = parser.GetNextToken();
-                if(token != "}")
+                else
                 {
                     engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                        "%s: Incorrect termination of effect name", __FUNCTION__);
+                        "%s: Expected `;' at end of status effect expression", __FUNCTION__);
                 }
-                token = parser.GetNextToken();
             }
-            
+            else 
+            {
+                engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
+                    "%s: Wrong type of token `%s' for first expression token!", 
+                    __FUNCTION__, token.c_str());                
+            }
+
+            token = parser.GetNextToken();
+
             // Get the coefficient var pairs separated by +
             while(token != "," && token != ";" && token != "")
             {
                 // can't create the numeric range until we get both lower and upper
                 float lower=1.0f, upper=1.0f;
-                AttributeInput var;
+                Attribute var;
                 // try to read a '(' or single number
                 if(token == "(")
                 {
@@ -509,14 +316,9 @@ namespace combat
                 }
                 // next read the attribute input var name
                 token = parser.GetNextToken();
-                var = StringToAttributeInput(token);
-                if(var == AttributeInput::INV)
-                {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
-                        "%s: `%s' is not a valid input attribute", __FUNCTION__, token.c_str());
-                }
+                var = StringToAttribute(token);
                 // now we can create the Term
-                FormulaTerm term = { NumericRange(lower,upper), var };
+                ExpressionTerm term = { NumericRange(lower,upper), var };
                 currentExpression.terms.push_back(term);
                 token = parser.GetNextToken();
                 // now we reach a '+' indicating to continue this loop to read another term or the while condition
@@ -532,23 +334,9 @@ namespace combat
             {
                 token = parser.GetNextToken();
                 // defaults to physical so no use checking validity
-                currentExpression.outputSchool = StringToSchool(token);
+                currentExpression.outputType = StringToOutputType(token);
                 token = parser.GetNextToken();
                 // expect a ';' immediately after school. indicated end of expression. 
-            }
-            // a duration can go after school
-            if(token == ":")
-            {
-                token = parser.GetNextToken();
-                if(!StringIsAValidNumber(token))
-                {
-                    engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL,
-                        "%s: Invalid numerical value `%s' for duration", __FUNCTION__, token.c_str());
-                }
-                // parser does not distinguish between ints and floats so just cast to int
-                currentExpression.duration = (int)atof(token.c_str());
-                // read the next token (hopefully a ';')
-                token = parser.GetNextToken();
             }
             if(token == ";") 
             {

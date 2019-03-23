@@ -612,6 +612,8 @@ namespace world
         lua_setglobal(scripting_, "ON_DESTROY");
         lua_pushcfunction(scripting_, TileMap::lua_BeginMobType);
         lua_setglobal(scripting_, "BEGIN_MOB_TYPE");
+        lua_pushcfunction(scripting_, TileMap::lua_MobClass);
+        lua_setglobal(scripting_, "MOB_CLASS");
         lua_pushcfunction(scripting_, TileMap::lua_LevelRange);
         lua_setglobal(scripting_, "LEVEL_RANGE");
         lua_pushcfunction(scripting_, TileMap::lua_DefaultAnimation);
@@ -638,10 +640,10 @@ namespace world
         lua_setglobal(scripting_, "MOB_COLLISION_BOX");
         lua_pushcfunction(scripting_, TileMap::lua_MobAggroType);
         lua_setglobal(scripting_, "MOB_AGGRO_TYPE");
+        lua_pushcfunction(scripting_, TileMap::lua_MobAggroRadius);
+        lua_setglobal(scripting_, "MOB_AGGRO_RADIUS");
         lua_pushcfunction(scripting_, TileMap::lua_Biome);
         lua_setglobal(scripting_, "BIOME");
-        lua_pushcfunction(scripting_, TileMap::lua_CombatAbilityList);
-        lua_setglobal(scripting_, "COMBAT_ABILITY_LIST");
         lua_pushcfunction(scripting_, TileMap::lua_LootTable);
         lua_setglobal(scripting_, "LOOT_TABLE");
         lua_pushcfunction(scripting_, TileMap::lua_EndMobType);
@@ -861,6 +863,15 @@ namespace world
         return 0;
     }
 
+    int TileMap::lua_MobClass(lua_State* L)
+    {
+        TileMap* tileMap = GetTileMapObject(L);
+
+        const char* name = lua_tostring(L, 1);
+        tileMap->currentMobType_.combatClass = name;
+        return 0;
+    }
+
     int TileMap::lua_LevelRange(lua_State* L)
     {
         TileMap* tileMap = GetTileMapObject(L);
@@ -1007,6 +1018,13 @@ namespace world
         return 0;
     }
 
+    int TileMap::lua_MobAggroRadius(lua_State* L)
+    {
+        TileMap* tileMap = GetTileMapObject(L);
+        tileMap->currentMobType_.aggroRadius = (int)lua_tointeger(L, 1);
+        return 0;
+    }
+
     int TileMap::lua_Biome(lua_State* L)
     {
         TileMap* tileMap = GetTileMapObject(L);
@@ -1017,25 +1035,6 @@ namespace world
             tileMap->currentMobType_.biome = game::MobType::BIOME::LAND;
         else if(strcmp(biomeStr,"water")==0)
             tileMap->currentMobType_.biome = game::MobType::BIOME::WATER;
-        return 0;
-    }
-        
-    int TileMap::lua_CombatAbilityList(lua_State* L)
-    {
-        TileMap* tileMap = GetTileMapObject(L);
-        
-        const char* abilityListName = lua_tostring(L, 1);
-        const auto& lists = combat::AbilityTables::Get().GetLists();
-        const auto found = lists.find(abilityListName);
-        if(found != lists.end())
-        {
-            tileMap->currentMobType_.combatAbilityList = found->second;
-        }
-        else 
-        {
-            engine::GameEngine::Get().GetLogger().Logf(engine::Logger::Severity::FATAL, 
-                "%s: AbilityTable not set because it (%s) wasn't found", __FUNCTION__, abilityListName);
-        }
         return 0;
     }
 

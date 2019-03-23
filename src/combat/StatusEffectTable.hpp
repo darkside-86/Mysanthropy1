@@ -1,4 +1,4 @@
-// PlayerCombatUnit.hpp
+// StatusEffectTable.hpp
 //-----------------------------------------------------------------------------
 // Author: darkside-86
 // (c) 2019
@@ -18,28 +18,30 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "CombatClassEntry.hpp"
-#include "CombatUnit.hpp"
+#include <string>
+#include <unordered_map>
+
+#include <lua/lua.hpp>
+
+#include "StatusEffectEntry.hpp"
 
 namespace combat
 {
-    class PlayerCombatUnit : public CombatUnit 
+    // database of all status effects
+    class StatusEffectTable
     {
     public:
-        PlayerCombatUnit(int level, int exp, const CombatClassEntry& playerClass);
-        virtual ~PlayerCombatUnit();
-        // calculate stats for level
-        void SetLevel(int level);
-        // return true if a level was gained
-        bool AddExperience(int exp);
-        // access numbers for display
-        inline int GetMaxExperience() const { return maxExperience_; }
-        inline int GetCurrentExperience() const { return currentExperience_; }
-        // TODO: add generic ability cooldown percentage method
-        float GetRemainingRightCooldownAsValue();
-        float GetRemainingLeftCooldownAsValue();
+        static const StatusEffectTable& Get()
+        {
+            static StatusEffectTable singleton;
+            return singleton;
+        }
+        const StatusEffectEntry* GetEntry(const std::string& name) const;
     private:
-        int maxExperience_;
-        int currentExperience_;
+        StatusEffectTable();
+        virtual ~StatusEffectTable();
+        static int lua_StatusEffect(lua_State* L);
+
+        std::unordered_map<std::string, StatusEffectEntry> statusEffects_;
     };
 }

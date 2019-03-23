@@ -23,7 +23,7 @@
 
 #include <lua/lua.hpp>
 
-#include "combat/AbilityTables.hpp"
+#include "combat/AbilityTable.hpp"
 #include "game/Entity.hpp"
 #include "game/MobSpawner.hpp"
 #include "ogl/Program.hpp"
@@ -150,6 +150,7 @@ namespace world
         static int lua_Farmable(lua_State* L);
         static int lua_EndEntity(lua_State* L);
         static int lua_BeginMobType(lua_State* L);
+        static int lua_MobClass(lua_State* L);
         static int lua_LevelRange(lua_State* L);
         static int lua_DefaultAnimation(lua_State* L);
         static int lua_FrAnimTextureList(lua_State* L);
@@ -163,8 +164,8 @@ namespace world
         static int lua_MobLeash(lua_State* L);
         static int lua_MobCollisionBox(lua_State* L);
         static int lua_MobAggroType(lua_State* L);
+        static int lua_MobAggroRadius(lua_State* L);
         static int lua_Biome(lua_State* L);
-        static int lua_CombatAbilityList(lua_State* L);
         static int lua_LootTable(lua_State* L);
         static int lua_EndMobType(lua_State* L);
         ///////////////////////////////////////////////////////////////////////

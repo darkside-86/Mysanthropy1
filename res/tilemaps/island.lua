@@ -344,6 +344,7 @@ END_ENTITY()
 -- 0 : redcrab ----------------------------------------------------------------
 -- Begins a mob type entry. Argument is the name of the mob used for indexing and display
 BEGIN_MOB_TYPE "redcrab"
+ MOB_CLASS "basic_mob"
  -- lower and upper inclusive range the levels of the mobs that spawn
  LEVEL_RANGE (1, 5)
  -- default "anim0" texture. See next note.
@@ -385,15 +386,13 @@ BEGIN_MOB_TYPE "redcrab"
  MOB_COLLISION_BOX ( 4, 4, 16, 16 )
  -- "neutral" means the mobs only attack when the player attacks them first. "hostile" for aggressive mobs
  MOB_AGGRO_TYPE ( "neutral" )
- -- Argument should be name of ability list in C++ mob ability list. (Abilities will eventually be
- --   defined in Lua rather than C++ but the indexing will remain the same)
- COMBAT_ABILITY_LIST "redcrab"
  -- 25% chance to drop 1 shellfish. Arguments to LOOT_TABLE should be multiples of 3
  LOOT_TABLE ( "shellfish", 1, 25.0 )
 -- Ends the mob entry and adds it to the list
 END_MOB_TYPE()
 -- 1 : shark ------------------------------------------------------------------
 BEGIN_MOB_TYPE "shark"
+ MOB_CLASS "basic_mob"
  LEVEL_RANGE(6, 8)
  DEFAULT_ANIMATION "lf1.png"
  FR_ANIM_TEXTURE_LIST (
@@ -415,6 +414,6 @@ BEGIN_MOB_TYPE "shark"
  MOB_LEASH ( 400 )
  MOB_COLLISION_BOX ( 4, 4, 112, 112 )
  MOB_AGGRO_TYPE ( "hostile" )
+ MOB_AGGRO_RADIUS ( 320 ) -- only meaningful if hostile
  BIOME "water" -- "both" by default, other options are "land", restricts movement
- COMBAT_ABILITY_LIST "redcrab"
 END_MOB_TYPE()
